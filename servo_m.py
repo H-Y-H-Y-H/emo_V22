@@ -57,34 +57,29 @@ class Actuator(object):
         self.v_cur = self.v_min 
         self.norm_v_cur = 0
 
-def check_lip_top(cmd_lip_up_warp, cmd_lip_up):
+def check_lip_low(cmd_lip_down, cmd_lip_down_warp):
 
+    # regenerate the lip values.
+    if cmd_lip_down+cmd_lip_down_warp<0.8:
+        cmd_lip_down_warp = np.random.uniform((0.8-cmd_lip_down),1)
 
-    if (0.286 - cmd_lip_up_warp) * lip_up_warp.ranges > (cmd_lip_up-0)*lip_up.ranges:
-        # print(cmd_lip_up_warp, cmd_lip_up)
-        cmd_lip_up_warp = 0.286 - ((cmd_lip_up)*lip_up.ranges)/lip_up_warp.ranges
-        # print(cmd_lip_up_warp, cmd_lip_up)
-        # print('-------')
-    return cmd_lip_up_warp, cmd_lip_up
-    # if (60-cmd_lip_up_warp) > (85 - cmd_lip_up ):
-    #     cmd_lip_up_warp = 60 - (85 - cmd_lip_up)
-
+    return cmd_lip_down, cmd_lip_down_warp
 
 
 # add value 
 
-lip_up = Actuator(idx_tuple = (0,0), min_angle = 45, max_angle = 90, init_angle = 90, inverse_flag=True)
-lip_up_warp = Actuator(idx_tuple = (0,1), min_angle = 40, max_angle = 80 , init_angle = 60 )
+lip_up      = Actuator(idx_tuple = (0,0), min_angle = 70, max_angle = 95, init_angle = 95, inverse_flag=True)
+lip_up_warp = Actuator(idx_tuple = (0,1), min_angle = 70, max_angle = 100,  init_angle = 70 )
 
+lip_down = Actuator(idx_tuple = (0,4), min_angle = 65, max_angle = 88 , init_angle = 88 )
+lip_down_warp = Actuator(idx_tuple = (0,5), min_angle = 100, max_angle = 130 , init_angle = 130)
+#  lip_down_warp_cmds = np.random.uniform((0.8-lip_down_cmds),1)
 
-lip_down = Actuator(idx_tuple = (0,4), min_angle = 70, max_angle = 110 , init_angle = 105 )
-lip_down_warp = Actuator(idx_tuple = (0,5), min_angle = 170, max_angle = 180 , init_angle = 180, inverse_flag = 1 )
+r_corner_up = Actuator(idx_tuple = (0,2), min_angle = 40, max_angle = 110 , init_angle = 65 )
+l_corner_up = Actuator(idx_tuple = (0,7), min_angle = 20, max_angle = 90 , init_angle = 65,inverse_flag = 1 )
 
-r_corner_up = Actuator(idx_tuple = (0,2), min_angle = 40, max_angle = 110 , init_angle = 55 )
-l_corner_up = Actuator(idx_tuple = (0,7), min_angle = 20, max_angle = 90 , init_angle = 75,inverse_flag = 1 )
-
-r_corner_low = Actuator(idx_tuple = (0,3), min_angle = 20, max_angle = 100 , init_angle = 50  )
-l_corner_low = Actuator(idx_tuple = (0,6), min_angle = 90, max_angle = 170 , init_angle = 140,inverse_flag =1  )
+r_corner_low = Actuator(idx_tuple = (0,3), min_angle = 20, max_angle = 100 , init_angle = 62  )
+l_corner_low = Actuator(idx_tuple = (0,6), min_angle = 90, max_angle = 170 , init_angle = 127,inverse_flag =1  )
 
 r_eye_yaw = Actuator(idx_tuple = (0,8), min_angle = 65, max_angle = 125 , init_angle = 95  )
 l_eye_yaw = Actuator(idx_tuple = (1,7), min_angle = 60, max_angle = 120 , init_angle = 90  )
@@ -114,22 +109,29 @@ else:
 
 
 
-def move_all(target, interval = 50):
-    num_motors = len(target)
-    target = np.asarray(target)
+def random_move(interval = 50):
+    num_motors = len(all_motors)
     curr = np.zeros(num_motors)
 
+    # Get current motor joint angles:
     for i in range(num_motors):
         curr[i] = all_motors[i].norm_v_cur
     
-    traj = np.linspace(curr,target, num= interval)
-    # print(traj)
+    # Generate random movement and check lower lips
+    cmds_random = np.random.sample(num_motors)
+    cmds_random[5] = cmds_random[4]
+    cmds_random[7] = cmds_random[6]
+    cmds_random[2], cmds_random[3] = check_lip_low(cmds_random[2], cmds_random[3])
+
+    print("execute random commands: ", cmds_random)
+    # Generate trajectories
+    traj = np.linspace(curr, cmds_random, num=interval, endpoint=True)
+
+    # execute the commands:
     for i in range(interval):
-        # print(traj[i])
         for j in range(num_motors):
             val = traj[i][j]
-            # print(val)
-            check_lip_top
+
             all_motors[j].norm_act(val)
             time.sleep(0.001)
 
@@ -173,6 +175,7 @@ def random_smile():
         move_all(smile_normal_random)
         time.sleep(0.5)
 
+
 def eyes_module(i):
     print(i)
     # r_eye_yaw.norm_act(0.5*np.sin((i+1)/400 * 2*np.pi)+0.5)
@@ -189,59 +192,26 @@ def eyes_module(i):
 if __name__ == "__main__":
 
 # Save resting face position in normed space
+    np.random.seed(1)
 
     resting_face = []
     for m in all_motors:
         resting_face.append(m.norm_v_cur)
         print(m.norm_v_cur)
+    resting_face = [0.0,0.0,1.0,1.0,0.357,0.357,0.525,0.5375,1.0]
     
-    time.sleep(3)
-    smile_1 = [
-    0.5,
-    0,
-    0.9,
-    0.8,
-    
-    0.8,
-    0.8,
-    0.,
-    0.,
-    0.8]
-
-    smile_2 = np.asarray([
-    0.5,
-    0,
-    0.9,
-    0.8,
-    
-    0.8,
-    0.8,
-    0.1,
-    0.1,
-    0.9])
-
-    # scale_range = [0.2,0.1,0.6,0.6,
-    # 0.3,0.3,0.2,0.2,0.2]
     scale_range = 1
 
-    for i in range(12000):
+    for i in range(100):
+        random_move()
+        time.sleep(0.2)
         # eyes_module(i)
-        print(i)
+        # print(i)
         # random_smile()
 
 
-    # print(l_corner_up.norm_v_cur)
-    # lip_up.norm_act(1)
-    # lip_up_warp.norm_act(0)
-    # l_corner_up.norm_act(0.5)
-    # r_corner_up.norm_act(0.5)
-    # lip_down.norm_act(0)
-    # jaw.norm_act(0.8)
-    # lip_down_warp.norm_act(1)
-    
         # print(v)
         # lip_down_warp.act(v)
-
         
         # test_v = 0.5*np.sin(i* np.pi/2 /100)+0.5
         # test.norm_act(test_v)
