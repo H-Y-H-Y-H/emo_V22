@@ -68,7 +68,6 @@ class PCF:
         self.bottom = -0.5 * height_at_near
         self.top = 0.5 * height_at_near
 
-
 canonical_metric_landmarks = np.array(
     [
         0.000000,

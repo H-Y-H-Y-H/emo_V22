@@ -15,7 +15,7 @@ mp_face_mesh = mp.solutions.face_mesh
 
 # For webcam input:
 drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
-cap = cv2.VideoCapture(4)
+cap = cv2.VideoCapture(0)
 
 # get cap property
 frame_width  = cap.get(cv2.CAP_PROP_FRAME_WIDTH)   # float `width`
@@ -91,9 +91,7 @@ with mp_face_mesh.FaceMesh(
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         if results.multi_face_landmarks:
             for face_landmarks in results.multi_face_landmarks:
-                landmarks = np.array(
-                    [(lm.x, lm.y, lm.z) for lm in face_landmarks.landmark]
-                )
+                landmarks = np.array([(lm.x, lm.y, lm.z) for lm in face_landmarks.landmark])
 
                 # overlay landmarks on original image
                 mp_drawing.draw_landmarks(
@@ -118,69 +116,6 @@ with mp_face_mesh.FaceMesh(
                     connection_drawing_spec=mp_drawing_styles
                         .get_default_face_mesh_iris_connections_style())
 
-                # draw landmarks on black screen
-                mp_drawing.draw_landmarks(
-                    image=black_img,
-                    landmark_list=face_landmarks,
-                    connections=mp_face_mesh.FACEMESH_TESSELATION,
-                    landmark_drawing_spec=None,
-                    connection_drawing_spec=mp_drawing_styles
-                        .get_default_face_mesh_tesselation_style())
-                mp_drawing.draw_landmarks(
-                    image=black_img,
-                    landmark_list=face_landmarks,
-                    connections=mp_face_mesh.FACEMESH_CONTOURS,
-                    landmark_drawing_spec=None,
-                    connection_drawing_spec=mp_drawing_styles
-                        .get_default_face_mesh_contours_style())
-                mp_drawing.draw_landmarks(
-                    image=black_img,
-                    landmark_list=face_landmarks,
-                    connections=mp_face_mesh.FACEMESH_IRISES,
-                    landmark_drawing_spec=None,
-                    connection_drawing_spec=mp_drawing_styles
-                        .get_default_face_mesh_iris_connections_style())
-
-                # freely rotate landmarks
-                rot_x = cv2.getTrackbarPos('vert', 'landmarks')
-                rot_y = cv2.getTrackbarPos('hori', 'landmarks')
-
-                rot_x_rad = (rot_x - 180) * np.pi / 180
-                rot_y_rad = (rot_y - 180) * np.pi / 180
-
-                rot_x_lm = landmarks @ rotation_matrix([1, 0, 0], rot_x_rad)
-                rot_y_lm = rot_x_lm @ rotation_matrix([0, 1, 0], rot_y_rad)
-
-                rot_y_lm[:, 0] -= rot_y_lm[:, 0].mean() - 0.5
-                rot_y_lm[:, 1] -= rot_y_lm[:, 1].mean() - 0.5
-
-                for idx, lm in enumerate(face_landmarks.landmark):
-                    lm.x = rot_y_lm[idx][0]
-                    lm.y = rot_y_lm[idx][1]
-                    lm.z = rot_y_lm[idx][2]
-
-                # draw rotated landmarks
-                mp_drawing.draw_landmarks(
-                    image=black_img_rot,
-                    landmark_list=face_landmarks,
-                    connections=mp_face_mesh.FACEMESH_TESSELATION,
-                    landmark_drawing_spec=None,
-                    connection_drawing_spec=mp_drawing_styles
-                        .get_default_face_mesh_tesselation_style())
-                mp_drawing.draw_landmarks(
-                    image=black_img_rot,
-                    landmark_list=face_landmarks,
-                    connections=mp_face_mesh.FACEMESH_CONTOURS,
-                    landmark_drawing_spec=None,
-                    connection_drawing_spec=mp_drawing_styles
-                        .get_default_face_mesh_contours_style())
-                mp_drawing.draw_landmarks(
-                    image=black_img_rot,
-                    landmark_list=face_landmarks,
-                    connections=mp_face_mesh.FACEMESH_IRISES,
-                    landmark_drawing_spec=None,
-                    connection_drawing_spec=mp_drawing_styles
-                        .get_default_face_mesh_iris_connections_style())
 
                 # get metric landmarks
                 landmarks_face_mesh = landmarks.copy()
@@ -216,6 +151,46 @@ with mp_face_mesh.FaceMesh(
                     landmark_drawing_spec=None,
                     connection_drawing_spec=mp_drawing_styles
                         .get_default_face_mesh_contours_style())
+
+
+                landmarks = np.array([(lm.x, lm.y, lm.z) for lm in face_landmarks.landmark])
+
+                # freely rotate landmarks
+                rot_x = cv2.getTrackbarPos('vert', 'landmarks')
+                rot_y = cv2.getTrackbarPos('hori', 'landmarks')
+
+                rot_y = -90
+                rot_x_rad = (rot_x - 180) * np.pi / 180
+                rot_y_rad = (rot_y - 180) * np.pi / 180
+
+                rot_x_lm = landmarks @ rotation_matrix([1, 0, 0], rot_x_rad)
+                rot_y_lm = rot_x_lm @ rotation_matrix([0, 1, 0], rot_y_rad)
+
+                rot_y_lm[:, 0] -= rot_y_lm[:, 0].mean() - 0.5
+                rot_y_lm[:, 1] -= rot_y_lm[:, 1].mean() - 0.5
+
+                for idx, lm in enumerate(face_landmarks.landmark):
+                    lm.x = rot_y_lm[idx][0]
+                    lm.y = rot_y_lm[idx][1]
+                    lm.z = rot_y_lm[idx][2]
+
+                # draw rotated landmarks
+                mp_drawing.draw_landmarks(
+                    image=black_img_rot,
+                    landmark_list=face_landmarks,
+                    connections=mp_face_mesh.FACEMESH_TESSELATION,
+                    landmark_drawing_spec=None,
+                    connection_drawing_spec=mp_drawing_styles
+                        .get_default_face_mesh_tesselation_style())
+                mp_drawing.draw_landmarks(
+                    image=black_img_rot,
+                    landmark_list=face_landmarks,
+                    connections=mp_face_mesh.FACEMESH_CONTOURS,
+                    landmark_drawing_spec=None,
+                    connection_drawing_spec=mp_drawing_styles
+                        .get_default_face_mesh_contours_style())
+
+
 
         # concatenate frames together
         image_original = cv2.flip(image_original, 1)
