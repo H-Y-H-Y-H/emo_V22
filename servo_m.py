@@ -91,9 +91,17 @@ r_upper_eyelid = Actuator(idx_tuple = (0,11),min_angle = 80, max_angle = 163 , i
 l_upper_eyelid = Actuator(idx_tuple = (1,4), min_angle = 18, max_angle = 100 , init_angle = 100  )
 
 r_lower_eyelid = Actuator(idx_tuple = (0,10), min_angle = 93, max_angle = 143 , init_angle = 93   )
-l_lower_eyelid = Actuator(idx_tuple = (1,5), min_angle = 40, max_angle = 95 , init_angle = 95, inverse_flag = True     )
+l_lower_eyelid = Actuator(idx_tuple = (1,5), min_angle = 40, max_angle = 95 , init_angle = 95, inverse_flag = True )
+
+
+r_inner_eyebrow = Actuator(idx_tuple = (0,14),min_angle = 65, max_angle = 100 , init_angle = 85, inverse_flag = True )
+l_inner_eyebrow = Actuator(idx_tuple = (1,1), min_angle = 75, max_angle = 110 , init_angle = 90 )
+
+r_outer_eyebrow = Actuator(idx_tuple = (0,15), min_angle = 80, max_angle = 125, init_angle = 110 )
+l_outer_eyebrow = Actuator(idx_tuple = (1,0), min_angle = 60, max_angle = 105 , init_angle = 75, inverse_flag = True )
 
 jaw = Actuator(idx_tuple = (1,15), min_angle = 40, max_angle = 90, init_angle = 90)
+
 
 neck_mode = False
 
@@ -101,83 +109,71 @@ if neck_mode == True:
     neck_yaw = Actuator(idx_tuple = (1,14), min_angle = 20, max_angle = 160, init_angle = 90)
     neck_roll = Actuator(idx_tuple = (1,13), min_angle = 90, max_angle = 120, init_angle = 105)
     neck_pitch= Actuator(idx_tuple = (1,12), min_angle = 20, max_angle = 60, init_angle = 40, inverse_flag = 1)
-    all_motors = [lip_up, lip_up_warp, lip_down, lip_down_warp, r_corner_up, l_corner_up, r_corner_low, l_corner_low, jaw,neck_roll,neck_pitch,neck_yaw ]
-    all_motors = [lip_up, lip_up_warp, lip_down, lip_down_warp, r_corner_up, l_corner_up, r_corner_low, l_corner_low, jaw,neck_roll,neck_pitch,neck_yaw ]
+    all_motors = [lip_up, lip_up_warp, lip_down, lip_down_warp, r_corner_up, l_corner_up, r_corner_low, l_corner_low, jaw, 
+    r_inner_eyebrow, l_inner_eyebrow, r_outer_eyebrow, l_outer_eyebrow,
+    neck_roll, neck_pitch, neck_yaw ]
 else:
-    all_motors = [lip_up, lip_up_warp, lip_down, lip_down_warp, r_corner_up, l_corner_up, r_corner_low, l_corner_low, jaw ]
-    all_motors = [lip_up, lip_up_warp, lip_down, lip_down_warp, r_corner_up, l_corner_up, r_corner_low, l_corner_low, jaw ]
+    all_motors = [lip_up, lip_up_warp, lip_down, lip_down_warp,
+                  r_corner_up, l_corner_up, r_corner_low, l_corner_low,
+                  jaw,
+                  r_inner_eyebrow, l_inner_eyebrow, r_outer_eyebrow, l_outer_eyebrow ]
 
 
 
-def random_move(interval = 50):
+def random_cmds(reference = None, noise = 0.2, only_mouth = True):
+
     num_motors = len(all_motors)
-    curr = np.zeros(num_motors)
 
-    # Get current motor joint angles:
-    for i in range(num_motors):
-        curr[i] = all_motors[i].norm_v_cur
-    
+    if reference != None:
+        cmds_random = np.random.normal(reference, scale = noise)
+    else:
     # Generate random movement and check lower lips
-    cmds_random = np.random.sample(num_motors)
+        cmds_random = np.random.sample(num_motors)
+
+    # Symmetrize 
     cmds_random[5] = cmds_random[4]
     cmds_random[7] = cmds_random[6]
+    cmds_random[10] = cmds_random[9]
+    cmds_random[12] = cmds_random[11]
     cmds_random[2], cmds_random[3] = check_lip_low(cmds_random[2], cmds_random[3])
+    
+    if only_mouth:
+        cmds_random[9:] = resting_face[9:]
 
-    print("execute random commands: ", cmds_random)
-    # Generate trajectories
-    traj = np.linspace(curr, cmds_random, num=interval, endpoint=True)
+    cmds_random = np.clip(cmds_random,0,1)
+
+    return cmds_random
+
+
+def move_all(target_cmds,interval = 50):
+    num_motors = len(all_motors)
+    # Get current motor joint angles:
+    curr = np.zeros(num_motors)
+    for i in range(num_motors):
+        curr[i] = all_motors[i].norm_v_cur
+
+    print("execute commands: ", target_cmds)
+    traj = np.linspace(curr, target_cmds, num=interval, endpoint=True)
 
     # execute the commands:
     for i in range(interval):
         for j in range(num_motors):
             val = traj[i][j]
-
             all_motors[j].norm_act(val)
             time.sleep(0.001)
-
-
-def random_move_neck():
-    neck_control = [neck_roll,neck_pitch,neck_yaw]
-    n_steps = 100
-    move_times = 10
-
-    for i in range(move_times):
-        target_pos = np.random.sample(3)
-        if i == move_times -1:
-            target_pos = np.ones(3)*0.5
-        print(target_pos)
-        for j in range(n_steps):
-            cur_pos = np.asarray([neck_roll.norm_v_cur,neck_pitch.norm_v_cur,neck_yaw.norm_v_cur])
-
-            neck_values = (target_pos - cur_pos)*0.05 + cur_pos
-            print(neck_values)
-        
-            for j in range(len(neck_control)):
-                neck_control[j].norm_act(neck_values[j])
-                time.sleep(0.01)
     
-def random_smile():
-        # smile_normal_random = np.random.normal(loc = smile_2, scale = scale_range)
-        # smile_normal_random = np.clip(smile_normal_random,0,1)
 
-        smile_normal_random = np.random.sample(9)
+def eyes_move_2_traget(l_point, r_point):
 
-        # Symentric:
-        smile_normal_random[4],smile_normal_random[6] = smile_normal_random[5],smile_normal_random[7]
-        # Check upper lips
-        smile_normal_random[0],smile_normal_random[1] = check_lip_top(smile_normal_random[0],smile_normal_random[1])
+    step = 1
 
-        # Add neck
-        # neck_pos = np.random.normal(loc = (0.5,0.7,0.5),scale = (0.2,0.2,0.1))
-        # neck_pos = np.clip(neck_pos, 0, 1)
-        # smile_normal_random = np.hstack((smile_normal_random,neck_pos))
-
-        move_all(smile_normal_random)
-        time.sleep(0.5)
-
-
-def eyes_module(i):
-    print(i)
+    l_loc = (0.5 - l_point)*abs(0.5 - l_point) *step + l_eye_yaw.norm_v_cur
+    r_loc = (0.5 - r_point)*abs(0.5 - r_point) *step + r_eye_yaw.norm_v_cur
+    l_loc = np.clip(l_loc,0,1)
+    r_loc = np.clip(r_loc,0,1)
+    l_eye_yaw.norm_act(l_loc)
+    r_eye_yaw.norm_act(r_loc)
+    print(l_loc,r_loc)
     # r_eye_yaw.norm_act(0.5*np.sin((i+1)/400 * 2*np.pi)+0.5)
     # l_eye_yaw.norm_act(0.5*np.sin((i+1)/400 * 2*np.pi)+0.5)
     # l_upper_eyelid.norm_act(0.5*np.cos((i+1)/400 * 2*np.pi)+0.5)
@@ -186,7 +182,7 @@ def eyes_module(i):
     # r_lower_eyelid.norm_act(0.5*np.cos((i+1)/400 * 2*np.pi+np.pi)+0.5)
     # l_eye_pitch.norm_act(0.5*np.sin((i+1)/400 * 2*np.pi)+0.5)
     # r_eye_pitch.norm_act(0.5*np.sin((i+1)/400 * 2*np.pi)+0.5)
-    time.sleep(0.01)
+    # time.sleep(0.01)
 
 
 if __name__ == "__main__":
@@ -198,16 +194,16 @@ if __name__ == "__main__":
     for m in all_motors:
         resting_face.append(m.norm_v_cur)
         print(m.norm_v_cur)
-    resting_face = [0.0,0.0,1.0,1.0,0.357,0.357,0.525,0.5375,1.0]
+    resting_face = [0.0,0.0,1.0,1.0,0.357,0.357,0.525,0.5375,1.0,0.4286,0.4286,0.6667,0.6667]
     
     scale_range = 1
 
+    smile_face = [0.5, 0, 1, 1, 1, 1, 0.6, 0.6, 0.8, 0.4286,0.4286,0.6667,0.6667 ]
+
     for i in range(100):
-        random_move()
-        time.sleep(0.2)
-        # eyes_module(i)
-        # print(i)
-        # random_smile()
+        target_cmds = smile_face
+        target_cmds = random_cmds(reference = target_cmds, noise = 0.2, only_mouth = True)
+        move_all(target_cmds)
 
 
         # print(v)
