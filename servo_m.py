@@ -78,7 +78,7 @@ r_corner_up = Actuator(idx_tuple=(0, 2), min_angle=40, max_angle=110, init_angle
 l_corner_up = Actuator(idx_tuple=(0, 7), min_angle=20, max_angle=90, init_angle=60, inverse_flag=1)
 
 r_corner_low = Actuator(idx_tuple=(0, 3), min_angle=20, max_angle=100, init_angle=62)
-l_corner_low = Actuator(idx_tuple=(0, 6), min_angle=90, max_angle=170, init_angle=127, inverse_flag=1)
+l_corner_low = Actuator(idx_tuple=(0, 6), min_angle=90, max_angle=170, init_angle=128, inverse_flag=1)
 
 r_eye_yaw = Actuator(idx_tuple=(0, 8), min_angle=65, max_angle=125, init_angle=95)
 l_eye_yaw = Actuator(idx_tuple=(1, 7), min_angle=60, max_angle=120, init_angle=90)
@@ -101,6 +101,7 @@ l_outer_eyebrow = Actuator(idx_tuple=(1, 0), min_angle=60, max_angle=105, init_a
 jaw = Actuator(idx_tuple=(1, 15), min_angle=40, max_angle=90, init_angle=90)
 
 neck_mode = False
+neck_yaw = Actuator(idx_tuple=(1, 14), min_angle=20, max_angle=160, init_angle=90)
 
 if neck_mode == True:
     neck_yaw = Actuator(idx_tuple=(1, 14), min_angle=20, max_angle=160, init_angle=90)
@@ -205,8 +206,25 @@ def eyes_lid():
         time.sleep(0.01)
 
 
-# eyes_lid()
 
+resting_face = [0.0,
+0.0,
+0.8064516129032258,
+0.8333333333333334,
+0.42857142857142855,
+0.4285714285714286,
+0.525,
+0.525,
+1.0,
+0.4285714285714286,
+0.42857142857142855,
+0.6666666666666666,
+0.6666666666666667]
+
+smile_face = [0.5, 0, 1, 1, 1, 1, 0.6, 0.6, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
+upper_teeth = [1, 1, 0.1, 0, 0.5, 0.5, 0.9, 0.9, 0.7, 0.4286, 0.4286, 0.6667, 0.6667]
+
+combin_face = [resting_face,smile_face,upper_teeth]
 if __name__ == "__main__":
 
     # Save resting face position in normed space
@@ -216,15 +234,12 @@ if __name__ == "__main__":
     for m in all_motors:
         resting_face.append(m.norm_v_cur)
         print(m.norm_v_cur)
-    resting_face = [0.0, 0.0, 0.8, 0.9, 0.357, 0.357, 0.525, 0.5375, 1.0, 0.4286, 0.4286, 0.6667, 0.6667]
 
     scale_range = 1
 
-    smile_face = [0.5, 0, 1, 1, 1, 1, 0.6, 0.6, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
 
     pout_face = [0.5, 1, 1, 0.0, 0.1, 0.1, 1, 1, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
     lowet_teeth = [0.1, 0.1, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
-    upper_teeth = [1, 1, 0.1, 0, 0.5, 0.5, 0.9, 0.9, 0.7, 0.4286, 0.4286, 0.6667, 0.6667]
 
     for i in range(100):
         target_cmds = random_cmds(reference=resting_face, noise=1, only_mouth=True)
