@@ -1,4 +1,5 @@
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 import mediapipe as mp
 import queue, threading, time
@@ -188,10 +189,22 @@ def render_img(image_original):
 
     return image_show, raw_lmks, m_landmarks
 
+dataset = np.load("/Users/yuhang/Downloads/dataset1000_RF/r_lmks.npy")
+def nearest_neighber(lmks):
+
+    duplicate_lmks = np.asarray([lmks]*len(dataset))
+    distance = (duplicate_lmks - dataset)**2
+    distance = np.mean(np.mean(distance,axis = 1),axis=1)
+    rank = np.argsort(distance)
+    best_nn_id = rank[0]
+
+    nn_img = plt.imread('/Users/yuhang/Downloads/dataset1000_RF/img/%d.png'%best_nn_id)
+
+    return nn_img
 
 if __name__ == "__main__":
 
-    cap = VideoCapture(4)
+    cap = VideoCapture(0)
 
     # get cap property
     frame_width  = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)   # float `width`
@@ -213,6 +226,8 @@ if __name__ == "__main__":
     )
 
     cv2.namedWindow("landmarks")
+    cv2.namedWindow("Robot")
+
     cv2.createTrackbar("vert", "landmarks", 180, 360, do_nothing)
     cv2.createTrackbar("hori", "landmarks", 180, 360, do_nothing)
 
@@ -225,7 +240,13 @@ if __name__ == "__main__":
             image = cap.read()
 
             image_show, raw_lmks, m_lmks = render_img(image)
+
+            nn_img = nearest_neighber(m_lmks)
+
+
             cv2.imshow('landmarks', image_show)
+            cv2.imshow('Robot', nn_img)
+
 
             if cv2.waitKey(5) & 0xFF == 27:
                 break
