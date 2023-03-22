@@ -101,10 +101,9 @@ l_outer_eyebrow = Actuator(idx_tuple=(1, 0), min_angle=60, max_angle=105, init_a
 jaw = Actuator(idx_tuple=(1, 15), min_angle=40, max_angle=90, init_angle=90)
 
 neck_mode = False
-neck_yaw = Actuator(idx_tuple=(1, 14), min_angle=20, max_angle=160, init_angle=90)
+neck_yaw = Actuator(idx_tuple=(1, 14), min_angle=20, max_angle=160, init_angle=85)
 
 if neck_mode == True:
-    neck_yaw = Actuator(idx_tuple=(1, 14), min_angle=20, max_angle=160, init_angle=90)
     neck_roll = Actuator(idx_tuple=(1, 13), min_angle=90, max_angle=120, init_angle=105)
     neck_pitch = Actuator(idx_tuple=(1, 12), min_angle=20, max_angle=60, init_angle=40, inverse_flag=1)
     all_motors = [lip_up, lip_up_warp, lip_down, lip_down_warp, r_corner_up, l_corner_up, r_corner_low, l_corner_low,
@@ -150,7 +149,7 @@ def move_all(target_cmds, interval=50):
         curr[i] = all_motors[i].norm_v_cur
 
     print("execute commands: ", target_cmds)
-    target_cmds[2], target_cmds[3] = check_lip_low(target_cmds[2], target_cmds[3])
+    # target_cmds[2], target_cmds[3] = check_lip_low(target_cmds[2], target_cmds[3])
 
     traj = np.linspace(curr, target_cmds, num=interval, endpoint=True)
 
@@ -222,7 +221,9 @@ resting_face = [0.0,
 0.6666666666666667]
 
 smile_face = [0.5, 0, 1, 1, 1, 1, 0.6, 0.6, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
-upper_teeth = [1, 1, 0.1, 0, 0.5, 0.5, 0.9, 0.9, 0.7, 0.4286, 0.4286, 0.6667, 0.6667]
+upper_teeth = [1, 0, 0.1, 0, 0.5, 0.5, 0.9, 0.9, 0.7, 0.4286, 0.4286, 0.6667, 0.6667]
+lower_teeth = [0.1, 0.1, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
+pout_face = [0.5, 1, 1, 0.0, 0.1, 0.1, 1, 1, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
 
 combin_face = [resting_face,smile_face,upper_teeth]
 if __name__ == "__main__":
@@ -238,13 +239,10 @@ if __name__ == "__main__":
     scale_range = 1
 
 
-    pout_face = [0.5, 1, 1, 0.0, 0.1, 0.1, 1, 1, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
-    lowet_teeth = [0.1, 0.1, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
-
-    for i in range(100):
-        target_cmds = random_cmds(reference=resting_face, noise=1, only_mouth=True)
-        move_all(target_cmds)
-        time.sleep(0.4)
+    for i in range(10,20):
+        # target_cmds = random_cmds(reference=resting_face, noise=0.5, only_mouth=True)
+        move_all(action_list[i])
+        time.sleep(5)
 
         # print(v)
         # lip_down_warp.act(v)

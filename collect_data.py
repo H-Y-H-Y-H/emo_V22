@@ -1,6 +1,6 @@
 from realtime_landmark import *
 from servo_m import *
-import queue, threading, time
+import queue, threading, time, os
 
 # bufferless VideoCapture
 class VideoCapture:
@@ -157,13 +157,9 @@ def render_img(image_original):
     return image_show, raw_lmks, m_landmarks
 
 if __name__ == "__main__":
-    mp_drawing = mp.solutions.drawing_utils
-    mp_drawing_styles = mp.solutions.drawing_styles
-    mp_face_mesh = mp.solutions.face_mesh
-
-    # For webcam input:
-    drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
-    cap = VideoCapture(6)
+    os.makedirs('../dataset/img',exist_ok= True)
+    
+    cap = VideoCapture(4)
 
     # get cap property
     frame_width  = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)   # float `width`
@@ -205,7 +201,7 @@ if __name__ == "__main__":
                 for _ in range(100):
                     image = cap.read()
 
-            target_cmds = random_cmds(reference=resting_face, noise=1, only_mouth=True)
+            target_cmds = random_cmds(reference=upper_teeth, noise=0.5, only_mouth=True)
             # print("cmds",((img_i)//step_num)%3, "img_i",img_i)
             # target_cmds = combin_face[((img_i)//step_num)%3]
             num_motors = len(all_motors)
