@@ -189,8 +189,8 @@ def render_img(image_original):
 
     return image_show, raw_lmks, m_landmarks
 
-# dataset = np.load("/Users/yuhang/Downloads/dataset1000_RF/r_lmks.npy")
-dataset = np.load("../dataset/r_lmks.npy")
+dataset = np.load("/Users/yuhang/Downloads/dataset1000_RF/m_lmks.npy")
+# dataset = np.load("../dataset/m_lmks.npy")
 lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
             81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
 inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
@@ -198,19 +198,19 @@ inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 40
 def nearest_neighber(lmks):
 
     duplicate_lmks = np.asarray([lmks]*len(dataset))
-    distance = (duplicate_lmks[lips_idx][:,:,:2] - dataset[lips_idx][:,:,:2])**2
+    distance = (duplicate_lmks - dataset)**2
     distance = np.mean(np.mean(distance,axis = 1),axis=1)
     rank = np.argsort(distance)
     best_nn_id = rank[0]
     print(distance[rank[:5]])
     print(rank[:5])
-    # nn_img = plt.imread('/Users/yuhang/Downloads/dataset1000_RF/img/%d.png'%best_nn_id)
-    nn_img = cv2.imread('../dataset/img/%d.png'%best_nn_id)
+    nn_img = cv2.imread('/Users/yuhang/Downloads/dataset1000_RF/img/%d.png'%best_nn_id)
+    # nn_img = cv2.imread('../dataset/img/%d.png'%best_nn_id)
     return nn_img
 
 if __name__ == "__main__":
 
-    cap = VideoCapture(4)
+    cap = VideoCapture(0)
 
     # get cap property
     frame_width  = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)   # float `width`
