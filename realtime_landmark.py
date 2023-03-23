@@ -212,7 +212,7 @@ def nearest_neighber(lmks):
         nn_img = cv2.imread(dataset_pth+add_dataset_pth[best_nn_id_setid]+'/img/%d.png'%best_nn_id)
     else:
         nn_img = cv2.imread(dataset_pth+'img/%d.png'%best_nn_id)
-    return nn_img
+    return nn_img, best_nn_id
 
 if __name__ == "__main__":
 
@@ -265,12 +265,17 @@ if __name__ == "__main__":
 
             image_show, raw_lmks, m_lmks = render_img(image)
 
-            nn_img = nearest_neighber(m_lmks)
+            nn_img,best_nn_id = nearest_neighber(m_lmks)
+            selct_lmks = dataset[best_nn_id]
+
+            # plt.scatter(selct_lmks[:,0],selct_lmks[:,1])
+            # plt.scatter(m_lmks[:,0],m_lmks[:,1])
 
 
             cv2.imshow('landmarks', image_show)
             cv2.imshow('Robot', nn_img)
-
+            # plt.show()
+            # break
 
             if cv2.waitKey(5) & 0xFF == 27:
                 break
