@@ -148,17 +148,17 @@ def move_all(target_cmds, interval=50):
     for i in range(num_motors):
         curr[i] = all_motors[i].norm_v_cur
 
-    print("execute commands: ", target_cmds)
+    # print("execute commands: ", target_cmds)
     # target_cmds[2], target_cmds[3] = check_lip_low(target_cmds[2], target_cmds[3])
 
-    traj = np.linspace(curr, target_cmds, num=interval, endpoint=True)
+    traj = np.linspace(curr, target_cmds, num=interval+1, endpoint=True)
 
     # execute the commands:
-    for i in range(interval):
+    for i in range(1,interval+1):
         for j in range(num_motors):
             val = traj[i][j]
             all_motors[j].norm_act(val)
-            time.sleep(0.001)
+        time.sleep(0.008)
 
 
 def eyes_move_2_traget(l_point, r_point):
