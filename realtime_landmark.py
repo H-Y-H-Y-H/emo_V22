@@ -1,3 +1,5 @@
+import os
+
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
@@ -203,7 +205,13 @@ def nearest_neighber(lmks):
     best_nn_id = rank[0]
     print(distance[rank[:5]])
     print(rank[:5])
-    nn_img = cv2.imread(dataset_pth+'img/%d.png'%best_nn_id)
+
+    if best_nn_id>=1000:
+        best_nn_id_setid = (best_nn_id-1000)//1000
+        best_nn_id = best_nn_id%1000
+        nn_img = cv2.imread(dataset_pth+add_dataset_pth[best_nn_id_setid]+'/img/%d.png'%best_nn_id)
+    else:
+        nn_img = cv2.imread(dataset_pth+'img/%d.png'%best_nn_id)
     return nn_img
 
 if __name__ == "__main__":
@@ -213,6 +221,12 @@ if __name__ == "__main__":
     dataset_pth = '/Users/yuhang/Downloads/dataset1000_RF/'
     # dataset_pth = '../dataset/'
     dataset = np.load(dataset_pth+"m_lmks.npy")
+    add_dataset_pth = ['dataset_lower0.5','dataset_pout0.5','dataset_upper0.5','dataset_smile0.5','dataset_resting0.5']
+    for i in range(len(add_dataset_pth)):
+        add_d = np.load(dataset_pth+add_dataset_pth[i]+'/m_lmks.npy')
+        dataset = np.concatenate((dataset,add_d))
+
+
     # dataset = np.load(dataset_pth +"m_lmks.npy")
 
 
