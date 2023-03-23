@@ -10,8 +10,6 @@ def nearest_neighber(lmks):
     distance = np.mean(np.mean(distance,axis = 1),axis=1)
     rank = np.argsort(distance)
     best_nn_id = rank[0]
-    print(distance[rank[:5]])
-    print(rank[:5])
 
 
     best_nn_id_setid = (best_nn_id)//1000
@@ -34,36 +32,61 @@ if __name__ == "__main__":
         dataset_lmk.append(add_lmk)
         dataset_cmd.append(add_cmd)
     dataset_lmk, dataset_cmd = np.asarray(dataset_lmk), np.asarray(dataset_cmd)
-    dataset_lmk = np.concatenate(dataset_lmk,0)[:,:468]
+    dataset_lmk = np.concatenate(dataset_lmk,0)[:,:468,:2]
     dataset_cmd = np.concatenate(dataset_cmd,0)
-
+    print(dataset_lmk.shape)
 
     target_lmks = np.load('data/gpt_lmks/en-1.npy')
 
+
+    step_n = 1
+
+    mode = 1
+
+    target_id = np.loadtxt('logger.csv')
     logger_id = []
-    for i in range(len(target_lmks)):
-        lmks = target_lmks[i].T
-        best_nn_id, nn_img = nearest_neighber(lmks)
-        cmds= dataset_cmd[best_nn_id]
-        logger_id.append(best_nn_id)
+    time_s = time.time()
+    time0 = time.time()
+    print(len(target_lmks))
+    for i in range(0,len(target_lmks),step_n):
+        print(i)
+        if mode ==0:
+            #compute offline:
+            lmks = target_lmks[i].T
+            lmks = lmks[:,:2]
+            lmks = lmks/22 + 0.5
+            lmks[:,1] = 1-lmks[:,1]
+            lmks[:,1] -=0.05
 
-        select_lmk = dataset_lmk[best_nn_id]
-        lmks = lmks/20 + 0.5
-        # lmks[:,0] = lmks[:,0]+0.5
-        # lmks[:,1] = lmks[:,1]+0.5
-        lmks[:,1] = 1-lmks[:,1]
-        plt.scatter(lmks[:,0],lmks[:,1],label='target')
-        plt.scatter(select_lmk[:,0],select_lmk[:,1],label='select')
-        plt.legend()
+            best_nn_id, nn_img = nearest_neighber(lmks)
+            logger_id.append(best_nn_id)
 
-        plt.show()
-        quit()
+        elif mode ==1:
+            best_nn_id = int(target_id[i])
+            cmds= dataset_cmd[best_nn_id]
 
+            move_all(cmds,interval=1)
+            time_left = time.time()-time0
+            if 0.04*step_n-time_left>0:
+                time.sleep(0.04*step_n-time_left)
+            print(time_left)
+            time0 = time.time()
 
-    # np.savetxt('logger.csv',np.asarray(logger_id),fmt='%i')
-        # move_all(cmds)
-        # time.sleep(0.04)
+    if mode == 0:
+        np.savetxt('logger.csv',np.asarray(logger_id),fmt='%i')
         
+    time_e = time.time()
+
+    print(time_e - time_s)
 
 
 
+        # select_lmk = dataset_lmk[best_nn_id]
+        # plt.scatter(lmks[:,0],lmks[:,1],label='target')
+        # plt.scatter(select_lmk[:,0],select_lmk[:,1],label='select')
+        # plt.legend()
+
+        # plt.show()
+        # quit()
+
+        # time.sleep(0.04)
