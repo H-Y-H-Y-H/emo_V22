@@ -11,12 +11,14 @@ from face_geometry import (
     get_metric_landmarks,
     procrustes_landmark_basis,
 )
+
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_face_mesh = mp.solutions.face_mesh
 
 # For webcam input:
 drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
+
 
 def rotation_matrix(axis, theta):
     """
@@ -38,34 +40,34 @@ def rotation_matrix(axis, theta):
 def do_nothing(x):
     pass
 
+
 class VideoCapture:
 
-  def __init__(self, name):
-    self.cap = cv2.VideoCapture(name)
-    self.q = queue.Queue()
-    t = threading.Thread(target=self._reader)
-    t.daemon = True
-    t.start()
+    def __init__(self, name):
+        self.cap = cv2.VideoCapture(name)
+        self.q = queue.Queue()
+        t = threading.Thread(target=self._reader)
+        t.daemon = True
+        t.start()
 
-  # read frames as soon as they are available, keeping only most recent one
-  def _reader(self):
-    while True:
-      ret, frame = self.cap.read()
-      if not ret:
-        break
-      if not self.q.empty():
-        try:
-          self.q.get_nowait()   # discard previous (unprocessed) frame
-        except queue.Empty:
-          pass
-      self.q.put(frame)
+    # read frames as soon as they are available, keeping only most recent one
+    def _reader(self):
+        while True:
+            ret, frame = self.cap.read()
+            if not ret:
+                break
+            if not self.q.empty():
+                try:
+                    self.q.get_nowait()  # discard previous (unprocessed) frame
+                except queue.Empty:
+                    pass
+            self.q.put(frame)
 
-  def read(self):
-    return self.q.get()
+    def read(self):
+        return self.q.get()
 
 
 def render_img(image_original):
-
     black_img = np.zeros(image_original.shape, dtype="uint8")
     black_img_rot = np.zeros(image_original.shape, dtype="uint8")
     black_img_metric = np.zeros(image_original.shape, dtype="uint8")
@@ -83,7 +85,7 @@ def render_img(image_original):
         for face_landmarks in results.multi_face_landmarks:
             landmarks = np.array([(lm.x, lm.y, lm.z) for lm in face_landmarks.landmark])
             raw_lmks = np.copy(landmarks)
-                
+
             # overlay landmarks on original image
             mp_drawing.draw_landmarks(
                 image=image_original,
@@ -91,22 +93,21 @@ def render_img(image_original):
                 connections=mp_face_mesh.FACEMESH_TESSELATION,
                 landmark_drawing_spec=None,
                 connection_drawing_spec=mp_drawing_styles
-                    .get_default_face_mesh_tesselation_style())
+                .get_default_face_mesh_tesselation_style())
             mp_drawing.draw_landmarks(
                 image=image_original,
                 landmark_list=face_landmarks,
                 connections=mp_face_mesh.FACEMESH_CONTOURS,
                 landmark_drawing_spec=None,
                 connection_drawing_spec=mp_drawing_styles
-                    .get_default_face_mesh_contours_style())
+                .get_default_face_mesh_contours_style())
             mp_drawing.draw_landmarks(
                 image=image_original,
                 landmark_list=face_landmarks,
                 connections=mp_face_mesh.FACEMESH_IRISES,
                 landmark_drawing_spec=None,
                 connection_drawing_spec=mp_drawing_styles
-                    .get_default_face_mesh_iris_connections_style())
-
+                .get_default_face_mesh_iris_connections_style())
 
             # get metric landmarks
             landmarks_face_mesh = landmarks.copy()
@@ -134,19 +135,16 @@ def render_img(image_original):
                 connections=mp_face_mesh.FACEMESH_TESSELATION,
                 landmark_drawing_spec=None,
                 connection_drawing_spec=mp_drawing_styles
-                    .get_default_face_mesh_tesselation_style())
+                .get_default_face_mesh_tesselation_style())
             mp_drawing.draw_landmarks(
                 image=black_img_metric,
                 landmark_list=face_landmarks,
                 connections=mp_face_mesh.FACEMESH_CONTOURS,
                 landmark_drawing_spec=None,
                 connection_drawing_spec=mp_drawing_styles
-                    .get_default_face_mesh_contours_style())
-
+                .get_default_face_mesh_contours_style())
 
             m_landmarks = np.array([(lm.x, lm.y, lm.z) for lm in face_landmarks.landmark])
-
-
 
             # freely rotate landmarks
             rot_x = cv2.getTrackbarPos('vert', 'landmarks')
@@ -174,15 +172,14 @@ def render_img(image_original):
                 connections=mp_face_mesh.FACEMESH_TESSELATION,
                 landmark_drawing_spec=None,
                 connection_drawing_spec=mp_drawing_styles
-                    .get_default_face_mesh_tesselation_style())
+                .get_default_face_mesh_tesselation_style())
             mp_drawing.draw_landmarks(
                 image=black_img_rot,
                 landmark_list=face_landmarks,
                 connections=mp_face_mesh.FACEMESH_CONTOURS,
                 landmark_drawing_spec=None,
                 connection_drawing_spec=mp_drawing_styles
-                    .get_default_face_mesh_contours_style())
-
+                .get_default_face_mesh_contours_style())
 
     image_up = cv2.hconcat([image, image_original])
     image_dn = cv2.hconcat([black_img_metric, black_img_rot])
@@ -196,23 +193,22 @@ lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146
             81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
 inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
 
-def nearest_neighber(lmks):
 
-    duplicate_lmks = np.asarray([lmks]*len(dataset))
-    distance = (duplicate_lmks - dataset)**2
-    distance = np.mean(np.mean(distance,axis = 1),axis=1)
+def nearest_neighber(lmks):
+    duplicate_lmks = np.asarray([lmks] * len(dataset))
+    distance = (duplicate_lmks - dataset) ** 2
+    distance = np.mean(np.mean(distance, axis=1), axis=1)
     rank = np.argsort(distance)
     best_nn_id = rank[0]
     print(distance[rank[:5]])
     print(rank[:5])
 
-    if best_nn_id>=1000:
-        best_nn_id_setid = (best_nn_id-1000)//1000
-        best_nn_id = best_nn_id%1000
-        nn_img = cv2.imread(dataset_pth+add_dataset_pth[best_nn_id_setid]+'/img/%d.png'%best_nn_id)
-    else:
-        nn_img = cv2.imread(dataset_pth+'img/%d.png'%best_nn_id)
+    best_nn_id_setid = best_nn_id // 1000
+    best_nn_id = best_nn_id % 1000
+    nn_img = cv2.imread(dataset_pth + add_dataset_pth[best_nn_id_setid] + '/img/%d.png' % best_nn_id)
+
     return nn_img, best_nn_id
+
 
 if __name__ == "__main__":
 
@@ -220,18 +216,16 @@ if __name__ == "__main__":
 
     dataset_pth = '/Users/yuhang/Downloads/dataset1000_RF/'
     # dataset_pth = '../dataset/'
-    dataset = np.load(dataset_pth+"m_lmks.npy")
-    add_dataset_pth = ['dataset_lower0.5','dataset_pout0.5','dataset_upper0.5','dataset_smile0.5','dataset_resting0.5']
+    dataset = []
+    add_dataset_pth = ['dataset_resting1', 'dataset_lower0.5', 'dataset_pout0.5', 'dataset_upper0.5',
+                       'dataset_smile0.5', 'dataset_resting0.5']
     for i in range(len(add_dataset_pth)):
-        add_d = np.load(dataset_pth+add_dataset_pth[i]+'/m_lmks.npy')
-        dataset = np.concatenate((dataset,add_d))
-
-
-    # dataset = np.load(dataset_pth +"m_lmks.npy")
-
+        add_d = np.load(dataset_pth + add_dataset_pth[i] + '/m_lmks.npy')
+        dataset.append(add_d)
+    dataset = np.concatenate(dataset, axis=0)
 
     # get cap property
-    frame_width  = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)   # float `width`
+    frame_width = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
     frame_height = cap.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
     focal_length = frame_width
@@ -260,23 +254,25 @@ if __name__ == "__main__":
             refine_landmarks=True,
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5) as face_mesh:
+        id_select = []
         while 1:
             image = cap.read()
 
             image_show, raw_lmks, m_lmks = render_img(image)
 
-            nn_img,best_nn_id = nearest_neighber(m_lmks)
+            nn_img, best_nn_id = nearest_neighber(m_lmks)
             selct_lmks = dataset[best_nn_id]
 
-            # plt.scatter(selct_lmks[:,0],selct_lmks[:,1])
-            # plt.scatter(m_lmks[:,0],m_lmks[:,1])
-
+            # plt.scatter(selct_lmks[:, 0], selct_lmks[:, 1])
+            # plt.scatter(m_lmks[:, 0], m_lmks[:, 1])
 
             cv2.imshow('landmarks', image_show)
             cv2.imshow('Robot', nn_img)
             # plt.show()
             # break
+            id_select.append(best_nn_id)
 
             if cv2.waitKey(5) & 0xFF == 27:
                 break
+        np.savetxt('select_id.csv',fmt='%i')
     cap.release()
