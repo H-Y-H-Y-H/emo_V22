@@ -148,11 +148,7 @@ def move_all(target_cmds, interval=50):
     for i in range(num_motors):
         curr[i] = all_motors[i].norm_v_cur
 
-    # print("execute commands: ", target_cmds)
-    # target_cmds[2], target_cmds[3] = check_lip_low(target_cmds[2], target_cmds[3])
-
     traj = np.linspace(curr, target_cmds, num=interval+1, endpoint=True)
-
     # execute the commands:
     for i in range(1,interval+1):
         for j in range(num_motors):
@@ -238,11 +234,10 @@ if __name__ == "__main__":
 
     scale_range = 1
 
-
-    for i in range(10,20):
-        # target_cmds = random_cmds(reference=resting_face, noise=0.5, only_mouth=True)
-        move_all(action_list[i])
-        time.sleep(5)
+    # for i in range(10,20):
+    #     target_cmds = random_cmds(reference=resting_face, noise=0.5, only_mouth=True)
+    #     move_all(action_list[i])
+    #     time.sleep(5)
 
         # print(v)
         # lip_down_warp.act(v)
@@ -250,10 +245,20 @@ if __name__ == "__main__":
         # test_v = 0.5*np.sin(i* np.pi/2 /100)+0.5
         # test.norm_act(test_v)
         # time.sleep(0.005)
+    load_cmd = np.load('../en-1_nn.npy')
+    # load_cmd = np.load('../en-1_pred.npy')
 
-    # for i in range(100):
-    #     time.sleep(0.3)
+    time0 = time.time()
+    for i in range(len(load_cmd)):
+        target_cmds = load_cmd[i]
+        for j in range(len(target_cmds)):
+            target_cmds[j] = np.clip(target_cmds[j],0,1)
+            all_motors[j].norm_act(target_cmds[j])
 
+
+        time_used = time.time()-time0
+        time.sleep(0.04-time_used)
+        time0 = time.time()
 
 
 

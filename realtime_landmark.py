@@ -274,5 +274,5 @@ if __name__ == "__main__":
 
             if cv2.waitKey(5) & 0xFF == 27:
                 break
-        np.savetxt('select_id.csv',fmt='%i')
+            np.savetxt('select_id.csv',np.asarray(id_select),fmt='%i')
     cap.release()
