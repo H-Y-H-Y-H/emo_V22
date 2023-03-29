@@ -147,9 +147,9 @@ def render_img(image_original):
             m_landmarks = np.array([(lm.x, lm.y, lm.z) for lm in face_landmarks.landmark])
 
             # freely rotate landmarks
-            rot_x = cv2.getTrackbarPos('vert', 'landmarks')
-            rot_y = cv2.getTrackbarPos('hori', 'landmarks')
-
+            # rot_x = cv2.getTrackbarPos('vert', 'landmarks')
+            # rot_y = cv2.getTrackbarPos('hori', 'landmarks')
+            rot_x = 0
             rot_y = 90
             rot_x_rad = (rot_x - 180) * np.pi / 180
             rot_y_rad = (rot_y - 180) * np.pi / 180
@@ -202,9 +202,13 @@ def nearest_neighber(lmks):
     best_nn_id = rank[0]
     print(distance[rank[:5]])
     print(rank[:5])
+    if best_nn_id < 6000:
+        best_nn_id_setid = best_nn_id // 1000
+        best_nn_id = best_nn_id % 1000
+    else:
+        best_nn_id_setid = -1
+        best_nn_id = best_nn_id-6000
 
-    best_nn_id_setid = best_nn_id // 1000
-    best_nn_id = best_nn_id % 1000
     nn_img = cv2.imread(dataset_pth + add_dataset_pth[best_nn_id_setid] + '/img/%d.png' % best_nn_id)
 
     return nn_img, best_nn_id
@@ -217,8 +221,8 @@ if __name__ == "__main__":
     dataset_pth = '/Users/yuhang/Downloads/dataset1000_RF/'
     # dataset_pth = '../dataset/'
     dataset = []
-    add_dataset_pth = ['dataset_resting1', 'dataset_lower0.5', 'dataset_pout0.5', 'dataset_upper0.5',
-                       'dataset_smile0.5', 'dataset_resting0.5']
+    add_dataset_pth = ['dataset_rdm_1_0', 'dataset_rdm_1_1', 'dataset_rdm_1_2', 'dataset_rdm_1_3',
+                       'dataset_resting1', 'dataset_resting1(1)','dataset_resting1_10000']
     for i in range(len(add_dataset_pth)):
         add_d = np.load(dataset_pth + add_dataset_pth[i] + '/m_lmks.npy')
         dataset.append(add_d)

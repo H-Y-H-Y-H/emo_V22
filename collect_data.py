@@ -72,7 +72,6 @@ def render_img(image_original):
                 connection_drawing_spec=mp_drawing_styles
                     .get_default_face_mesh_iris_connections_style())
 
-
             # get metric landmarks
             landmarks_face_mesh = landmarks.copy()
             landmarks_face_mesh = landmarks_face_mesh.T[:, :468]
@@ -108,10 +107,7 @@ def render_img(image_original):
                 connection_drawing_spec=mp_drawing_styles
                     .get_default_face_mesh_contours_style())
 
-
             m_landmarks = np.array([(lm.x, lm.y, lm.z) for lm in face_landmarks.landmark])
-
-
 
             # freely rotate landmarks
             # rot_x = cv2.getTrackbarPos('vert', 'landmarks')
@@ -147,7 +143,6 @@ def render_img(image_original):
                 landmark_drawing_spec=None,
                 connection_drawing_spec=mp_drawing_styles
                     .get_default_face_mesh_contours_style())
-
 
     image_up = cv2.hconcat([image, image_original])
     image_dn = cv2.hconcat([black_img_metric, black_img_rot])
