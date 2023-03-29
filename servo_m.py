@@ -77,8 +77,8 @@ lip_down_warp = Actuator(idx_tuple=(0, 5), min_angle=100, max_angle=130, init_an
 r_corner_up = Actuator(idx_tuple=(0, 2), min_angle=40, max_angle=110, init_angle=70)
 l_corner_up = Actuator(idx_tuple=(0, 7), min_angle=20, max_angle=90, init_angle=60, inverse_flag=1)
 
-r_corner_low = Actuator(idx_tuple=(0, 3), min_angle=20, max_angle=100, init_angle=62)
-l_corner_low = Actuator(idx_tuple=(0, 6), min_angle=90, max_angle=170, init_angle=128, inverse_flag=1)
+r_corner_low = Actuator(idx_tuple=(0, 3), min_angle=20, max_angle=68, init_angle=62)
+l_corner_low = Actuator(idx_tuple=(0, 6), min_angle=122, max_angle=170, init_angle=128, inverse_flag=1)
 
 r_eye_yaw = Actuator(idx_tuple=(0, 8), min_angle=65, max_angle=125, init_angle=95)
 l_eye_yaw = Actuator(idx_tuple=(1, 7), min_angle=60, max_angle=120, init_angle=90)
@@ -201,6 +201,39 @@ def eyes_lid():
         time.sleep(0.01)
 
 
+# def check_lip(target_cmds):
+#     # if (target_cmds[6]-target_cmds[4])>0.8:
+#     #     target_cmds[2] = 0.5
+#     #     target_cmds[1] = 0.8
+#     #     target_cmds[3] = 0
+#     if (target_cmds[6]-target_cmds[4]>0.8) and (target_cmds[6]>0.6):
+#         target_cmds[6] = 0.6
+#         target_cmds[7] = 0.6
+#         print(1)
+
+#     if (target_cmds[4]<=1) and (target_cmds[6]>0.6):
+#         target_cmds[6] = 0.6
+#         target_cmds[7] = 0.6
+#         print(1)
+
+
+#     return target_cmds
+
+
+
+# test_cmds = [0.59090275, 0.03795507, 0. ,        0.94747217, 1, 1,
+#  1.,         1.,         1.,         0.42857143, 0.42857143, 0.66666667,
+#  0.66666667]
+
+# move_all(test_cmds)
+
+# time.sleep(1)
+# test_cmds = check_lip(test_cmds)
+# move_all(test_cmds)
+# print(all_motors[6].v_cur)
+# print(all_motors[7].v_cur)
+# quit()
+
 
 resting_face = [0.0,
 0.0,
@@ -225,7 +258,7 @@ combin_face = [resting_face,smile_face,upper_teeth]
 if __name__ == "__main__":
 
     # Save resting face position in normed space
-    np.random.seed(1)
+    np.random.seed(3)
 
     resting_face = []
     for m in all_motors:
@@ -233,11 +266,13 @@ if __name__ == "__main__":
         print(m.norm_v_cur)
 
     scale_range = 1
+    for i in range(20):
+        target_cmds = random_cmds(reference=resting_face, noise=scale_range, only_mouth=True)
+        # target_cmds = check_lip(target_cmds)
 
-    # for i in range(10,20):
-    #     target_cmds = random_cmds(reference=resting_face, noise=0.5, only_mouth=True)
-    #     move_all(action_list[i])
-    #     time.sleep(5)
+        move_all(target_cmds)
+        print(target_cmds)
+        # time.sleep(1)
 
         # print(v)
         # lip_down_warp.act(v)
@@ -245,20 +280,20 @@ if __name__ == "__main__":
         # test_v = 0.5*np.sin(i* np.pi/2 /100)+0.5
         # test.norm_act(test_v)
         # time.sleep(0.005)
-    load_cmd = np.load('../en-1_nn.npy')
-    # load_cmd = np.load('../en-1_pred.npy')
 
-    time0 = time.time()
-    for i in range(len(load_cmd)):
-        target_cmds = load_cmd[i]
-        for j in range(len(target_cmds)):
-            target_cmds[j] = np.clip(target_cmds[j],0,1)
-            all_motors[j].norm_act(target_cmds[j])
+        # load_cmd = np.load('../en-1_scale_pred.npy')
+        # load_cmd = np.load('../en-1_pred.npy')
 
+        # time0 = time.time()
+        # for i in range(len(load_cmd)):
+        #     target_cmds = load_cmd[i]
+        #     for j in range(len(target_cmds)):
+        #         target_cmds[j] = np.clip(target_cmds[j],0,1)
+        #         all_motors[j].norm_act(target_cmds[j])
 
-        time_used = time.time()-time0
-        time.sleep(0.04-time_used)
-        time0 = time.time()
+        #     time_used = time.time()-time0
+        #     time.sleep(0.04-time_used)
+        #     time0 = time.time()
 
 
 

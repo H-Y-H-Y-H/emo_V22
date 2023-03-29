@@ -114,9 +114,9 @@ def render_img(image_original):
 
 
             # freely rotate landmarks
-            rot_x = cv2.getTrackbarPos('vert', 'landmarks')
-            rot_y = cv2.getTrackbarPos('hori', 'landmarks')
-
+            # rot_x = cv2.getTrackbarPos('vert', 'landmarks')
+            # rot_y = cv2.getTrackbarPos('hori', 'landmarks')
+            rot_x =0
             rot_y = 90
             rot_x_rad = (rot_x - 180) * np.pi / 180
             rot_y_rad = (rot_y - 180) * np.pi / 180
@@ -158,13 +158,14 @@ def render_img(image_original):
 
 
 if __name__ == "__main__":
-    os.makedirs('../data/img',exist_ok= True)
+    np.random.seed(2023)
+    os.makedirs('../dataset/img',exist_ok= True)
 
     video_source = "data/me_source-synced-en1.mp4"
-    mode =1
+    mode = 0
     if mode == 0:
         from servo_m import *
-        cap = VideoCapture(4)
+        cap = VideoCapture(5)
 
         # get cap property
         frame_width = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
@@ -185,16 +186,16 @@ if __name__ == "__main__":
             fy=camera_matrix[1, 1]
         )
 
-        cv2.namedWindow("landmarks")
-        cv2.createTrackbar("vert", "landmarks", 180, 360, do_nothing)
-        cv2.createTrackbar("hori", "landmarks", 180, 360, do_nothing)
+        # cv2.namedWindow("landmarks")
+        # cv2.createTrackbar("vert", "landmarks", 180, 360, do_nothing)
+        # cv2.createTrackbar("hori", "landmarks", 180, 360, do_nothing)
         img_i = 0
         r_lmks_logger = []
         m_lmks_logger = []
         action_logger = []
 
         step_num = 10
-        NUM_data = 1000
+        NUM_data = 10000
 
         with mp_face_mesh.FaceMesh(
                 max_num_faces=1,
@@ -206,9 +207,8 @@ if __name__ == "__main__":
                     for _ in range(100):
                         image = cap.read()
 
-                target_cmds = random_cmds(reference=upper_teeth, noise=0.5, only_mouth=True)
-                # print("cmds",((img_i)//step_num)%3, "img_i",img_i)
-                # target_cmds = combin_face[((img_i)//step_num)%3]
+                target_cmds = random_cmds(reference=resting_face, noise=1, only_mouth=True)
+                # target_cmds = random_cmds(reference = None, noise = 1, only_mouth=True)
                 num_motors = len(all_motors)
                 # Get current motor joint angles:
                 curr = np.zeros(num_motors)
