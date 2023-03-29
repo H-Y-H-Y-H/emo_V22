@@ -10,20 +10,11 @@ random.seed(0)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print("start", device)
-data_path = "/Users/yuhang/Downloads/dataset1000_RF/"
-dataset_lmk = []
-dataset_cmd = []
-add_dataset_pth = ['dataset_rdm_1_0', 'dataset_rdm_1_1', 'dataset_rdm_1_2', 'dataset_rdm_1_3',
-                   'dataset_resting1', 'dataset_resting1(1)', 'dataset_resting1_10000']
+data_path = "../data/"
 
-for i in range(len(add_dataset_pth)):
-    add_d = np.load(data_path + add_dataset_pth[i] + '/m_lmks.npy')
-    add_cmd = np.loadtxt(data_path + add_dataset_pth[i] + '/action.csv')
+dataset_lmk = np.load(data_path+'R_lmks_data.npy')
+dataset_cmd = np.load(data_path+'R_cmds_data.npy')
 
-    dataset_lmk.append(add_d)
-    dataset_cmd.append(add_cmd)
-dataset_lmk = np.concatenate(dataset_lmk, axis=0)
-dataset_cmd = np.concatenate(dataset_cmd, axis=0)
 sample_id = random.sample(range(len(dataset_lmk)), len(dataset_lmk))
 
 tr_lmks = dataset_lmk[sample_id[:int(len(dataset_lmk) * 0.8)]]
@@ -52,7 +43,7 @@ class Robot_face_data(Dataset):
         return len(self.input_data)
 
 
-def train_model(batchsize, lr = 1e-4):
+def train_model(batchsize, lr = 1e-5):
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     Loss_fun = nn.MSELoss(reduction='mean')
     # Loss_fun = nn.L1Loss(reduction='mean')
@@ -75,7 +66,7 @@ def train_model(batchsize, lr = 1e-4):
     train_epoch_L = []
     test_epoch_L = []
     min_loss = + np.inf
-
+    patience = 0
     for epoch in range(num_epoches):
         t0 = time.time()
         model.train()
@@ -123,14 +114,17 @@ def train_model(batchsize, lr = 1e-4):
             min_loss = test_mean_loss
             PATH = log_path + '/best_model_MSE.pt'
             torch.save(model.state_dict(), PATH)
+            patience = 0
+        patience +=1
         np.savetxt(log_path + "training_MSE.csv", np.asarray(train_epoch_L))
         np.savetxt(log_path + "testing_MSE.csv", np.asarray(test_epoch_L))
 
         t1 = time.time()
-        print(epoch, "time used: ", (t1 - t0) / (epoch + 1), "training mean loss: ",train_mean_loss, "Test loss: ", test_mean_loss, "lr:", optimizer.param_groups[0]['lr'])
-
-    plt.plot(np.arange(len(train_epoch_L)),train_epoch_L)
-    plt.plot(np.arange(len(test_epoch_L)),test_epoch_L)
+        print(epoch, "time used: ", round((t1 - t0),3), "training mean loss: ",round(train_mean_loss,5), "Test loss: ", round(test_mean_loss,5), "lr:", round(optimizer.param_groups[0]['lr'],5))
+        if patience>30:
+            break
+    plt.plot(np.arange(10,len(train_epoch_L)),train_epoch_L[10:])
+    plt.plot(np.arange(10,len(test_epoch_L)),test_epoch_L[10:])
     plt.title('Learning Curve')
     plt.legend()
     plt.savefig(log_path+'lc.png')
@@ -145,7 +139,7 @@ if __name__ == '__main__':
 
     model = inverse_model(input_dim,output_dim).to(device)
 
-    batchsize = 128  # 128
+    batchsize = 64  # 128
     num_epoches = 1000
 
     log_path = "../data/logger_IVM/"
