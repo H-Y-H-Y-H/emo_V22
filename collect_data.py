@@ -29,8 +29,8 @@ class VideoCapture:
     return self.q.get()
 
 
-def render_img(image_original):
-
+def render_img(image,face_mesh,pcf):
+    image_original = np.copy(image)
     black_img = np.zeros(image_original.shape, dtype="uint8")
     black_img_rot = np.zeros(image_original.shape, dtype="uint8")
     black_img_metric = np.zeros(image_original.shape, dtype="uint8")
@@ -228,7 +228,7 @@ if __name__ == "__main__":
                     #     # If loading a video, use 'break' instead of 'continue'.
                     #     continue
 
-                    image_show, raw_lmks, m_lmks = render_img(image)
+                    image_show, raw_lmks, m_lmks = render_img(image,face_mesh,pcf)
                     r_lmks_logger.append(raw_lmks)
                     m_lmks_logger.append(m_lmks)
                     action_logger.append(traj[i])
@@ -295,7 +295,7 @@ if __name__ == "__main__":
                     print("Can't receive frame (stream end?). Exiting ...")
                     break
 
-                image_show, raw_lmks, m_lmks = render_img(image)
+                image_show, raw_lmks, m_lmks = render_img(image,face_mesh,pcf)
                 r_lmks_logger.append(raw_lmks)
                 m_lmks_logger.append(m_lmks)
 

@@ -255,6 +255,8 @@ lower_teeth = [0.1, 0.1, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1, 0.8, 0.4286, 0.4286, 0.66
 pout_face = [0.5, 1, 1, 0.0, 0.1, 0.1, 1, 1, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
 
 combin_face = [resting_face,smile_face,upper_teeth]
+from scipy.signal import savgol_filter
+import matplotlib.pyplot as plt
 if __name__ == "__main__":
 
     # Save resting face position in normed space
@@ -280,20 +282,129 @@ if __name__ == "__main__":
         # test_v = 0.5*np.sin(i* np.pi/2 /100)+0.5
         # test.norm_act(test_v)
         # time.sleep(0.005)
+    time_interval = 1/30
+    load_cmd = np.loadtxt('data/en_1.csv')
+    load_cmd_filt = np.copy(load_cmd)
 
-    # load_cmd = np.loadtxt('data/en_1.csv')
-    load_cmd = np.load('data/R_cmds_data.npy')
+    # load_cmd_ori = np.copy(load_cmd)
+    # for j in range(2,5):
+    #     fig, axs = plt.subplots(9)
+    #     fig.suptitle('motor command plots')
+    #     for i in range(9):
+    #         window = 9
+    #         order = 3
+    #         load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
+    #         axs[i].plot(list(range(len(load_cmd_ori[:,i]))),load_cmd_ori[:,i],label='raw')
+    #         axs[i].plot(list(range(len(load_cmd_filt[:,i]))),load_cmd_filt[:,i],label='filtered')
+    #     plt.legend()
+    #     plt.savefig('../savgol_%d_%d'%(window,order))
+    #     plt.clf()
 
-    time0 = time.time()
-    for i in range(len(load_cmd)):
-        target_cmds = load_cmd[i]
-        for j in range(9):
-            target_cmds[j] = np.clip(target_cmds[j],0,1)
-            all_motors[j].norm_act(target_cmds[j])
+    # quit()
 
-        time_used = time.time()-time0
-        time.sleep(0.04-time_used)
+
+    record = True
+    # Smooth:
+    if record == False:
+        window = 9
+        order = 3
+        for i in range(9):
+            load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
+
+        time.sleep(1)
         time0 = time.time()
+        for i in range(len(load_cmd)):
+            target_cmds = load_cmd[i]
+            for j in range(9):
+                target_cmds[j] = np.clip(target_cmds[j],0,1)
+                all_motors[j].norm_act(target_cmds[j])
 
+            time_used = time.time()-time0
+            time.sleep(time_interval-time_used)
+            time0 = time.time()
 
+    else:
+        #   RECORD A VIDEO
+        window = 9
+        order = 3
+        for i in range(9):
+            load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
+
+        from collect_data import *
+        from realtime_landmark import *
+
+        cap = VideoCapture(4)
+
+        # get cap property
+        frame_width = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
+        frame_height = cap.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+
+        focal_length = frame_width
+        center = (frame_width / 2, frame_height / 2)
+        camera_matrix = np.array(
+            [[focal_length, 0, center[0]], [0, focal_length, center[1]], [0, 0, 1]],
+            dtype="double",
+        )
+
+        pcf = PCF(
+            near=1,
+            far=10000,
+            frame_height=frame_height,
+            frame_width=frame_width,
+            fy=camera_matrix[1, 1]
+        )
+
+        # cv2.namedWindow("landmarks")
+        # cv2.createTrackbar("vert", "landmarks", 180, 360, do_nothing)
+        # cv2.createTrackbar("hori", "landmarks", 180, 360, do_nothing)
+        img_i = 0
+        r_lmks_logger = []
+        m_lmks_logger = []
+        action_logger = []
+
+        with mp_face_mesh.FaceMesh(
+                max_num_faces=1,
+                refine_landmarks=True,
+                min_detection_confidence=0.5,
+                min_tracking_confidence=0.5) as face_mesh:
+            for i in range(len(load_cmd)):
+                if img_i == 0:
+                    for _ in range(100):
+                        image = cap.read()
+
+                target_cmds = load_cmd[i]
+
+                # execute the commands:
+                for j in range(9):
+                    target_cmds[j] = np.clip(target_cmds[j],0,1)
+                    all_motors[j].norm_act(target_cmds[j])
+
+                time.sleep(0.03)
+
+                image = cap.read()
+                # if not success:
+                #     print("Ignoring empty camera frame.")
+                #     # If loading a video, use 'break' instead of 'continue'.
+                #     continue
+
+                image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
+                r_lmks_logger.append(raw_lmks)
+                m_lmks_logger.append(m_lmks)
+
+                # SAVE
+                cv2.imwrite('../dataset/img/%d.png' % img_i, image_show)
+                img_i += 1
+                if img_i % 20 == 0:
+                    np.save('../dataset/r_lmks.npy', np.asarray(r_lmks_logger))
+                    np.save('../dataset/m_lmks.npy', np.asarray(m_lmks_logger))
+                    print(img_i, np.asarray(r_lmks_logger).shape)
+
+                # cv2.imshow('landmarks', image_show)
+
+                if cv2.waitKey(5) & 0xFF == 27:
+                    break
+
+        cap.cap.release()
+
+# Record
 

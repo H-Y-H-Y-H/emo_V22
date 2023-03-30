@@ -67,7 +67,8 @@ class VideoCapture:
         return self.q.get()
 
 
-def render_img(image_original):
+def render_img(image,face_mesh,pcf):
+    image_original = np.copy(image)
     black_img = np.zeros(image_original.shape, dtype="uint8")
     black_img_rot = np.zeros(image_original.shape, dtype="uint8")
     black_img_metric = np.zeros(image_original.shape, dtype="uint8")
@@ -262,7 +263,7 @@ if __name__ == "__main__":
         while 1:
             image = cap.read()
 
-            image_show, raw_lmks, m_lmks = render_img(image)
+            image_show, raw_lmks, m_lmks = render_img(image,face_mesh,pcf)
 
             nn_img, best_nn_id = nearest_neighber(m_lmks)
             selct_lmks = dataset[best_nn_id]
