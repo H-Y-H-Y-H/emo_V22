@@ -9,26 +9,29 @@ import numpy as np
 
 class inverse_model(nn.Module):
 
-    def __init__(self, input_size,label_size):
+    def __init__(self, input_size=478*3,label_size=13):
         super(inverse_model, self).__init__()
 
         self.inputsize = input_size
         self.outputsize = label_size
 
-        self.fc1 = nn.Linear(self.inputsize, 1024)
-        self.fc2 = nn.Linear(1024, 512)
-        self.fc3 = nn.Linear(512, self.outputsize)
+        self.fc1 = nn.Linear(self.inputsize, 4096)
+        self.fc2 = nn.Linear(4096, 4096)
+        self.fc3= nn.Linear(4096, 4096)
+        self.fc4 = nn.Linear(4096, self.outputsize)
 
-        self.bn1 = nn.BatchNorm1d(512)
-        self.bn2 = nn.BatchNorm1d(1024)
-        self.bn3 = nn.BatchNorm1d(512)
-
+        self.bn1 = nn.BatchNorm1d(4096)
+        self.bn2 = nn.BatchNorm1d(4096)
+        self.bn3 = nn.BatchNorm1d(4096)
+        # (2) no batch norm
     def forward(self, x):
         x = F.relu(self.fc1(x))
+        x = self.bn1(x)
+        x2 = F.relu(self.fc2(x))
         x = self.bn2(x)
-        x = F.relu(self.fc2(x))
-        x = torch.sigmoid(self.fc3(x))
-
+        x = F.relu(self.fc3(torch.add(x,x2)))
+        x = self.bn3(x)
+        x=self.fc4(x)
         return x
 
     def loss(self, pred, target):
