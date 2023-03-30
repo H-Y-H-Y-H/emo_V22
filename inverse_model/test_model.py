@@ -22,10 +22,22 @@ def lmks2cmds(input_data, log_path):
 
 
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
     # Check GPU
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
     input_data = np.load('../data/me_lmks_en1.npy')
+    # input_data = input_data / 22 + 0.5
+    # input_data[:,:, 1] = 1 - input_data[:,:, 1]
+    # input_data[:,:, 1] -= 0.05
+
+    # training_lmks = np.load('../data/R_lmks_data.npy')[0]
+    # plt.scatter(training_lmks[:,0],training_lmks[:,2])
+    # plt.scatter(input_data[0,:,0],input_data[0,:,2])
+    # plt.show()
+
+
+
     chunksize = 64
     chunkperpare = [input_data[i:i+chunksize] for i in range(0,input_data.shape[0],chunksize)]
 
