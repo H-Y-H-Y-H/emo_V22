@@ -281,12 +281,13 @@ if __name__ == "__main__":
         # test.norm_act(test_v)
         # time.sleep(0.005)
 
-    load_cmd = np.loadtxt('data/en_1.csv')
+    # load_cmd = np.loadtxt('data/en_1.csv')
+    load_cmd = np.load('data/R_cmds_data.npy')
 
     time0 = time.time()
     for i in range(len(load_cmd)):
         target_cmds = load_cmd[i]
-        for j in range(len(target_cmds)):
+        for j in range(9):
             target_cmds[j] = np.clip(target_cmds[j],0,1)
             all_motors[j].norm_act(target_cmds[j])
 
