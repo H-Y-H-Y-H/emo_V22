@@ -266,12 +266,12 @@ if __name__ == "__main__":
         print(m.norm_v_cur)
 
     scale_range = 1
-    for i in range(20):
-        target_cmds = random_cmds(reference=resting_face, noise=scale_range, only_mouth=True)
+    # for i in range(20):
+        # target_cmds = random_cmds(reference=resting_face, noise=scale_range, only_mouth=True)
         # target_cmds = check_lip(target_cmds)
 
-        move_all(target_cmds)
-        print(target_cmds)
+        # move_all(target_cmds)
+        # print(target_cmds)
         # time.sleep(1)
 
         # print(v)
@@ -281,19 +281,18 @@ if __name__ == "__main__":
         # test.norm_act(test_v)
         # time.sleep(0.005)
 
-        # load_cmd = np.load('../en-1_scale_pred.npy')
-        # load_cmd = np.load('../en-1_pred.npy')
+    load_cmd = np.loadtxt('data/en_1.csv')
 
-        # time0 = time.time()
-        # for i in range(len(load_cmd)):
-        #     target_cmds = load_cmd[i]
-        #     for j in range(len(target_cmds)):
-        #         target_cmds[j] = np.clip(target_cmds[j],0,1)
-        #         all_motors[j].norm_act(target_cmds[j])
+    time0 = time.time()
+    for i in range(len(load_cmd)):
+        target_cmds = load_cmd[i]
+        for j in range(len(target_cmds)):
+            target_cmds[j] = np.clip(target_cmds[j],0,1)
+            all_motors[j].norm_act(target_cmds[j])
 
-        #     time_used = time.time()-time0
-        #     time.sleep(0.04-time_used)
-        #     time0 = time.time()
+        time_used = time.time()-time0
+        time.sleep(0.04-time_used)
+        time0 = time.time()
 
 
 
