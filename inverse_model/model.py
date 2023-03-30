@@ -31,7 +31,7 @@ class inverse_model(nn.Module):
         x = self.bn2(x)
         x = F.relu(self.fc3(torch.add(x,x2)))
         x = self.bn3(x)
-        x=self.fc4(x)
+        x = torch.sigmoid(self.fc4(x))
         return x
 
     def loss(self, pred, target):
