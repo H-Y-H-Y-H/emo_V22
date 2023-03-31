@@ -112,8 +112,8 @@ def render_img(image,face_mesh,pcf):
             # freely rotate landmarks
             # rot_x = cv2.getTrackbarPos('vert', 'landmarks')
             # rot_y = cv2.getTrackbarPos('hori', 'landmarks')
-            rot_x =0
-            rot_y = 90
+            rot_x = 180
+            rot_y = 270
             rot_x_rad = (rot_x - 180) * np.pi / 180
             rot_y_rad = (rot_y - 180) * np.pi / 180
 
