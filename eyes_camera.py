@@ -8,7 +8,7 @@ mp_drawing_styles = mp.solutions.drawing_styles
 mp_face_mesh = mp.solutions.face_mesh
 
 cap_r = cv2.VideoCapture(2)
-cap_l = cv2.VideoCapture(5)
+cap_l = cv2.VideoCapture(0)
 
 if not cap_r.isOpened():
     print("Cannot open right camera")
@@ -26,19 +26,19 @@ with mp_face_mesh.FaceMesh(
     refine_landmarks=True,
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5) as face_mesh:
-
+    blink_count = 0
     while True:
+        blink_count+=1
+        if (blink_count+np.random.randint(20)) > 90:
+            blink_count = 0
+            blink()
+
+
         t0 = time.time()
         # Capture frame-by-frame
         ret_r, frame_r = cap_r.read()
         ret_l, frame_l = cap_l.read()
-        # if frame is read correctly ret is True
-        if not ret_r:
-            print("Can't receive right eyes frame (stream end?). Exiting ...")
-            break
-        if not ret_l:
-            print("Can't receive left eyes frame (stream end?). Exiting ...")
-            break
+
 
         frame_r.flags.writeable, frame_l.flags.writeable = False,False
         
@@ -105,9 +105,9 @@ with mp_face_mesh.FaceMesh(
                     connection_drawing_spec=mp_drawing_styles
                     .get_default_face_mesh_iris_connections_style())
 
-        print(landmarks_l[6][0], landmarks_r[6][0])
+        # print(landmarks_l[6][:2], landmarks_r[6][:2])
         if results_l.multi_face_landmarks and results_r.multi_face_landmarks:
-            eyes_move_2_traget(landmarks_l[6][0],landmarks_r[6][0])
+            eyes_move_2_traget(landmarks_l[6][:2], landmarks_r[6][:2])
 
         # Gray image
         # frame_r = cv2.cvtColor(frame_r, cv2.COLOR_BGR2GRAY)

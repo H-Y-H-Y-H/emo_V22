@@ -160,13 +160,23 @@ def move_all(target_cmds, interval=50):
 def eyes_move_2_traget(l_point, r_point):
     step = 1
 
-    l_loc = (0.5 - l_point) * abs(0.5 - l_point) * step + l_eye_yaw.norm_v_cur
-    r_loc = (0.5 - r_point) * abs(0.5 - r_point) * step + r_eye_yaw.norm_v_cur
+    l_loc = (0.5 - l_point[0]) * abs(0.5 - l_point[0]) * step + l_eye_yaw.norm_v_cur
+    r_loc = (0.5 - r_point[0]) * abs(0.5 - r_point[0]) * step + r_eye_yaw.norm_v_cur
     l_loc = np.clip(l_loc, 0, 1)
     r_loc = np.clip(r_loc, 0, 1)
+
+    l_loc_p = (0.5 - l_point[1]) * abs(0.5 - l_point[1]) * step + l_eye_pitch.norm_v_cur
+    r_loc_p = (0.5 - r_point[1]) * abs(0.5 - r_point[1]) * step + r_eye_pitch.norm_v_cur
+    l_loc_p = np.clip(l_loc_p, 0, 1)
+    r_loc_p = np.clip(r_loc_p, 0, 1)
+
+
     l_eye_yaw.norm_act(l_loc)
     r_eye_yaw.norm_act(r_loc)
-    print(l_loc, r_loc)
+    l_eye_pitch.norm_act(l_loc_p)
+    r_eye_pitch.norm_act(r_loc_p)
+
+    # print(l_loc, r_loc)
     # r_eye_yaw.norm_act(0.5*np.sin((i+1)/400 * 2*np.pi)+0.5)
     # l_eye_yaw.norm_act(0.5*np.sin((i+1)/400 * 2*np.pi)+0.5)
 
@@ -199,6 +209,18 @@ def eyes_lid():
         l_lower_eyelid.norm_act(0.5 * np.cos((i + 1) / 400 * 2 * np.pi + np.pi) + 0.5)
         r_lower_eyelid.norm_act(0.5 * np.cos((i + 1) / 400 * 2 * np.pi + np.pi) + 0.5)
         time.sleep(0.01)
+def blink():
+
+    l_upper_eyelid.norm_act(0)
+    r_upper_eyelid.norm_act(0)
+    l_lower_eyelid.norm_act(1)
+    r_lower_eyelid.norm_act(1)
+    time.sleep(0.2)   
+    l_upper_eyelid.norm_act(1)
+    r_upper_eyelid.norm_act(1)
+    l_lower_eyelid.norm_act(0)
+    r_lower_eyelid.norm_act(0)  
+
 
 
 # def check_lip(target_cmds):
