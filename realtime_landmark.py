@@ -190,19 +190,27 @@ def render_img(image,face_mesh,pcf):
     return image_show, raw_lmks, m_landmarks
 
 
+
 lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
             81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
 inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
 
 
-def nearest_neighber(lmks):
-    duplicate_lmks = np.asarray([lmks] * len(dataset))
-    distance = (duplicate_lmks - dataset) ** 2
+def nearest_neighber(lmks,dataset,add_dataset_pth,dataset_pth,only_mouth = False):
+    if only_mouth:
+        compare_idx = lips_idx + inner_lips_idx
+        duplicate_lmks = np.asarray([lmks[compare_idx]] * len(dataset))
+        distance = (duplicate_lmks - dataset[:,compare_idx]) ** 2
+    else:
+        duplicate_lmks = np.asarray([lmks] * len(dataset))
+        distance = (duplicate_lmks - dataset) ** 2
+
     distance = np.mean(np.mean(distance, axis=1), axis=1)
     rank = np.argsort(distance)
     best_nn_id = rank[0]
     print(distance[rank[:5]])
     print(rank[:5])
+    best_nn_id_absolute = np.copy(best_nn_id)
     if best_nn_id < 6000:
         best_nn_id_setid = best_nn_id // 1000
         best_nn_id = best_nn_id % 1000
@@ -212,7 +220,7 @@ def nearest_neighber(lmks):
 
     nn_img = cv2.imread(dataset_pth + add_dataset_pth[best_nn_id_setid] + '/img/%d.png' % best_nn_id)
 
-    return nn_img, best_nn_id
+    return nn_img, best_nn_id_absolute
 
 
 if __name__ == "__main__":
@@ -263,9 +271,9 @@ if __name__ == "__main__":
         while 1:
             image = cap.read()
 
-            image_show, raw_lmks, m_lmks = render_img(image,face_mesh,pcf)
+            image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
 
-            nn_img, best_nn_id = nearest_neighber(m_lmks)
+            nn_img, best_nn_id = nearest_neighber(m_lmks, dataset, add_dataset_pth, dataset_pth)
             selct_lmks = dataset[best_nn_id]
 
             # plt.scatter(selct_lmks[:, 0], selct_lmks[:, 1])

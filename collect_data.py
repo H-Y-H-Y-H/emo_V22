@@ -154,10 +154,10 @@ def render_img(image,face_mesh,pcf):
 
 if __name__ == "__main__":
     np.random.seed(2023)
-    os.makedirs('../dataset/img',exist_ok= True)
+    os.makedirs('../data/img',exist_ok= True)
 
-    video_source = "data/me_source-synced-en1.mp4"
-    mode = 0
+    video_source = "data/en1-ava-synced.mp4"
+    mode = 1
     if mode == 0:
         from servo_m import *
         cap = VideoCapture(5)
@@ -281,9 +281,6 @@ if __name__ == "__main__":
         m_lmks_logger = []
         action_logger = []
 
-        step_num = 10
-        NUM_data = 1000
-
         with mp_face_mesh.FaceMesh(
                 max_num_faces=1,
                 refine_landmarks=True,
@@ -302,6 +299,6 @@ if __name__ == "__main__":
                 cv2.imshow('landmarks', image_show)
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
-            np.save('data/m_lmks.npy', m_lmks_logger)
+            np.save('data/en1_ava_lmks.npy', m_lmks_logger)
 
         cap.release()

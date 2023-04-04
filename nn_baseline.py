@@ -1,92 +1,79 @@
-from servo_m import *
+# from servo_m import *
 import cv2
 import matplotlib.pyplot as plt
+from realtime_landmark import *
 
-def nearest_neighber(lmks):
-
-
-    duplicate_lmks = np.asarray([lmks]*len(dataset_lmk))
-    distance = (duplicate_lmks - dataset_lmk)**2
-    distance = np.mean(np.mean(distance,axis = 1),axis=1)
-    rank = np.argsort(distance)
-    best_nn_id = rank[0]
-
-
-    best_nn_id_setid = (best_nn_id)//1000
-    best_nn_id_imgid = best_nn_id%1000
-    nn_img = cv2.imread(dataset_pth+add_dataset_pth[best_nn_id_setid]+'/img/%d.png'%best_nn_id_imgid)
-
-    return best_nn_id, nn_img
 
 
 if __name__ == "__main__":
-    
-    dataset_pth = '../'
-    add_dataset_pth = ['dataset_resting1','dataset_lower0.5','dataset_pout0.5','dataset_upper0.5','dataset_smile0.5','dataset_resting0.5']
 
-    dataset_lmk,dataset_cmd = [],[]
-
-    for i in range(len(add_dataset_pth)):
-        add_lmk = np.load(dataset_pth+add_dataset_pth[i]+'/m_lmks.npy')
-        add_cmd = np.loadtxt(dataset_pth+add_dataset_pth[i]+'/action.csv')
-        dataset_lmk.append(add_lmk)
-        dataset_cmd.append(add_cmd)
-    dataset_lmk, dataset_cmd = np.asarray(dataset_lmk), np.asarray(dataset_cmd)
-    dataset_lmk = np.concatenate(dataset_lmk,0)[:,:468,:2]
-    dataset_cmd = np.concatenate(dataset_cmd,0)
-    print(dataset_lmk.shape)
-
-    target_lmks = np.load('data/gpt_lmks/en-1.npy')
+    data_path = 'data/'
+    dataset_pth = '/Users/yuhang/Downloads/dataset1000_RF/'
+    add_dataset_pth = ['dataset_rdm_1_0', 'dataset_rdm_1_1', 'dataset_rdm_1_2', 'dataset_rdm_1_3',
+                       'dataset_resting1', 'dataset_resting1(1)','dataset_resting1_10000']
 
 
-    step_n = 1
+    dataset_lmk = np.load(data_path + 'R_lmks_data.npy')
+    dataset_cmd = np.load(data_path + 'R_cmds_data.npy')
 
-    mode = 1
+    # target_lmks = np.load('data/gpt_lmks/en-1.npy')
+    # target_lmks = np.load(data_path + 'm_lmks_norm.npy')
+    target_lmks = np.load(data_path + 'en1_ava_lmks.npy')
 
-    target_id = np.loadtxt('logger.csv')
+    mode = 0
+
+    # target_id = np.loadtxt('logger.csv')
     logger_id = []
     time_s = time.time()
     time0 = time.time()
     print(len(target_lmks))
-    for i in range(0,len(target_lmks),step_n):
-        print(i)
-        if mode ==0:
-            #compute offline:
-            lmks = target_lmks[i].T
-            lmks = lmks[:,:2]
-            lmks = lmks/22 + 0.5
-            lmks[:,1] = 1-lmks[:,1]
-            lmks[:,1] -=0.05
 
-            best_nn_id, nn_img = nearest_neighber(lmks)
+    frame_time = 1/30
+    if mode == 0:
+        for i in range(len(target_lmks)):
+            print(i)
+            # compute offline:
+            lmks = target_lmks[i]
+            lmks = lmks[:, :3]
+            # lmks = lmks / 22 + 0.5
+            # lmks[:, 1] = 1 - lmks[:, 1]
+            # lmks[:, 1] -= 0.05
+
+            nn_img, best_nn_id = nearest_neighber(lmks, dataset_lmk[...,:3], add_dataset_pth, dataset_pth, only_mouth=True)
+
+            # plt.scatter(lmks[:,0],lmks[:,1], label='me')
+            # plt.scatter(dataset_lmk[best_nn_id,:,0],dataset_lmk[best_nn_id,:,1], label='nn_robot face')
+            # plt.legend()
+            # plt.show()
+
             logger_id.append(best_nn_id)
+        np.savetxt('logger.csv', np.asarray(logger_id), fmt='%i')
 
-        elif mode ==1:
+
+    elif mode == 1:
+        for i in range(len(target_lmks)):
             best_nn_id = int(target_id[i])
-            cmds= dataset_cmd[best_nn_id]
+            cmds = dataset_cmd[best_nn_id]
 
-            move_all(cmds,interval=1)
-            time_left = time.time()-time0
-            if 0.04*step_n-time_left>0:
-                time.sleep(0.04*step_n-time_left)
+            move_all(cmds, interval=1)
+            time_left = time.time() - time0
+            if frame_time - time_left > 0:
+                time.sleep(frame_time - time_left)
             print(time_left)
             time0 = time.time()
+        time_e = time.time()
 
-    if mode == 0:
-        np.savetxt('logger.csv',np.asarray(logger_id),fmt='%i')
-        
-    time_e = time.time()
-
-    print(time_e - time_s)
+        print(time_e - time_s)
 
 
 
-        # select_lmk = dataset_lmk[best_nn_id]
-        # plt.scatter(lmks[:,0],lmks[:,1],label='target')
-        # plt.scatter(select_lmk[:,0],select_lmk[:,1],label='select')
-        # plt.legend()
 
-        # plt.show()
-        # quit()
+    # select_lmk = dataset_lmk[best_nn_id]
+    # plt.scatter(lmks[:,0],lmks[:,1],label='target')
+    # plt.scatter(select_lmk[:,0],select_lmk[:,1],label='select')
+    # plt.legend()
 
-        # time.sleep(0.04)
+    # plt.show()
+    # quit()
+
+    # time.sleep(0.04)
