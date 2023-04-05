@@ -22,14 +22,13 @@ lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146
 inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
 
 frame_id_list = np.loadtxt('logger.csv')
-def logger2cmds():
 
 
 def two_lmks_compare():
     me_lmks = np.load('data/en1_ava_lmks.npy')
-    # robo_lmks = np.load("/Users/yuhang/Downloads/en1_realrobot/m_lmks.npy")
+    # robo_lmks = np.load("/Users/yuhang/Downloads/EMO_GPTDEMO/m_lmks.npy")
     robo_lmks = np.load("data/R_lmks_data.npy")
-    log_pth = '/Users/yuhang/Downloads/en1_realrobot/en1_ava_VS_NN'
+    log_pth = '/Users/yuhang/Downloads/EMO_GPTDEMO/en1_ava_VS_NN'
     os.makedirs(log_pth,exist_ok=True)
     for i in range(len(me_lmks)):
         print(i)
@@ -47,8 +46,8 @@ def two_lmks_compare():
 
 
 def combine_img():
-    R_data = "/Users/yuhang/Downloads/en1_realrobot/img/"
-    data2lmks = "/Users/yuhang/Downloads/en1_realrobot/img2_realVSrawhuman/"
+    R_data = "/Users/yuhang/Downloads/EMO_GPTDEMO/img/"
+    data2lmks = "/Users/yuhang/Downloads/EMO_GPTDEMO/en1_ava_VS_NN/"
     fourcc = cv2.VideoWriter_fourcc(*'MP4V')
     img_list = []
     for i in range(300):
@@ -66,7 +65,7 @@ def combine_img():
 
     width, height = img_list[0].shape[:2]
     img_size = (height, width)
-    out = cv2.VideoWriter('/Users/yuhang/Downloads/en1_realrobot/project_raw.mp4', fourcc, 30, img_size)
+    out = cv2.VideoWriter('/Users/yuhang/Downloads/EMO_GPTDEMO/project_raw.mp4', fourcc, 30, img_size)
 
     for i in range(len(img_list)):
         out.write(img_list[i])
@@ -84,7 +83,7 @@ def image2video():
                        'dataset_resting1', 'dataset_resting1(1)', 'dataset_resting1_10000']
 
     frame_id_list = np.loadtxt('logger.csv')
-    for i in range(300):
+    for i in range(len(frame_id_list)):
         best_nn_id = frame_id_list[i]
         if best_nn_id < 6000:
             best_nn_id_setid = best_nn_id // 1000
@@ -97,7 +96,7 @@ def image2video():
 
         height, width, layers = nn_img.shape
         # empty_img = np.zeros((height,width,layers))
-
+        #
         # out_img = np.vstack((img_i2,empty_img))
         # out_img = np.hstack((img_i,out_img))
         # out_img = np.uint8(out_img*255)
@@ -106,10 +105,10 @@ def image2video():
 
     width, height = img_list[0].shape[:2]
     img_size = (height, width)
-    out = cv2.VideoWriter('/Users/yuhang/Downloads/en1_realrobot/project.mp4', fourcc, 30, img_size)
+    out = cv2.VideoWriter('/Users/yuhang/Downloads/EMO_GPTDEMO/project.mp4', fourcc, 30, img_size)
 
     for i in range(len(img_list)):
         out.write(img_list[i])
     out.release()
 
-# image2video()
+image2video()
