@@ -305,7 +305,10 @@ if __name__ == "__main__":
         # test.norm_act(test_v)
         # time.sleep(0.005)
     time_interval = 1/30
-    load_cmd = np.loadtxt('data/en_1.csv')
+    load_cmd_idx = np.loadtxt('../dataset/logger.csv').astype(int)
+    load_cmd_nn = np.load('data/R_cmds_data.npy')
+    print(load_cmd_nn.shape)
+    load_cmd = load_cmd_nn[load_cmd_idx]
     load_cmd_filt = np.copy(load_cmd)
 
     # load_cmd_ori = np.copy(load_cmd)
@@ -336,7 +339,8 @@ if __name__ == "__main__":
         time.sleep(1)
         time0 = time.time()
         for i in range(len(load_cmd)):
-            target_cmds = load_cmd[i]
+            print(i)
+            target_cmds = load_cmd_filt[i]
             for j in range(9):
                 target_cmds[j] = np.clip(target_cmds[j],0,1)
                 all_motors[j].norm_act(target_cmds[j])
@@ -397,9 +401,9 @@ if __name__ == "__main__":
                 target_cmds = load_cmd[i]
 
                 # execute the commands:
-                for j in range(9):
-                    target_cmds[j] = np.clip(target_cmds[j],0,1)
-                    all_motors[j].norm_act(target_cmds[j])
+                # for j in range(9):
+                #     target_cmds[j] = np.clip(target_cmds[j],0,1)
+                #     all_motors[j].norm_act(target_cmds[j])
 
                 time.sleep(0.03)
 
@@ -414,15 +418,15 @@ if __name__ == "__main__":
                 m_lmks_logger.append(m_lmks)
 
                 # SAVE
-                cv2.imwrite('../dataset/img/%d.png' % img_i, image_show)
-                img_i += 1
+                cv2.imwrite('../dataset/resting%d.png' % img_i, image_show)
+                # img_i += 1
                 if img_i % 20 == 0:
-                    np.save('../dataset/r_lmks.npy', np.asarray(r_lmks_logger))
-                    np.save('../dataset/m_lmks.npy', np.asarray(m_lmks_logger))
+                    np.save('../dataset/resting_r_lmks.npy', np.asarray(r_lmks_logger))
+                    np.save('../dataset/resting_m_lmks.npy', np.asarray(m_lmks_logger))
                     print(img_i, np.asarray(r_lmks_logger).shape)
 
                 # cv2.imshow('landmarks', image_show)
-
+                break
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
 
