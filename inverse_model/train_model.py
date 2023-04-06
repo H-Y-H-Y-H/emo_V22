@@ -12,16 +12,24 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("start", device)
 data_path = "../data/"
 
-dataset_lmk = np.load(data_path+'R_lmks_data.npy')
+lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
+            81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
+inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
+
+select_lmks_id = lips_idx + inner_lips_idx
+n_lmks = len(select_lmks_id)
+
+dataset_lmk = np.load(data_path+'R_lmks_data.npy')[:, select_lmks_id]
 dataset_cmd = np.load(data_path+'R_cmds_data.npy')
 
 sample_id = random.sample(range(len(dataset_lmk)), len(dataset_lmk))
 
 tr_lmks = dataset_lmk[sample_id[:int(len(dataset_lmk) * 0.8)]]
-tr_cmds = dataset_cmd[sample_id[:int(len(dataset_cmd) * 0.8)]]
-
 va_lmks = dataset_lmk[sample_id[int(len(dataset_lmk) * 0.8):]]
-va_cmds = dataset_cmd[sample_id[int(len(dataset_cmd) * 0.8):]]
+
+
+tr_cmds = dataset_cmd[sample_id[:int(len(dataset_cmd) * 0.8)]][:,:9]
+va_cmds = dataset_cmd[sample_id[int(len(dataset_cmd) * 0.8):]][:,:9]
 
 
 # INPUT SIZE:  2(dimensions) x 113(lmks)
@@ -136,6 +144,8 @@ if __name__ == '__main__':
 
     input_dim = va_lmks.shape[1]*va_lmks.shape[2]
     output_dim = va_cmds.shape[1]
+    print('input_dim:',input_dim)
+    print('output_dim:',output_dim)
 
     model = inverse_model(input_dim,output_dim).to(device)
 
