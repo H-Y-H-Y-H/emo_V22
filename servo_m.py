@@ -86,11 +86,11 @@ l_eye_yaw = Actuator(idx_tuple=(1, 7), min_angle=60, max_angle=120, init_angle=9
 r_eye_pitch = Actuator(idx_tuple=(0, 9), min_angle=68, max_angle=98, init_angle=83)
 l_eye_pitch = Actuator(idx_tuple=(1, 6), min_angle=78, max_angle=108, init_angle=93, inverse_flag=True)
 
-r_upper_eyelid = Actuator(idx_tuple=(0, 11), min_angle=80, max_angle=163, init_angle=80, inverse_flag=True)
-l_upper_eyelid = Actuator(idx_tuple=(1, 4), min_angle=18, max_angle=100, init_angle=100)
+r_upper_eyelid = Actuator(idx_tuple=(0, 11), min_angle=80, max_angle=153, init_angle=153, inverse_flag=True)
+l_upper_eyelid = Actuator(idx_tuple=(1, 4), min_angle=28, max_angle=100, init_angle=28)
 
-r_lower_eyelid = Actuator(idx_tuple=(0, 10), min_angle=93, max_angle=143, init_angle=93)
-l_lower_eyelid = Actuator(idx_tuple=(1, 5), min_angle=40, max_angle=95, init_angle=95, inverse_flag=True)
+r_lower_eyelid = Actuator(idx_tuple=(0, 10), min_angle=93, max_angle=143, init_angle=143)
+l_lower_eyelid = Actuator(idx_tuple=(1, 5), min_angle=40, max_angle=95, init_angle=40, inverse_flag=True)
 
 r_inner_eyebrow = Actuator(idx_tuple=(0, 14), min_angle=65, max_angle=100, init_angle=85, inverse_flag=True)
 l_inner_eyebrow = Actuator(idx_tuple=(1, 1), min_angle=75, max_angle=110, init_angle=90)
@@ -209,8 +209,18 @@ def eyes_lid():
         l_lower_eyelid.norm_act(0.5 * np.cos((i + 1) / 400 * 2 * np.pi + np.pi) + 0.5)
         r_lower_eyelid.norm_act(0.5 * np.cos((i + 1) / 400 * 2 * np.pi + np.pi) + 0.5)
         time.sleep(0.01)
-def blink():
 
+def eyes_open():
+    for i in range(100):
+        print('eyeopen:',i)
+        l_upper_eyelid.norm_act(np.sin((i + 1) / 200  * np.pi))
+        r_upper_eyelid.norm_act(np.sin((i + 1) / 200  * np.pi))
+        l_lower_eyelid.norm_act(np.cos((i + 1) / 200  * np.pi))
+        r_lower_eyelid.norm_act(np.cos((i + 1) / 200  * np.pi))
+        time.sleep(0.01)
+
+
+def blink():
     l_upper_eyelid.norm_act(0)
     r_upper_eyelid.norm_act(0)
     l_lower_eyelid.norm_act(1)
@@ -221,40 +231,20 @@ def blink():
     l_lower_eyelid.norm_act(0)
     r_lower_eyelid.norm_act(0)  
 
-
-
-# def check_lip(target_cmds):
-#     # if (target_cmds[6]-target_cmds[4])>0.8:
-#     #     target_cmds[2] = 0.5
-#     #     target_cmds[1] = 0.8
-#     #     target_cmds[3] = 0
-#     if (target_cmds[6]-target_cmds[4]>0.8) and (target_cmds[6]>0.6):
-#         target_cmds[6] = 0.6
-#         target_cmds[7] = 0.6
-#         print(1)
-
-#     if (target_cmds[4]<=1) and (target_cmds[6]>0.6):
-#         target_cmds[6] = 0.6
-#         target_cmds[7] = 0.6
-#         print(1)
-
-
-#     return target_cmds
-
-
-
-# test_cmds = [0.59090275, 0.03795507, 0. ,        0.94747217, 1, 1,
-#  1.,         1.,         1.,         0.42857143, 0.42857143, 0.66666667,
-#  0.66666667]
-
-# move_all(test_cmds)
-
-# time.sleep(1)
-# test_cmds = check_lip(test_cmds)
-# move_all(test_cmds)
-# print(all_motors[6].v_cur)
-# print(all_motors[7].v_cur)
-# quit()
+# 10 steps per blink
+def blink_seg(ti, c = 10, n_step= 8):
+    if ti <= 8:
+        l_upper_eyelid.norm_act(1-ti/n_step)
+        r_upper_eyelid.norm_act(1-ti/n_step)
+        l_lower_eyelid.norm_act(ti/n_step)
+        r_lower_eyelid.norm_act(ti/n_step)
+    # elif (ti >3) and (ti<6):
+        # nothing
+    elif ti>= c:
+        l_upper_eyelid.norm_act(  (ti-c)/n_step)
+        r_upper_eyelid.norm_act(  (ti-c)/n_step)
+        l_lower_eyelid.norm_act(1-(ti-c)/n_step)
+        r_lower_eyelid.norm_act(1-(ti-c)/n_step)  
 
 
 resting_face = [0.0,
@@ -263,8 +253,8 @@ resting_face = [0.0,
 0.8333333333333334,
 0.42857142857142855,
 0.4285714285714286,
-0.525,
-0.525,
+0.875,
+0.875,
 1.0,
 0.4285714285714286,
 0.42857142857142855,
@@ -283,6 +273,7 @@ if __name__ == "__main__":
 
     # Save resting face position in normed space
     np.random.seed(3)
+    eyes_open()
 
     resting_face = []
     for m in all_motors:
@@ -305,10 +296,15 @@ if __name__ == "__main__":
         # test.norm_act(test_v)
         # time.sleep(0.005)
     time_interval = 1/30
-    load_cmd_idx = np.loadtxt('../dataset/logger.csv').astype(int)
-    load_cmd_nn = np.load('data/R_cmds_data.npy')
-    print(load_cmd_nn.shape)
-    load_cmd = load_cmd_nn[load_cmd_idx]
+    ID_or_CMD = 1
+
+    if ID_or_CMD == 0:
+        load_cmd_idx = np.loadtxt('../dataset/logger(norm).csv').astype(int)
+        load_cmd_nn = np.load('data/R_cmds_data.npy')
+        load_cmd = load_cmd_nn[load_cmd_idx]
+    elif ID_or_CMD ==1:
+        load_cmd = np.loadtxt('data/en_1.csv')
+    
     load_cmd_filt = np.copy(load_cmd)
 
     # load_cmd_ori = np.copy(load_cmd)
@@ -316,8 +312,8 @@ if __name__ == "__main__":
     #     fig, axs = plt.subplots(9)
     #     fig.suptitle('motor command plots')
     #     for i in range(9):
-    #         window = 9
-    #         order = 3
+    #         window = 8*j+1
+    #         order = 8
     #         load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
     #         axs[i].plot(list(range(len(load_cmd_ori[:,i]))),load_cmd_ori[:,i],label='raw')
     #         axs[i].plot(list(range(len(load_cmd_filt[:,i]))),load_cmd_filt[:,i],label='filtered')
@@ -328,26 +324,51 @@ if __name__ == "__main__":
     # quit()
 
 
-    record = True
+    record = False
     # Smooth:
     if record == False:
-        window = 9
-        order = 3
+        window = 25
+        order = 8
         for i in range(9):
             load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
 
         time.sleep(1)
         time0 = time.time()
+
+        eyelid_traj_id = 0
+        blink_count_threshold = 105
+        blink_count = 0
+        blink_flag = False
         for i in range(len(load_cmd)):
             print(i)
             target_cmds = load_cmd_filt[i]
+
+            # Mouth movements
             for j in range(9):
                 target_cmds[j] = np.clip(target_cmds[j],0,1)
                 all_motors[j].norm_act(target_cmds[j])
+            
+            # blink 
+            if blink_count > blink_count_threshold:
+                blink_flag = True
+                blink_count = 0
+                
+
+            if blink_flag:
+                blink_seg(blink_count)
+                if blink_count == 18:
+                    blink_count = 0
+                    blink_flag = False
+                    
+
+            blink_count +=1
 
             time_used = time.time()-time0
-            time.sleep(time_interval-time_used)
+            if time_used<time_interval:
+                time.sleep(time_interval-time_used)
             time0 = time.time()
+
+            
 
     else:
         #   RECORD A VIDEO
