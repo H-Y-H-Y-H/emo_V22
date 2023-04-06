@@ -56,14 +56,14 @@ class Actuator(object):
         self.norm_v_cur = 0
 
 
-def check_lip_low(cmd_lip_down, cmd_lip_down_warp):
-    # regenerate the lip values.
-    if cmd_lip_down + cmd_lip_down_warp < 0.8:
-        cmd_lip_down_warp = np.random.uniform((0.8 - cmd_lip_down), 1)
-        print('reproduce cmd_lip_down_warp ', )
-
-    return cmd_lip_down, cmd_lip_down_warp
-
+def eyes_open():
+    for i in range(100):
+        print('eyeopen:',i)
+        l_upper_eyelid.norm_act(np.sin((i + 1) / 200  * np.pi))
+        r_upper_eyelid.norm_act(np.sin((i + 1) / 200  * np.pi))
+        l_lower_eyelid.norm_act(np.cos((i + 1) / 200  * np.pi))
+        r_lower_eyelid.norm_act(np.cos((i + 1) / 200  * np.pi))
+        time.sleep(0.01)
 
 # add value
 
@@ -86,11 +86,23 @@ l_eye_yaw = Actuator(idx_tuple=(1, 7), min_angle=60, max_angle=120, init_angle=9
 r_eye_pitch = Actuator(idx_tuple=(0, 9), min_angle=68, max_angle=98, init_angle=83)
 l_eye_pitch = Actuator(idx_tuple=(1, 6), min_angle=78, max_angle=108, init_angle=93, inverse_flag=True)
 
-r_upper_eyelid = Actuator(idx_tuple=(0, 11), min_angle=80, max_angle=153, init_angle=153, inverse_flag=True)
-l_upper_eyelid = Actuator(idx_tuple=(1, 4), min_angle=28, max_angle=100, init_angle=28)
 
-r_lower_eyelid = Actuator(idx_tuple=(0, 10), min_angle=93, max_angle=143, init_angle=143)
-l_lower_eyelid = Actuator(idx_tuple=(1, 5), min_angle=40, max_angle=95, init_angle=40, inverse_flag=True)
+start_as_closed_eyes = False
+if start_as_closed_eyes:
+    r_upper_eyelid = Actuator(idx_tuple=(0, 11), min_angle=80, max_angle=153, init_angle=153, inverse_flag=True)
+    l_upper_eyelid = Actuator(idx_tuple=(1, 4), min_angle=28, max_angle=100, init_angle=28)
+    r_lower_eyelid = Actuator(idx_tuple=(0, 10), min_angle=93, max_angle=143, init_angle=143)
+    l_lower_eyelid = Actuator(idx_tuple=(1, 5), min_angle=40, max_angle=95, init_angle=40, inverse_flag=True)
+    time.sleep(1)
+    eyes_open()
+
+else:
+    r_upper_eyelid = Actuator(idx_tuple=(0, 11), min_angle=80, max_angle=153, init_angle=80, inverse_flag=True)
+    l_upper_eyelid = Actuator(idx_tuple=(1, 4), min_angle=28, max_angle=100, init_angle=100)
+
+    r_lower_eyelid = Actuator(idx_tuple=(0, 10), min_angle=93, max_angle=143, init_angle=93)
+    l_lower_eyelid = Actuator(idx_tuple=(1, 5), min_angle=40, max_angle=95, init_angle=95, inverse_flag=True)
+
 
 r_inner_eyebrow = Actuator(idx_tuple=(0, 14), min_angle=65, max_angle=100, init_angle=85, inverse_flag=True)
 l_inner_eyebrow = Actuator(idx_tuple=(1, 1), min_angle=75, max_angle=110, init_angle=90)
@@ -116,6 +128,18 @@ else:
                   jaw,
                   r_inner_eyebrow, l_inner_eyebrow, r_outer_eyebrow, l_outer_eyebrow]
 
+def check_lip_low(cmd_lip_down, cmd_lip_down_warp):
+    # regenerate the lip values.
+    if cmd_lip_down + cmd_lip_down_warp < 0.8:
+        cmd_lip_down_warp = np.random.uniform((0.8 - cmd_lip_down), 1)
+        print('reproduce cmd_lip_down_warp ', )
+
+    return cmd_lip_down, cmd_lip_down_warp
+
+def check_lip_upper(cmd_lip_up,cmd_r_corner_up):
+    if (cmd_r_corner_up>0.7) and (cmd_lip_up<0.5):
+        cmd_lip_up = 0.5 
+    return cmd_lip_up
 
 def random_cmds(reference=None, noise=0.2, only_mouth=True):
     num_motors = len(all_motors)
@@ -132,6 +156,7 @@ def random_cmds(reference=None, noise=0.2, only_mouth=True):
     cmds_random[10] = cmds_random[9]
     cmds_random[12] = cmds_random[11]
     cmds_random[2], cmds_random[3] = check_lip_low(cmds_random[2], cmds_random[3])
+    cmds_random[0] = check_lip_upper(cmds_random[0],cmds_random[4])
 
     if only_mouth:
         cmds_random[9:] = resting_face[9:]
@@ -154,7 +179,7 @@ def move_all(target_cmds, interval=50):
         for j in range(num_motors):
             val = traj[i][j]
             all_motors[j].norm_act(val)
-        time.sleep(0.008)
+        time.sleep(0.004)
 
 
 def eyes_move_2_traget(l_point, r_point):
@@ -210,14 +235,7 @@ def eyes_lid():
         r_lower_eyelid.norm_act(0.5 * np.cos((i + 1) / 400 * 2 * np.pi + np.pi) + 0.5)
         time.sleep(0.01)
 
-def eyes_open():
-    for i in range(100):
-        print('eyeopen:',i)
-        l_upper_eyelid.norm_act(np.sin((i + 1) / 200  * np.pi))
-        r_upper_eyelid.norm_act(np.sin((i + 1) / 200  * np.pi))
-        l_lower_eyelid.norm_act(np.cos((i + 1) / 200  * np.pi))
-        r_lower_eyelid.norm_act(np.cos((i + 1) / 200  * np.pi))
-        time.sleep(0.01)
+
 
 
 def blink():
@@ -246,6 +264,13 @@ def blink_seg(ti, c = 10, n_step= 8):
         l_lower_eyelid.norm_act(1-(ti-c)/n_step)
         r_lower_eyelid.norm_act(1-(ti-c)/n_step)  
 
+def random_move():
+    scale_range = 1
+    for i in range(50):
+        target_cmds = random_cmds(reference=resting_face, noise=scale_range, only_mouth=True)
+
+        move_all(target_cmds,interval=50)
+        print(target_cmds)
 
 resting_face = [0.0,
 0.0,
@@ -273,37 +298,26 @@ if __name__ == "__main__":
 
     # Save resting face position in normed space
     np.random.seed(3)
-    eyes_open()
+    # eyes_open()
 
     resting_face = []
     for m in all_motors:
         resting_face.append(m.norm_v_cur)
         print(m.norm_v_cur)
 
-    scale_range = 1
-    # for i in range(20):
-        # target_cmds = random_cmds(reference=resting_face, noise=scale_range, only_mouth=True)
-        # target_cmds = check_lip(target_cmds)
+    lip_up.norm_act(1)
+    quit()
+    # random_move()
 
-        # move_all(target_cmds)
-        # print(target_cmds)
-        # time.sleep(1)
-
-        # print(v)
-        # lip_down_warp.act(v)
-
-        # test_v = 0.5*np.sin(i* np.pi/2 /100)+0.5
-        # test.norm_act(test_v)
-        # time.sleep(0.005)
     time_interval = 1/30
-    ID_or_CMD = 1
+    ID_or_CMD = 0
 
     if ID_or_CMD == 0:
-        load_cmd_idx = np.loadtxt('../dataset/logger(norm).csv').astype(int)
+        load_cmd_idx = np.loadtxt('../dataset/emo_logger(norm).csv').astype(int)
         load_cmd_nn = np.load('data/R_cmds_data.npy')
         load_cmd = load_cmd_nn[load_cmd_idx]
     elif ID_or_CMD ==1:
-        load_cmd = np.loadtxt('data/en_1.csv')
+        load_cmd = np.loadtxt('data/en_1_cmds.csv')
     
     load_cmd_filt = np.copy(load_cmd)
 
@@ -322,19 +336,23 @@ if __name__ == "__main__":
     #     plt.clf()
 
     # quit()
-
-
-    record = False
+    
+    record = True
     # Smooth:
+    filter_flag = True
+    window = 25
+    order = 8
+    for i in range(9):
+        load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
+    time.sleep(1)
+
+    if filter_flag:
+        load_cmd = load_cmd_filt
+
+
+
     if record == False:
-        window = 25
-        order = 8
-        for i in range(9):
-            load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
-
-        time.sleep(1)
         time0 = time.time()
-
         eyelid_traj_id = 0
         blink_count_threshold = 105
         blink_count = 0
@@ -353,14 +371,12 @@ if __name__ == "__main__":
                 blink_flag = True
                 blink_count = 0
                 
-
             if blink_flag:
                 blink_seg(blink_count)
                 if blink_count == 18:
                     blink_count = 0
                     blink_flag = False
                     
-
             blink_count +=1
 
             time_used = time.time()-time0
@@ -368,15 +384,8 @@ if __name__ == "__main__":
                 time.sleep(time_interval-time_used)
             time0 = time.time()
 
-            
-
     else:
         #   RECORD A VIDEO
-        window = 9
-        order = 3
-        for i in range(9):
-            load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
-
         from collect_data import *
         from realtime_landmark import *
 
@@ -435,15 +444,15 @@ if __name__ == "__main__":
                 #     continue
 
                 image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
-                r_lmks_logger.append(raw_lmks)
+                # r_lmks_logger.append(raw_lmks)
                 m_lmks_logger.append(m_lmks)
 
                 # SAVE
-                cv2.imwrite('../dataset/resting%d.png' % img_i, image_show)
+                cv2.imwrite('../dataset/img/%d.png' % img_i, image_show)
                 # img_i += 1
                 if img_i % 20 == 0:
-                    np.save('../dataset/resting_r_lmks.npy', np.asarray(r_lmks_logger))
-                    np.save('../dataset/resting_m_lmks.npy', np.asarray(m_lmks_logger))
+                    # np.save('../dataset/resting_r_lmks.npy', np.asarray(r_lmks_logger))
+                    np.save('../dataset/en1_m_lmks.npy', np.asarray(m_lmks_logger))
                     print(img_i, np.asarray(r_lmks_logger).shape)
 
                 # cv2.imshow('landmarks', image_show)
