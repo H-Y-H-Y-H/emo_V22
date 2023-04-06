@@ -16,9 +16,7 @@ if __name__ == "__main__":
     dataset_lmk = np.load(data_path + 'R_lmks_data.npy')
     dataset_cmd = np.load(data_path + 'R_cmds_data.npy')
 
-    # target_lmks = np.load('data/gpt_lmks/en-1.npy')
-    # target_lmks = np.load(data_path + 'm_lmks_norm.npy')
-    target_lmks = np.load(data_path + 'en1_ava_lmks.npy')
+    target_lmks = np.load(data_path + 'en1_ava_lmks(norm).npy')
 
     mode = 0
 
@@ -39,7 +37,7 @@ if __name__ == "__main__":
             # lmks[:, 1] = 1 - lmks[:, 1]
             # lmks[:, 1] -= 0.05
 
-            nn_img, best_nn_id = nearest_neighber(lmks, dataset_lmk[...,:3], add_dataset_pth, dataset_pth, only_mouth=True)
+            nn_img, best_nn_id = nearest_neighber(lmks, dataset_lmk[..., :3], add_dataset_pth, dataset_pth, only_mouth=True)
 
             # plt.scatter(lmks[:,0],lmks[:,1], label='me')
             # plt.scatter(dataset_lmk[best_nn_id,:,0],dataset_lmk[best_nn_id,:,1], label='nn_robot face')
@@ -47,7 +45,7 @@ if __name__ == "__main__":
             # plt.show()
 
             logger_id.append(best_nn_id)
-        np.savetxt('logger.csv', np.asarray(logger_id), fmt='%i')
+        np.savetxt('logger(norm).csv', np.asarray(logger_id), fmt='%i')
 
 
     elif mode == 1:

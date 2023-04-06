@@ -31,8 +31,7 @@ if __name__ == '__main__':
     # Check GPU
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
-    input_data = np.load('../data/m_lmks_norm.npy')
-    # label_data = np.load('../data/R_cmds_data.npy')[-300:]
+    input_data = np.load('../data/en1_ava_lmks(norm).npy')
 
     #
     # training_lmks = np.load('../data/R_lmks_data.npy')[0]
@@ -40,12 +39,10 @@ if __name__ == '__main__':
     # plt.scatter(input_data[14,:,0],input_data[14,:,1])
     # plt.show()
 
-
-
     chunksize = 64
     chunkperpare = [input_data[i:i+chunksize] for i in range(0,input_data.shape[0],chunksize)]
 
-    lmks2cmds(chunkperpare, log_path = "logger_IVM(sota)/en_1.csv")
+    lmks2cmds(chunkperpare, log_path = "logger_IVM(sota)/en_1_cmds.csv")
 
 
 

@@ -82,7 +82,7 @@ def image2video():
     add_dataset_pth = ['dataset_rdm_1_0', 'dataset_rdm_1_1', 'dataset_rdm_1_2', 'dataset_rdm_1_3',
                        'dataset_resting1', 'dataset_resting1(1)', 'dataset_resting1_10000']
 
-    frame_id_list = np.loadtxt('logger.csv')
+    frame_id_list = np.loadtxt('logger(norm).csv')
     for i in range(len(frame_id_list)):
         best_nn_id = frame_id_list[i]
         if best_nn_id < 6000:
@@ -105,7 +105,7 @@ def image2video():
 
     width, height = img_list[0].shape[:2]
     img_size = (height, width)
-    out = cv2.VideoWriter('/Users/yuhang/Downloads/EMO_GPTDEMO/project.mp4', fourcc, 30, img_size)
+    out = cv2.VideoWriter('/Users/yuhang/Downloads/EMO_GPTDEMO/project(norm).mp4', fourcc, 30, img_size)
 
     for i in range(len(img_list)):
         out.write(img_list[i])
