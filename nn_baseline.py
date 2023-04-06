@@ -16,7 +16,7 @@ if __name__ == "__main__":
     dataset_lmk = np.load(data_path + 'R_lmks_data.npy')
     dataset_cmd = np.load(data_path + 'R_cmds_data.npy')
 
-    target_lmks = np.load(data_path + 'en1_ava_lmks(norm).npy')
+    target_lmks = np.load(data_path + 'en1_emo_lmks(norm).npy')
 
     mode = 0
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
             # plt.show()
 
             logger_id.append(best_nn_id)
-        np.savetxt('logger(norm).csv', np.asarray(logger_id), fmt='%i')
+        np.savetxt('emo_logger.csv', np.asarray(logger_id), fmt='%i')
 
 
     elif mode == 1:

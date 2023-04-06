@@ -40,7 +40,7 @@ def norm_array_landmarks(R_static_lmks, H_static_lmks, input_lmks, k=1):
 
 
 if __name__ == '__main__':
-    input_data = np.load('data/en1_ava_lmks.npy')
+    input_data = np.load('data/en1_emo_lmks.npy')
     R_static_lmks = np.load('robo_norm/resting_m_lmks.npy')
     label_data = np.load('data/R_cmds_data.npy')
     resting_face_cmd = [0.0, 0.0, 0.8064516129032258, 0.8333333333333334, 0.42857142857142855,
@@ -49,7 +49,9 @@ if __name__ == '__main__':
 
     H_static_id = 0
     H_static = input_data[H_static_id]
+    # plt.scatter(H_static[:,0], H_static[:,1])
+    # plt.show()
 
     output_d = norm_array_landmarks(R_static_lmks[0], H_static, input_data)
 
-    np.save('data/en1_ava_lmks(norm).npy', output_d)
+    np.save('data/en1_emo_lmks(norm).npy', output_d)

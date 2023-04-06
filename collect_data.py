@@ -156,7 +156,7 @@ if __name__ == "__main__":
     np.random.seed(2023)
     os.makedirs('../data/img',exist_ok= True)
 
-    video_source = "data/en1-ava-synced.mp4"
+    video_source = "data/en1-emo-synced.mp4"
     mode = 1
     if mode == 0:
         from servo_m import *
@@ -299,6 +299,6 @@ if __name__ == "__main__":
                 cv2.imshow('landmarks', image_show)
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
-            np.save('data/en1_ava_lmks.npy', m_lmks_logger)
+            np.save('data/en1_emo_lmks.npy', m_lmks_logger)
 
         cap.release()
