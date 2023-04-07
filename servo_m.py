@@ -305,34 +305,34 @@ if __name__ == "__main__":
         resting_face.append(m.norm_v_cur)
         print(m.norm_v_cur)
 
-    lip_up.norm_act(1)
-    quit()
+    # lip_up.norm_act(1)
+    # quit()
     # random_move()
 
     time_interval = 1/30
     ID_or_CMD = 0
 
     if ID_or_CMD == 0:
-        load_cmd_idx = np.loadtxt('../dataset/emo_logger(norm).csv').astype(int)
+        load_cmd_idx = np.loadtxt('../dataset/logger.csv').astype(int)
         load_cmd_nn = np.load('data/R_cmds_data.npy')
         load_cmd = load_cmd_nn[load_cmd_idx]
     elif ID_or_CMD ==1:
         load_cmd = np.loadtxt('data/en_1_cmds.csv')
-    
     load_cmd_filt = np.copy(load_cmd)
 
+    # visualize commands
     # load_cmd_ori = np.copy(load_cmd)
-    # for j in range(2,5):
+    # for j in range(1):
     #     fig, axs = plt.subplots(9)
     #     fig.suptitle('motor command plots')
     #     for i in range(9):
-    #         window = 8*j+1
-    #         order = 8
+    #         window = 7
+    #         order = 2
     #         load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
     #         axs[i].plot(list(range(len(load_cmd_ori[:,i]))),load_cmd_ori[:,i],label='raw')
     #         axs[i].plot(list(range(len(load_cmd_filt[:,i]))),load_cmd_filt[:,i],label='filtered')
     #     plt.legend()
-    #     plt.savefig('../savgol_%d_%d'%(window,order))
+    #     plt.savefig('../signal_processing_plots/savgol_%d_%d'%(window,order))
     #     plt.clf()
 
     # quit()
@@ -340,8 +340,8 @@ if __name__ == "__main__":
     record = True
     # Smooth:
     filter_flag = True
-    window = 25
-    order = 8
+    window = 7
+    order = 2
     for i in range(9):
         load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
     time.sleep(1)
@@ -359,7 +359,7 @@ if __name__ == "__main__":
         blink_flag = False
         for i in range(len(load_cmd)):
             print(i)
-            target_cmds = load_cmd_filt[i]
+            target_cmds = load_cmd[i]
 
             # Mouth movements
             for j in range(9):
@@ -385,11 +385,12 @@ if __name__ == "__main__":
             time0 = time.time()
 
     else:
+        print('record mode')
         #   RECORD A VIDEO
         from collect_data import *
         from realtime_landmark import *
 
-        cap = VideoCapture(4)
+        cap = VideoCapture(8)
 
         # get cap property
         frame_width = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
@@ -431,9 +432,9 @@ if __name__ == "__main__":
                 target_cmds = load_cmd[i]
 
                 # execute the commands:
-                # for j in range(9):
-                #     target_cmds[j] = np.clip(target_cmds[j],0,1)
-                #     all_motors[j].norm_act(target_cmds[j])
+                for j in range(9):
+                    target_cmds[j] = np.clip(target_cmds[j],0,1)
+                    all_motors[j].norm_act(target_cmds[j])
 
                 time.sleep(0.03)
 
@@ -449,17 +450,15 @@ if __name__ == "__main__":
 
                 # SAVE
                 cv2.imwrite('../dataset/img/%d.png' % img_i, image_show)
-                # img_i += 1
-                if img_i % 20 == 0:
+                img_i += 1
+                # if img_i % 20 == 0:
                     # np.save('../dataset/resting_r_lmks.npy', np.asarray(r_lmks_logger))
-                    np.save('../dataset/en1_m_lmks.npy', np.asarray(m_lmks_logger))
-                    print(img_i, np.asarray(r_lmks_logger).shape)
 
                 # cv2.imshow('landmarks', image_show)
-                break
+
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
-
+            np.save('../dataset/en1_m_lmks.npy', np.asarray(m_lmks_logger))
         cap.cap.release()
 
 # Record
