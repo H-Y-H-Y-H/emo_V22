@@ -183,9 +183,9 @@ def render_img(image,face_mesh,pcf):
                 .get_default_face_mesh_contours_style())
 
     image_up = cv2.hconcat([image, image_original])
-    # image_dn = cv2.hconcat([black_img_metric, black_img_rot])
+    image_dn = cv2.hconcat([black_img_metric, black_img_rot])
 
-    # image_show = cv2.vconcat([image_up, image_dn])
+    image_show = cv2.vconcat([image_up, image_dn])
 
     return image_show, raw_lmks, m_landmarks
 
@@ -273,7 +273,7 @@ if __name__ == "__main__":
 
             image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
 
-            nn_img, best_nn_id = nearest_neighber(m_lmks, dataset, add_dataset_pth, dataset_pth)
+            nn_img, best_nn_id = nearest_neighber(m_lmks, dataset, add_dataset_pth, dataset_pth,only_mouth=False)
             selct_lmks = dataset[best_nn_id]
 
             # plt.scatter(selct_lmks[:, 0], selct_lmks[:, 1])

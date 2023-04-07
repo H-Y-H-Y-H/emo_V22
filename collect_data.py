@@ -2,34 +2,35 @@ from realtime_landmark import *
 
 import queue, threading, time, os
 
+
 # bufferless VideoCapture
 class VideoCapture:
 
-  def __init__(self, name):
-    self.cap = cv2.VideoCapture(name)
-    self.q = queue.Queue()
-    t = threading.Thread(target=self._reader)
-    t.daemon = True
-    t.start()
+    def __init__(self, name):
+        self.cap = cv2.VideoCapture(name)
+        self.q = queue.Queue()
+        t = threading.Thread(target=self._reader)
+        t.daemon = True
+        t.start()
 
-  # read frames as soon as they are available, keeping only most recent one
-  def _reader(self):
-    while True:
-      ret, frame = self.cap.read()
-      if not ret:
-        break
-      if not self.q.empty():
-        try:
-          self.q.get_nowait()   # discard previous (unprocessed) frame
-        except queue.Empty:
-          pass
-      self.q.put(frame)
+    # read frames as soon as they are available, keeping only most recent one
+    def _reader(self):
+        while True:
+            ret, frame = self.cap.read()
+            if not ret:
+                break
+            if not self.q.empty():
+                try:
+                    self.q.get_nowait()  # discard previous (unprocessed) frame
+                except queue.Empty:
+                    pass
+            self.q.put(frame)
 
-  def read(self):
-    return self.q.get()
+    def read(self):
+        return self.q.get()
 
 
-def render_img(image,face_mesh,pcf):
+def render_img(image, face_mesh, pcf):
     image_original = np.copy(image)
     black_img = np.zeros(image_original.shape, dtype="uint8")
     black_img_rot = np.zeros(image_original.shape, dtype="uint8")
@@ -48,7 +49,7 @@ def render_img(image,face_mesh,pcf):
         for face_landmarks in results.multi_face_landmarks:
             landmarks = np.array([(lm.x, lm.y, lm.z) for lm in face_landmarks.landmark])
             raw_lmks = np.copy(landmarks)
-                
+
             # overlay landmarks on original image
             mp_drawing.draw_landmarks(
                 image=image_original,
@@ -56,21 +57,21 @@ def render_img(image,face_mesh,pcf):
                 connections=mp_face_mesh.FACEMESH_TESSELATION,
                 landmark_drawing_spec=None,
                 connection_drawing_spec=mp_drawing_styles
-                    .get_default_face_mesh_tesselation_style())
+                .get_default_face_mesh_tesselation_style())
             mp_drawing.draw_landmarks(
                 image=image_original,
                 landmark_list=face_landmarks,
                 connections=mp_face_mesh.FACEMESH_CONTOURS,
                 landmark_drawing_spec=None,
                 connection_drawing_spec=mp_drawing_styles
-                    .get_default_face_mesh_contours_style())
+                .get_default_face_mesh_contours_style())
             mp_drawing.draw_landmarks(
                 image=image_original,
                 landmark_list=face_landmarks,
                 connections=mp_face_mesh.FACEMESH_IRISES,
                 landmark_drawing_spec=None,
                 connection_drawing_spec=mp_drawing_styles
-                    .get_default_face_mesh_iris_connections_style())
+                .get_default_face_mesh_iris_connections_style())
 
             # get metric landmarks
             landmarks_face_mesh = landmarks.copy()
@@ -98,14 +99,14 @@ def render_img(image,face_mesh,pcf):
                 connections=mp_face_mesh.FACEMESH_TESSELATION,
                 landmark_drawing_spec=None,
                 connection_drawing_spec=mp_drawing_styles
-                    .get_default_face_mesh_tesselation_style())
+                .get_default_face_mesh_tesselation_style())
             mp_drawing.draw_landmarks(
                 image=black_img_metric,
                 landmark_list=face_landmarks,
                 connections=mp_face_mesh.FACEMESH_CONTOURS,
                 landmark_drawing_spec=None,
                 connection_drawing_spec=mp_drawing_styles
-                    .get_default_face_mesh_contours_style())
+                .get_default_face_mesh_contours_style())
 
             m_landmarks = np.array([(lm.x, lm.y, lm.z) for lm in face_landmarks.landmark])
 
@@ -135,14 +136,14 @@ def render_img(image,face_mesh,pcf):
                 connections=mp_face_mesh.FACEMESH_TESSELATION,
                 landmark_drawing_spec=None,
                 connection_drawing_spec=mp_drawing_styles
-                    .get_default_face_mesh_tesselation_style())
+                .get_default_face_mesh_tesselation_style())
             mp_drawing.draw_landmarks(
                 image=black_img_rot,
                 landmark_list=face_landmarks,
                 connections=mp_face_mesh.FACEMESH_CONTOURS,
                 landmark_drawing_spec=None,
                 connection_drawing_spec=mp_drawing_styles
-                    .get_default_face_mesh_contours_style())
+                .get_default_face_mesh_contours_style())
 
     image_up = cv2.hconcat([image, image_original])
     image_dn = cv2.hconcat([black_img_metric, black_img_rot])
@@ -154,12 +155,13 @@ def render_img(image,face_mesh,pcf):
 
 if __name__ == "__main__":
     np.random.seed(2023)
-    os.makedirs('../data/img',exist_ok= True)
+    os.makedirs('../data/img', exist_ok=True)
 
     video_source = "data/en1-emo-synced.mp4"
     mode = 1
     if mode == 0:
         from servo_m import *
+
         cap = VideoCapture(5)
 
         # get cap property
@@ -228,7 +230,7 @@ if __name__ == "__main__":
                     #     # If loading a video, use 'break' instead of 'continue'.
                     #     continue
 
-                    image_show, raw_lmks, m_lmks = render_img(image,face_mesh,pcf)
+                    image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
                     r_lmks_logger.append(raw_lmks)
                     m_lmks_logger.append(m_lmks)
                     action_logger.append(traj[i])
@@ -251,9 +253,9 @@ if __name__ == "__main__":
 
         cap.cap.release()
 
-    elif mode ==1:
+    elif mode == 1:
         cap = cv2.VideoCapture(video_source)
-
+        cap.set(cv2.CAP_PROP_FPS, 30)
         # get cap property
         frame_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
         frame_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -286,17 +288,24 @@ if __name__ == "__main__":
                 refine_landmarks=True,
                 min_detection_confidence=0.5,
                 min_tracking_confidence=0.5) as face_mesh:
+            m_lmks = 0
+            raw_lmks = 0
+            image_show = 0
+
+            count = 0
             while cap.isOpened():
                 ret, image = cap.read()
                 if not ret:
                     print("Can't receive frame (stream end?). Exiting ...")
                     break
 
-                image_show, raw_lmks, m_lmks = render_img(image,face_mesh,pcf)
+                image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
                 r_lmks_logger.append(raw_lmks)
                 m_lmks_logger.append(m_lmks)
 
                 cv2.imshow('landmarks', image_show)
+                print(count)
+                count+=1
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
             np.save('data/en1_emo_lmks.npy', m_lmks_logger)

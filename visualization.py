@@ -25,54 +25,59 @@ frame_id_list = np.loadtxt('logger.csv')
 
 
 def two_lmks_compare():
-    me_lmks = np.load('data/en1_ava_lmks.npy')
-    # robo_lmks = np.load("/Users/yuhang/Downloads/EMO_GPTDEMO/m_lmks.npy")
+    target_lmks0 = np.load('data/en1_ava_lmks.npy')
+    target_lmks = np.load("/Users/yuhang/Downloads/EMO_GPTDEMO/real_robot(no_norm_fileter7-2)/en1_m_lmks.npy")
     robo_lmks = np.load("data/R_lmks_data.npy")
-    log_pth = '/Users/yuhang/Downloads/EMO_GPTDEMO/en1_ava_VS_NN'
+    log_pth = '/Users/yuhang/Downloads/EMO_GPTDEMO/real_robot(no_norm_fileter7-2)'
     os.makedirs(log_pth,exist_ok=True)
-    for i in range(len(me_lmks)):
+    for i in range(len(target_lmks)):
         print(i)
-        draw_lmks(me_lmks[i], label_lmk='me')
+        draw_lmks(target_lmks[i], label_lmk='real robot using synced ava audio')
 
         robo_lmks_id = frame_id_list[i]
 
-        draw_lmks(robo_lmks[int(robo_lmks_id)], label_lmk='nn')
+        # draw_lmks(robo_lmks[int(robo_lmks_id)], label_lmk='picked from robodata closest to ava synced lmks')
+        draw_lmks(target_lmks0[i], label_lmk='ava synced lmks')
+
         plt.legend()
         plt.savefig(log_pth+'/%d.png' % i)
         plt.clf()
 
 
-# two_lmks_compare()
+two_lmks_compare()
 
 
 def combine_img():
-    R_data = "/Users/yuhang/Downloads/EMO_GPTDEMO/img/"
-    data2lmks = "/Users/yuhang/Downloads/EMO_GPTDEMO/en1_ava_VS_NN/"
+    dataPath = "/Users/yuhang/Downloads/EMO_GPTDEMO/"
+    R_data = dataPath + "real_robot(no_norm_fileter7-2)/img/"
+    data2lmks = dataPath + "real_robot(no_norm_fileter7-2)/"
     fourcc = cv2.VideoWriter_fourcc(*'MP4V')
     img_list = []
-    for i in range(300):
+    length = len(np.load(dataPath+'en1_m_lmks.npy'))
+    print(length)
+    for i in range(length):
         img_i = plt.imread(R_data + '%d.png' % i)
         img_i2 = plt.imread(data2lmks + '%d.png' % i)[..., :3]
 
         height, width, layers = img_i2.shape
         empty_img = np.zeros((height, width, layers))
 
-        out_img = np.vstack((img_i2, empty_img))
-        out_img = np.hstack((img_i, out_img))
+        out_img = np.hstack((img_i2, empty_img))
+        out_img = np.vstack((img_i, out_img))
         out_img = np.uint8(out_img * 255)
         out_img = cv2.cvtColor(out_img, cv2.COLOR_RGB2BGR)
         img_list.append(out_img)
 
     width, height = img_list[0].shape[:2]
     img_size = (height, width)
-    out = cv2.VideoWriter('/Users/yuhang/Downloads/EMO_GPTDEMO/project_raw.mp4', fourcc, 30, img_size)
+    out = cv2.VideoWriter('/Users/yuhang/Downloads/EMO_GPTDEMO/real_robot(no_norm_fileter7-2).mp4', fourcc, 30, img_size)
 
     for i in range(len(img_list)):
         out.write(img_list[i])
     out.release()
 
 
-# combine_img()
+combine_img()
 
 
 def image2video():
@@ -111,4 +116,4 @@ def image2video():
         out.write(img_list[i])
     out.release()
 
-image2video()
+# image2video()
