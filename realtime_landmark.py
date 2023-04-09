@@ -1,5 +1,5 @@
 import os
-
+from smooth import *
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
@@ -226,14 +226,19 @@ def nearest_neighber(lmks,dataset,add_dataset_pth,dataset_pth,only_mouth = False
 if __name__ == "__main__":
 
     cap = VideoCapture(0)
+    SMOOTH_FLAG = True
 
     dataset_pth = '/Users/yuhang/Downloads/dataset1000_RF/'
     # dataset_pth = '../dataset/'
     dataset = []
     add_dataset_pth = ['dataset_rdm_1_0', 'dataset_rdm_1_1', 'dataset_rdm_1_2', 'dataset_rdm_1_3',
                        'dataset_resting1', 'dataset_resting1(1)','dataset_resting1_10000']
+
+
     for i in range(len(add_dataset_pth)):
         add_d = np.load(dataset_pth + add_dataset_pth[i] + '/m_lmks.npy')
+        if SMOOTH_FLAG:
+            add_d = smooth_lmks(add_d)
         dataset.append(add_d)
     dataset = np.concatenate(dataset, axis=0)
 
@@ -273,7 +278,7 @@ if __name__ == "__main__":
 
             image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
 
-            nn_img, best_nn_id = nearest_neighber(m_lmks, dataset, add_dataset_pth, dataset_pth,only_mouth=False)
+            nn_img, best_nn_id = nearest_neighber(m_lmks, dataset, add_dataset_pth, dataset_pth, only_mouth=True)
             selct_lmks = dataset[best_nn_id]
 
             # plt.scatter(selct_lmks[:, 0], selct_lmks[:, 1])
