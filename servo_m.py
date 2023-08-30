@@ -2,7 +2,8 @@ from adafruit_servokit import ServoKit
 import numpy as np
 import random
 import time
-
+import board
+# i2c = board.I2C()
 ########################################
 ################# Face #################
 ########################################
@@ -67,24 +68,38 @@ def eyes_open():
 
 # add value
 
-lip_up = Actuator(idx_tuple=(0, 0), min_angle=70, max_angle=103, init_angle=103, inverse_flag=True)
-lip_up_warp = Actuator(idx_tuple=(0, 1), min_angle=70, max_angle=100, init_angle=70)
+lip_up = Actuator(idx_tuple=(0, 0), min_angle=70, max_angle=110, init_angle=100, inverse_flag=True)
+lip_up_warp = Actuator(idx_tuple=(0, 1), min_angle=60, max_angle=115, init_angle=60)
 
-lip_down = Actuator(idx_tuple=(0, 4), min_angle=65, max_angle=96, init_angle=90)
-lip_down_warp = Actuator(idx_tuple=(0, 5), min_angle=100, max_angle=130, init_angle=105, inverse_flag=True)
+# lip_down = Actuator(idx_tuple=(0, 4), min_angle=90, max_angle=125, init_angle=100)
+# lip_down_warp = Actuator(idx_tuple=(0, 5), min_angle=90, max_angle=110, init_angle=90, inverse_flag=True)
 #  lip_down_warp_cmds = np.random.uniform((0.8-lip_down_cmds),1)
+lip_down = Actuator(idx_tuple=(1, 11), min_angle=80, max_angle=125, init_angle=100, inverse_flag=True)
+# lip_down.norm_act(0)
 
-r_corner_up = Actuator(idx_tuple=(0, 2), min_angle=40, max_angle=110, init_angle=70)
-l_corner_up = Actuator(idx_tuple=(0, 7), min_angle=20, max_angle=90, init_angle=60, inverse_flag=1)
 
-r_corner_low = Actuator(idx_tuple=(0, 3), min_angle=20, max_angle=68, init_angle=62)
-l_corner_low = Actuator(idx_tuple=(0, 6), min_angle=122, max_angle=170, init_angle=128, inverse_flag=1)
+
+
+r_corner_up = Actuator(idx_tuple=(0, 2), min_angle=40, max_angle=110, init_angle=60)
+l_corner_up = Actuator(idx_tuple=(0, 7), min_angle=20, max_angle=90, init_angle=65, inverse_flag=1)
+
+r_corner_low = Actuator(idx_tuple=(0, 3), min_angle=20, max_angle=98, init_angle=62)
+l_corner_low = Actuator(idx_tuple=(0, 6), min_angle=85, max_angle=165, init_angle=128, inverse_flag=1)
 
 r_eye_yaw = Actuator(idx_tuple=(0, 8), min_angle=65, max_angle=125, init_angle=95)
 l_eye_yaw = Actuator(idx_tuple=(1, 7), min_angle=60, max_angle=120, init_angle=90)
 
 r_eye_pitch = Actuator(idx_tuple=(0, 9), min_angle=68, max_angle=98, init_angle=83)
 l_eye_pitch = Actuator(idx_tuple=(1, 6), min_angle=78, max_angle=108, init_angle=93, inverse_flag=True)
+
+# lip_up.norm_act(0.4)
+# lip_up_warp.norm_act(1)
+# l_corner_up.norm_act(0.4)
+# r_corner_up.norm_act(0.4)
+# l_corner_low.norm_act(1)
+# r_corner_low.norm_act(1)
+# lip_down_warp.norm_act(0)
+# lip_down.norm_act(0.8)
 
 
 start_as_closed_eyes = False
@@ -113,33 +128,62 @@ l_outer_eyebrow = Actuator(idx_tuple=(1, 0), min_angle=60, max_angle=105, init_a
 jaw = Actuator(idx_tuple=(1, 15), min_angle=40, max_angle=90, init_angle=90)
 
 neck_mode = False
-neck_yaw = Actuator(idx_tuple=(1, 14), min_angle=20, max_angle=160, init_angle=85)
 
 if neck_mode == True:
+    neck_yaw = Actuator(idx_tuple=(1, 14), min_angle=20, max_angle=160, init_angle=85)
+
     neck_roll = Actuator(idx_tuple=(1, 13), min_angle=90, max_angle=120, init_angle=105)
     neck_pitch = Actuator(idx_tuple=(1, 12), min_angle=20, max_angle=60, init_angle=40, inverse_flag=1)
-    all_motors = [lip_up, lip_up_warp, lip_down, lip_down_warp, r_corner_up, l_corner_up, r_corner_low, l_corner_low,
+    all_motors = [lip_up, lip_up_warp, lip_down, r_corner_up, l_corner_up, r_corner_low, l_corner_low,
                   jaw,
                   r_inner_eyebrow, l_inner_eyebrow, r_outer_eyebrow, l_outer_eyebrow,
                   neck_roll, neck_pitch, neck_yaw]
 else:
-    all_motors = [lip_up, lip_up_warp, lip_down, lip_down_warp,
+    all_motors = [lip_up, lip_up_warp, lip_down,
                   r_corner_up, l_corner_up, r_corner_low, l_corner_low,
                   jaw,
                   r_inner_eyebrow, l_inner_eyebrow, r_outer_eyebrow, l_outer_eyebrow]
 
-def check_lip_low(cmd_lip_down, cmd_lip_down_warp):
-    # regenerate the lip values.
-    if cmd_lip_down + cmd_lip_down_warp < 0.8:
-        cmd_lip_down_warp = np.random.uniform((0.8 - cmd_lip_down), 1)
-        print('reproduce cmd_lip_down_warp ', )
+# def check_lip_low(cmd_lip_down, cmd_lip_down_warp):
+#     # regenerate the lip values.
+#     if cmd_lip_down + cmd_lip_down_warp < 0.8:
+#         cmd_lip_down_warp = np.random.uniform((0.8 - cmd_lip_down), 1)
+#         print('reproduce cmd_lip_down_warp ', )
 
-    return cmd_lip_down, cmd_lip_down_warp
+    # return cmd_lip_down, cmd_lip_down_warp
 
-def check_lip_upper(cmd_lip_up,cmd_r_corner_up):
-    if (cmd_r_corner_up>0.7) and (cmd_lip_up<0.5):
-        cmd_lip_up = 0.5 
-    return cmd_lip_up
+
+
+def check_lip_upper(cmd_lip_up,cmd_lip_up_warp, cmd_corner_up,cmd_corner_low):
+    # Abnormality 1:
+    if (cmd_corner_up>0.7) and (cmd_lip_up<0.5):
+        # print("ABNORMALITY")
+        cmd_lip_up = random.uniform(0.5,1)
+    
+    # Abnormality 2:
+    if (cmd_corner_up<0.3) and (cmd_lip_up<0.1):
+        cmd_lip_up = random.uniform(0.5,1)
+        cmd_lip_up_warp = random.uniform(0.5,1)
+    
+    # Abnormality 3:
+    if (cmd_lip_up > 0.6) and (cmd_lip_up_warp > 0.5): 
+        cmd_lip_up_warp *= 0.4
+
+    # Abnormality 4:
+    if (cmd_corner_up<0.3 ) and (cmd_corner_low>0.8):
+        cmd_lip_up = random.uniform(0.9,1)
+        cmd_lip_up_warp = random.uniform(0.4,0.5)
+
+    return cmd_lip_up, cmd_lip_up_warp
+
+# def check_lip_upper2(lip_up, lip_up_warp):
+
+# if low lip corner is very high and up lip corner is very low,
+# def check_lip_upper3(cmd_lip_up, cmd_r_corner_low):
+#     if cmd_r_corner_low - cmd_lip_up>0.9:
+#         cmd_r_corner_up *=0.6
+#     return cmd_r_corner_up
+
 
 def random_cmds(reference=None, noise=0.2, only_mouth=True):
     num_motors = len(all_motors)
@@ -149,19 +193,24 @@ def random_cmds(reference=None, noise=0.2, only_mouth=True):
     else:
         # Generate random movement and check lower lips
         cmds_random = np.random.sample(num_motors)
+    cmds_random = np.clip(cmds_random, 0, 1)
+
+    # cmds_random = [1. , 1 ,0.68233284, 0.53335575, 0.53335575, 0.0, 0.0, 0.37913007, 0.42857, 0.42857, 0.66667, 0.66667]
 
     # Symmetrize
-    cmds_random[5] = cmds_random[4]
-    cmds_random[7] = cmds_random[6]
-    cmds_random[10] = cmds_random[9]
-    cmds_random[12] = cmds_random[11]
-    cmds_random[2], cmds_random[3] = check_lip_low(cmds_random[2], cmds_random[3])
-    cmds_random[0] = check_lip_upper(cmds_random[0],cmds_random[4])
+    cmds_random[4] = cmds_random[3]
+    cmds_random[6] = cmds_random[5]
+    cmds_random[9] = cmds_random[8]
+    cmds_random[11] = cmds_random[10]
+    # cmds_random[2], cmds_random[3] = check_lip_low(cmds_random[2], cmds_random[3])
+    cmds_random[0],cmds_random[1] = check_lip_upper(cmds_random[0],cmds_random[1],cmds_random[3],cmds_random[5])
+
+
 
     if only_mouth:
-        cmds_random[9:] = resting_face[9:]
+        cmds_random[8:] = resting_face[8:]
 
-    cmds_random = np.clip(cmds_random, 0, 1)
+    
 
     return cmds_random
 
@@ -201,25 +250,15 @@ def eyes_move_2_traget(l_point, r_point):
     l_eye_pitch.norm_act(l_loc_p)
     r_eye_pitch.norm_act(r_loc_p)
 
-    # print(l_loc, r_loc)
-    # r_eye_yaw.norm_act(0.5*np.sin((i+1)/400 * 2*np.pi)+0.5)
-    # l_eye_yaw.norm_act(0.5*np.sin((i+1)/400 * 2*np.pi)+0.5)
-
-    # l_eye_pitch.norm_act(0.5*np.sin((i+1)/400 * 2*np.pi)+0.5)
-    # r_eye_pitch.norm_act(0.5*np.sin((i+1)/400 * 2*np.pi)+0.5)
-    # time.sleep(0.01)
-
-
 def control_face():
     cmd_lip_up = 1
     cmd_lip_up_warp = 1
     cmd_lip_down = 0.1
-    cmd_lip_down_warp = 0
     cmd_r_corner_up = 0.5
     cmd_r_corner_low = 0.9
     jaw = 0.7
 
-    target_cmds = [cmd_lip_up, cmd_lip_up_warp, cmd_lip_down, cmd_lip_down_warp, cmd_r_corner_up, cmd_r_corner_up,
+    target_cmds = [cmd_lip_up, cmd_lip_up_warp, cmd_lip_down, cmd_r_corner_up, cmd_r_corner_up,
                    cmd_r_corner_low, cmd_r_corner_low, jaw] + [0.4286, 0.4286, 0.6667, 0.6667]
 
     target_cmds = random_cmds(reference=target_cmds, noise=0.2, only_mouth=True)
@@ -234,8 +273,6 @@ def eyes_lid():
         l_lower_eyelid.norm_act(0.5 * np.cos((i + 1) / 400 * 2 * np.pi + np.pi) + 0.5)
         r_lower_eyelid.norm_act(0.5 * np.cos((i + 1) / 400 * 2 * np.pi + np.pi) + 0.5)
         time.sleep(0.01)
-
-
 
 
 def blink():
@@ -264,36 +301,27 @@ def blink_seg(ti, c = 10, n_step= 8):
         l_lower_eyelid.norm_act(1-(ti-c)/n_step)
         r_lower_eyelid.norm_act(1-(ti-c)/n_step)  
 
-def random_move():
-    scale_range = 1
+def random_move(restf, scale_range = 0.1):
     for i in range(50):
-        target_cmds = random_cmds(reference=resting_face, noise=scale_range, only_mouth=True)
+        print(i)
+        target_cmds = random_cmds(reference=restf, noise=scale_range, only_mouth=True)
+        # target_cmds[2] = 1
+        # if i<49: continue
 
-        move_all(target_cmds,interval=50)
         print(target_cmds)
+        move_all(target_cmds,interval=50)
+        time.sleep(0.5)
 
-resting_face = [0.0,
-0.0,
-0.8064516129032258,
-0.8333333333333334,
-0.42857142857142855,
-0.4285714285714286,
-0.875,
-0.875,
-1.0,
-0.4285714285714286,
-0.42857142857142855,
-0.6666666666666666,
-0.6666666666666667]
+resting_face = [0.0, 0.0, 0.5, 0.42857, 0.5, 0.875, 0.875, 1.0, 0.42857, 0.42857, 0.66667, 0.66667]
 
-smile_face = [0.5, 0, 1, 1, 1, 1, 0.6, 0.6, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
-upper_teeth = [1, 0, 0.1, 0, 0.5, 0.5, 0.9, 0.9, 0.7, 0.4286, 0.4286, 0.6667, 0.6667]
-lower_teeth = [0.1, 0.1, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
-pout_face = [0.5, 1, 1, 0.0, 0.1, 0.1, 1, 1, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
+smile_face = [0.5, 0, 1,  1, 1, 0.6, 0.6, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
 
-combin_face = [resting_face,smile_face,upper_teeth]
+pout_face = [0., 1, 0.8, 0.4, 0.4, 0.8, 0.8, 1.0, 0.42857, 0.42857, 0.66667, 0.66667]
+
+# combin_face = [resting_face,smile_face,upper_teeth]
 from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
+
 if __name__ == "__main__":
 
     # Save resting face position in normed space
@@ -302,18 +330,21 @@ if __name__ == "__main__":
 
     resting_face = []
     for m in all_motors:
-        resting_face.append(m.norm_v_cur)
-        print(m.norm_v_cur)
+        resting_face.append(round(m.norm_v_cur,5))
+    print(resting_face)
 
     # lip_up.norm_act(1)
     # quit()
-    # random_move()
+    scale = 0.5
+    random_move(resting_face,scale)
+
+    quit()
 
     time_interval = 1/30
     ID_or_CMD = 0
 
     if ID_or_CMD == 0:
-        load_cmd_idx = np.loadtxt('../dataset/logger.csv').astype(int)
+        load_cmd_idx = np.loadtxt('../dataset/emo_logger_smooth.csv').astype(int)
         load_cmd_nn = np.load('data/R_cmds_data.npy')
         load_cmd = load_cmd_nn[load_cmd_idx]
     elif ID_or_CMD ==1:
@@ -335,21 +366,17 @@ if __name__ == "__main__":
     #     plt.savefig('../signal_processing_plots/savgol_%d_%d'%(window,order))
     #     plt.clf()
 
-    # quit()
-    
-    record = True
+    record = False
     # Smooth:
     filter_flag = True
-    window = 7
-    order = 2
+    window = 7 #13
+    order = 2 #3
     for i in range(9):
         load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
     time.sleep(1)
 
     if filter_flag:
         load_cmd = load_cmd_filt
-
-
 
     if record == False:
         time0 = time.time()
@@ -390,7 +417,7 @@ if __name__ == "__main__":
         from collect_data import *
         from realtime_landmark import *
 
-        cap = VideoCapture(8)
+        cap = VideoCapture(4)
 
         # get cap property
         frame_width = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
