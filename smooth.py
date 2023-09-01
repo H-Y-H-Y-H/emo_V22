@@ -1,14 +1,6 @@
 from visualization import *
-from scipy.signal import savgol_filter
 
 
-
-def smooth_lmks(lmks_list,window = 7, order = 2):
-
-    for j in range(len(lmks_list[0])):
-        for i in range(2):
-            lmks_list[:, j, i] = savgol_filter(lmks_list[:,j,i], window, order)
-    return lmks_list
 
 
 def folder_frames2video(dir_pth):

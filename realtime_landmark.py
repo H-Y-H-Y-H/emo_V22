@@ -190,7 +190,6 @@ def render_img(image,face_mesh,pcf):
     return image_show, raw_lmks, m_landmarks
 
 
-
 lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
             81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
 inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
@@ -226,7 +225,7 @@ def nearest_neighber(lmks,dataset,add_dataset_pth,dataset_pth,only_mouth = False
 if __name__ == "__main__":
 
     cap = VideoCapture(0)
-    SMOOTH_FLAG = True
+    SMOOTH_FLAG = False
 
     dataset_pth = '/Users/yuhang/Downloads/dataset1000_RF/'
     # dataset_pth = '../dataset/'

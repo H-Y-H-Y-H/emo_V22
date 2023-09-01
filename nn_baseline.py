@@ -12,16 +12,13 @@ if __name__ == "__main__":
     add_dataset_pth = ['dataset_rdm_1_0', 'dataset_rdm_1_1', 'dataset_rdm_1_2', 'dataset_rdm_1_3',
                        'dataset_resting1', 'dataset_resting1(1)','dataset_resting1_10000']
 
-
     dataset_lmk = np.load(data_path + 'R_lmks_data.npy')
     dataset_cmd = np.load(data_path + 'R_cmds_data.npy')
-
     target_lmks = np.load(data_path + 'en1_emo_lmks.npy')
 
     #####  SMOOTH LANDMARKS)
     target_lmks = smooth_lmks(target_lmks)
     dataset_lmk = smooth_lmks(dataset_lmk)
-
 
     mode = 0
 

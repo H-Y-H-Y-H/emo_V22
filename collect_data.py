@@ -155,17 +155,16 @@ def render_img(image, face_mesh, pcf):
 
 if __name__ == "__main__":
     np.random.seed(2023)
-    save_data_pth = "../data0830/"
-    os.makedirs(save_data_pth, exist_ok=True)
-    os.makedirs(save_data_pth+'img/', exist_ok=True)
 
-    video_source = "data/en1-emo-synced.mp4"
-    mode = 0
+    mode = 1
 
 
-    # Collect babbling data:
+    # Collect robot babbling data:
     if mode == 0:
         from servo_m import *
+        save_data_pth = "../data0830/"
+        os.makedirs(save_data_pth, exist_ok=True)
+        os.makedirs(save_data_pth+'img/', exist_ok=True)
 
         cap = VideoCapture(5)
 
@@ -259,7 +258,12 @@ if __name__ == "__main__":
 
         cap.cap.release()
 
+    # Collect landmarks from a video
     elif mode == 1:
+
+        # video_source = "data/en1-emo-synced.mp4"
+        video_source = '/Users/yuhang/Downloads/EMO_GPTDEMO/new/natural_babbling-synced.mp4'
+
         cap = cv2.VideoCapture(video_source)
         cap.set(cv2.CAP_PROP_FPS, 30)
         # get cap property
@@ -314,6 +318,6 @@ if __name__ == "__main__":
                 count+=1
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
-            np.save('data/en1_emo_lmks.npy', m_lmks_logger)
+            np.save('data/en1_emo_purple_lmks.npy', m_lmks_logger)
 
         cap.release()
