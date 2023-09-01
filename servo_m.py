@@ -68,8 +68,8 @@ def eyes_open():
 
 # add value
 
-lip_up = Actuator(idx_tuple=(0, 0), min_angle=70, max_angle=110, init_angle=100, inverse_flag=True)
-lip_up_warp = Actuator(idx_tuple=(0, 1), min_angle=60, max_angle=115, init_angle=60)
+lip_up = Actuator(idx_tuple=(0, 0), min_angle=70, max_angle=90, init_angle=88, inverse_flag=True)
+lip_up_warp = Actuator(idx_tuple=(0, 1), min_angle=60, max_angle=140, init_angle=60)
 
 # lip_down = Actuator(idx_tuple=(0, 4), min_angle=90, max_angle=125, init_angle=100)
 # lip_down_warp = Actuator(idx_tuple=(0, 5), min_angle=90, max_angle=110, init_angle=90, inverse_flag=True)
@@ -128,9 +128,9 @@ l_outer_eyebrow = Actuator(idx_tuple=(1, 0), min_angle=60, max_angle=105, init_a
 jaw = Actuator(idx_tuple=(1, 15), min_angle=40, max_angle=90, init_angle=90)
 
 neck_mode = False
+neck_yaw = Actuator(idx_tuple=(1, 14), min_angle=20, max_angle=160, init_angle=85)
 
 if neck_mode == True:
-    neck_yaw = Actuator(idx_tuple=(1, 14), min_angle=20, max_angle=160, init_angle=85)
 
     neck_roll = Actuator(idx_tuple=(1, 13), min_angle=90, max_angle=120, init_angle=105)
     neck_pitch = Actuator(idx_tuple=(1, 12), min_angle=20, max_angle=60, init_angle=40, inverse_flag=1)
@@ -176,14 +176,6 @@ def check_lip_upper(cmd_lip_up,cmd_lip_up_warp, cmd_corner_up,cmd_corner_low):
 
     return cmd_lip_up, cmd_lip_up_warp
 
-# def check_lip_upper2(lip_up, lip_up_warp):
-
-# if low lip corner is very high and up lip corner is very low,
-# def check_lip_upper3(cmd_lip_up, cmd_r_corner_low):
-#     if cmd_r_corner_low - cmd_lip_up>0.9:
-#         cmd_r_corner_up *=0.6
-#     return cmd_r_corner_up
-
 
 def random_cmds(reference=None, noise=0.2, only_mouth=True):
     num_motors = len(all_motors)
@@ -208,7 +200,7 @@ def random_cmds(reference=None, noise=0.2, only_mouth=True):
 
 
     if only_mouth:
-        cmds_random[8:] = resting_face[8:]
+        cmds_random[8:] = restart_face[8:]
 
     
 
@@ -229,6 +221,8 @@ def move_all(target_cmds, interval=50):
             val = traj[i][j]
             all_motors[j].norm_act(val)
         time.sleep(0.004)
+        # time.sleep(0.001)
+
 
 
 def eyes_move_2_traget(l_point, r_point):
@@ -305,18 +299,19 @@ def random_move(restf, scale_range = 0.1):
     for i in range(50):
         print(i)
         target_cmds = random_cmds(reference=restf, noise=scale_range, only_mouth=True)
-        # target_cmds[2] = 1
+        # target_cmds = resting_face1
         # if i<49: continue
 
         print(target_cmds)
         move_all(target_cmds,interval=50)
-        time.sleep(0.5)
+        # time.sleep(0.5)
 
-resting_face = [0.0, 0.0, 0.5, 0.42857, 0.5, 0.875, 0.875, 1.0, 0.42857, 0.42857, 0.66667, 0.66667]
+restart_face = [0.1, 0.0, 0.55556, 0.28571, 0.35714, 0.53846, 0.4625, 1.0, 0.42857, 0.42857, 0.66667, 0.66667]
+static_face = [0.1, 0.0, 0.55556, 0.4271, 0.4271, 0.5846, 0.525, 1.0, 0.42857, 0.42857, 0.66667, 0.66667]
 
 smile_face = [0.5, 0, 1,  1, 1, 0.6, 0.6, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
 
-pout_face = [0., 1, 0.8, 0.4, 0.4, 0.8, 0.8, 1.0, 0.42857, 0.42857, 0.66667, 0.66667]
+pout_face = [0., 1, 1, 0.2, 0.2, 1, 1, 1.0, 0.42857, 0.42857, 0.66667, 0.66667]
 
 # combin_face = [resting_face,smile_face,upper_teeth]
 from scipy.signal import savgol_filter
@@ -324,19 +319,20 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
 
+    # move_all(static_face)
     # Save resting face position in normed space
     np.random.seed(3)
     # eyes_open()
 
-    resting_face = []
+    restart_face = []
     for m in all_motors:
-        resting_face.append(round(m.norm_v_cur,5))
-    print(resting_face)
+        restart_face.append(round(m.norm_v_cur,5))
+    print(restart_face)
 
     # lip_up.norm_act(1)
     # quit()
     scale = 0.5
-    random_move(resting_face,scale)
+    random_move(restart_face,scale)
 
     quit()
 

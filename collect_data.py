@@ -155,10 +155,15 @@ def render_img(image, face_mesh, pcf):
 
 if __name__ == "__main__":
     np.random.seed(2023)
-    os.makedirs('../data/img', exist_ok=True)
+    save_data_pth = "../data0830/"
+    os.makedirs(save_data_pth, exist_ok=True)
+    os.makedirs(save_data_pth+'img/', exist_ok=True)
 
     video_source = "data/en1-emo-synced.mp4"
-    mode = 1
+    mode = 0
+
+
+    # Collect babbling data:
     if mode == 0:
         from servo_m import *
 
@@ -203,9 +208,10 @@ if __name__ == "__main__":
                 if img_i == 0:
                     for _ in range(100):
                         image = cap.read()
-
-                target_cmds = random_cmds(reference=resting_face, noise=1, only_mouth=True)
-                # target_cmds = random_cmds(reference = None, noise = 1, only_mouth=True)
+                    target_cmds = random_cmds(reference=restart_face, noise=0, only_mouth=True)
+                else:
+                    target_cmds = random_cmds(reference=restart_face, noise=0.5, only_mouth=True)
+                    
                 num_motors = len(all_motors)
                 # Get current motor joint angles:
                 curr = np.zeros(num_motors)
@@ -236,12 +242,12 @@ if __name__ == "__main__":
                     action_logger.append(traj[i])
 
                     # SAVE
-                    cv2.imwrite('../dataset/img/%d.png' % img_i, image_show)
+                    cv2.imwrite(save_data_pth+'img/%d.png' % img_i, image_show)
                     img_i += 1
                     if img_i % 20 == 0:
-                        np.save('../dataset/r_lmks.npy', np.asarray(r_lmks_logger))
-                        np.save('../dataset/m_lmks.npy', np.asarray(m_lmks_logger))
-                        np.savetxt('../dataset/action.csv', np.asarray(action_logger))
+                        np.save(save_data_pth+'r_lmks.npy', np.asarray(r_lmks_logger))
+                        np.save(save_data_pth+'m_lmks.npy', np.asarray(m_lmks_logger))
+                        np.savetxt(save_data_pth+'action.csv', np.asarray(action_logger))
                         print(img_i, np.asarray(r_lmks_logger).shape)
 
                     # cv2.imshow('landmarks', image_show)
