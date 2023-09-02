@@ -154,7 +154,11 @@ else:
 
 
 
-def check_lip_upper(cmd_lip_up,cmd_lip_up_warp, cmd_corner_up,cmd_corner_low):
+def check_lip_upper(cmd_lip_up,cmd_lip_up_warp,cmd_lip_low,cmd_corner_up,cmd_corner_low):
+
+    if cmd_corner_low<0.8:
+        cmd_lip_up_warp = random.uniform(0.,0.3)
+    
     # Abnormality 1:
     if (cmd_corner_up>0.7) and (cmd_lip_up<0.5):
         # print("ABNORMALITY")
@@ -166,13 +170,20 @@ def check_lip_upper(cmd_lip_up,cmd_lip_up_warp, cmd_corner_up,cmd_corner_low):
         cmd_lip_up_warp = random.uniform(0.5,1)
     
     # Abnormality 3:
-    if (cmd_lip_up > 0.6) and (cmd_lip_up_warp > 0.5): 
-        cmd_lip_up_warp *= 0.4
+    if (cmd_lip_up > 0.3) and (cmd_lip_up_warp > 0.3): 
+        cmd_lip_up_warp = random.uniform(0,0.3)
+    
+    if (cmd_corner_up<0.3):
+        cmd_lip_up_warp = random.uniform(0,0.3)
 
     # Abnormality 4:
     if (cmd_corner_up<0.3 ) and (cmd_corner_low>0.8):
         cmd_lip_up = random.uniform(0.9,1)
         cmd_lip_up_warp = random.uniform(0.4,0.5)
+
+    # #Abnormality 5:
+    # if cmd_lip_low<0.4:
+
 
     return cmd_lip_up, cmd_lip_up_warp
 
@@ -195,7 +206,7 @@ def random_cmds(reference=None, noise=0.2, only_mouth=True):
     cmds_random[9] = cmds_random[8]
     cmds_random[11] = cmds_random[10]
     # cmds_random[2], cmds_random[3] = check_lip_low(cmds_random[2], cmds_random[3])
-    cmds_random[0],cmds_random[1] = check_lip_upper(cmds_random[0],cmds_random[1],cmds_random[3],cmds_random[5])
+    cmds_random[0],cmds_random[1] = check_lip_upper(cmds_random[0],cmds_random[1],cmds_random[2],cmds_random[3],cmds_random[5])
 
 
 
@@ -307,7 +318,8 @@ def random_move(restf, scale_range = 0.1):
         # time.sleep(0.5)
 
 restart_face = [0.1, 0.0, 0.55556, 0.28571, 0.35714, 0.53846, 0.4625, 1.0, 0.42857, 0.42857, 0.66667, 0.66667]
-static_face = [0.1, 0.0, 0.55556, 0.4271, 0.4271, 0.5846, 0.525, 1.0, 0.42857, 0.42857, 0.66667, 0.66667]
+
+wired_face = [0.3, 0.918, 0.2 ,   0.,    0. ,   0.8 ,0.8, 0.73,  0.429, 0.429, 0.667, 0.667]
 
 smile_face = [0.5, 0, 1,  1, 1, 0.6, 0.6, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
 
@@ -319,20 +331,43 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
 
-    # move_all(static_face)
+
+    # action0830 = np.loadtxt('../data0830/action.csv')
+    # for i in range(1000):
+    #     a = input()
+    #     a = int(a)
+    #     action_list = action0830[a]
+    #     print(np.round(action_list,3))
+
+
+    ##########################################
+    ############# Abnormal test: #############
+    ##########################################
+
+    # wired_face_modify = wired_face
+    # for i in range(100):
+    #     a = input()
+    #     a = float(a)
+    #     wired_face_modify[1] = a
+    #     wired_face_modify[0],wired_face_modify[1] = check_lip_upper(wired_face_modify[0],wired_face_modify[1],wired_face_modify[2],wired_face_modify[3],wired_face_modify[5])
+    #     # wired_face_modify[4] = a
+    #     move_all(wired_face_modify)
     # Save resting face position in normed space
+
+    ##########################################
+    ############ Random babbling #############
+    ##########################################
     np.random.seed(3)
     # eyes_open()
-
     restart_face = []
     for m in all_motors:
         restart_face.append(round(m.norm_v_cur,5))
     print(restart_face)
 
-    # lip_up.norm_act(1)
-    # quit()
+    move_all(restart_face)
+
     scale = 0.5
-    random_move(restart_face,scale)
+    random_move(pout_face, scale)
 
     quit()
 

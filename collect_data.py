@@ -166,7 +166,7 @@ if __name__ == "__main__":
         os.makedirs(save_data_pth, exist_ok=True)
         os.makedirs(save_data_pth+'img/', exist_ok=True)
 
-        cap = VideoCapture(5)
+        cap = VideoCapture(4)
 
         # get cap property
         frame_width = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
@@ -196,7 +196,7 @@ if __name__ == "__main__":
         action_logger = []
 
         step_num = 10
-        NUM_data = 10000
+        NUM_data = 6000
 
         with mp_face_mesh.FaceMesh(
                 max_num_faces=1,
@@ -209,7 +209,14 @@ if __name__ == "__main__":
                         image = cap.read()
                     target_cmds = random_cmds(reference=restart_face, noise=0, only_mouth=True)
                 else:
-                    target_cmds = random_cmds(reference=restart_face, noise=0.5, only_mouth=True)
+                    if img_i%3 == 0:
+                        ref_face = restart_face
+                    elif img_i%3 == 1:
+                        ref_face = smile_face
+                    else:
+                        ref_face = pout_face
+
+                    target_cmds = random_cmds(reference=ref_face, noise=0.5, only_mouth=True)
                     
                 num_motors = len(all_motors)
                 # Get current motor joint angles:
@@ -262,7 +269,7 @@ if __name__ == "__main__":
     elif mode == 1:
 
         # video_source = "data/en1-emo-synced.mp4"
-        video_source = '/Users/yuhang/Downloads/EMO_GPTDEMO/new/rdm_b-synced.mp4'
+        video_source = '/Users/yuhang/Downloads/EMO_GPTDEMO/new/natural_babbling-synced.mp4'
 
         cap = cv2.VideoCapture(video_source)
         cap.set(cv2.CAP_PROP_FPS, 30)
