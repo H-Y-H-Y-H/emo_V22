@@ -195,7 +195,7 @@ lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146
 inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
 
 
-def nearest_neighber(lmks,dataset,add_dataset_pth,dataset_pth,only_mouth = False):
+def nearest_neighber(lmks,dataset,dataset_pth,only_mouth = False):
     if only_mouth:
         compare_idx = lips_idx + inner_lips_idx
         duplicate_lmks = np.asarray([lmks[compare_idx]] * len(dataset))
@@ -210,14 +210,11 @@ def nearest_neighber(lmks,dataset,add_dataset_pth,dataset_pth,only_mouth = False
     print(distance[rank[:5]])
     print(rank[:5])
     best_nn_id_absolute = np.copy(best_nn_id)
-    if best_nn_id < 6000:
-        best_nn_id_setid = best_nn_id // 1000
-        best_nn_id = best_nn_id % 1000
-    else:
-        best_nn_id_setid = -1
-        best_nn_id = best_nn_id-6000
 
-    nn_img = cv2.imread(dataset_pth + add_dataset_pth[best_nn_id_setid] + '/img/%d.png' % best_nn_id)
+    nn_img = cv2.imread(dataset_pth + 'img/%d.png' % best_nn_id)
+    nn_img1 = nn_img[:,160:480]
+    nn_img2 = nn_img[:,800:1120]
+    nn_img = np.hstack((nn_img1,nn_img2))
 
     return nn_img, best_nn_id_absolute
 
@@ -227,19 +224,19 @@ if __name__ == "__main__":
     cap = VideoCapture(0)
     SMOOTH_FLAG = False
 
-    dataset_pth = '/Users/yuhang/Downloads/dataset1000_RF/'
     # dataset_pth = '../dataset/'
-    dataset = []
-    add_dataset_pth = ['dataset_rdm_1_0', 'dataset_rdm_1_1', 'dataset_rdm_1_2', 'dataset_rdm_1_3',
-                       'dataset_resting1', 'dataset_resting1(1)','dataset_resting1_10000']
+    # dataset = []
+    # add_dataset_pth = ['dataset_rdm_1_0', 'dataset_rdm_1_1', 'dataset_rdm_1_2', 'dataset_rdm_1_3',
+    #                    'dataset_resting1', 'dataset_resting1(1)', 'dataset_resting1_10000']
+    # for i in range(len(add_dataset_pth)):
+    #     add_d = np.load(dataset_pth + add_dataset_pth[i] + '/m_lmks.npy')
+    #     if SMOOTH_FLAG:
+    #         add_d = smooth_lmks(add_d)
+    #     dataset.append(add_d)
+    # dataset = np.concatenate(dataset, axis=0)
 
-
-    for i in range(len(add_dataset_pth)):
-        add_d = np.load(dataset_pth + add_dataset_pth[i] + '/m_lmks.npy')
-        if SMOOTH_FLAG:
-            add_d = smooth_lmks(add_d)
-        dataset.append(add_d)
-    dataset = np.concatenate(dataset, axis=0)
+    dataset_pth = '/Users/yuhang/Downloads/EMO_GPTDEMO/data0901/'
+    dataset = np.load(dataset_pth + 'm_lmks.npy')
 
     # get cap property
     frame_width = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
@@ -277,7 +274,7 @@ if __name__ == "__main__":
 
             image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
 
-            nn_img, best_nn_id = nearest_neighber(m_lmks, dataset, add_dataset_pth, dataset_pth, only_mouth=True)
+            nn_img, best_nn_id = nearest_neighber(m_lmks, dataset, dataset_pth, only_mouth=True)
             selct_lmks = dataset[best_nn_id]
 
             # plt.scatter(selct_lmks[:, 0], selct_lmks[:, 1])

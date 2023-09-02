@@ -15,7 +15,6 @@ def folder_frames2video(dir_pth):
 
         img_i = cv2.imread(dir_pth + '%d.png' % i)
         # img_i2 = cv2.imread(dir_pth2 + '%d.png' % i)
-        #
         # img_i = np.hstack((img_i,img_i2))
         img_list.append(img_i)
 

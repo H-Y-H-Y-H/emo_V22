@@ -13,7 +13,7 @@ def find_H_static_face():
     c_robotstatic_lmks = R_static_lmks.flatten()
 
     resting_face_lmks4compare = np.asarray([c_robotstatic_lmks] * len(c_input_data))
-    #
+
     diff = np.mean(abs(resting_face_lmks4compare - c_input_data), axis=1)
     min_diff_idx = np.argmin(diff)
     print(min_diff_idx)

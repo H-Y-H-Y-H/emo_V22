@@ -3,26 +3,25 @@ import cv2
 import matplotlib.pyplot as plt
 from realtime_landmark import *
 
-
-
 if __name__ == "__main__":
 
     data_path = 'data/'
-    dataset_pth = '/Users/yuhang/Downloads/dataset1000_RF/'
-    add_dataset_pth = ['dataset_rdm_1_0', 'dataset_rdm_1_1', 'dataset_rdm_1_2', 'dataset_rdm_1_3',
-                       'dataset_resting1', 'dataset_resting1(1)','dataset_resting1_10000']
+    dataset_pth = '/Users/yuhang/Downloads/EMO_GPTDEMO/data0901/'
 
-    dataset_lmk = np.load(data_path + 'R_lmks_data.npy')
-    dataset_cmd = np.load(data_path + 'R_cmds_data.npy')
-    target_lmks = np.load(data_path + 'en1_emo_lmks.npy')
+    # dataset_lmk = np.load(data_path + 'R_lmks_data.npy')
+    # dataset_cmd = np.load(data_path + 'R_cmds_data.npy')
+    dataset_lmk = np.load(dataset_pth + 'm_lmks.npy')
+    dataset_cmd = np.loadtxt(dataset_pth + 'action.csv')
+
+    # Landmarks that the robot wants to mimic.
+    target_lmks = np.load(data_path + 'en1_emo_purple_lmks.npy')
 
     #####  SMOOTH LANDMARKS)
     target_lmks = smooth_lmks(target_lmks)
-    dataset_lmk = smooth_lmks(dataset_lmk)
+    # dataset_lmk = smooth_lmks(dataset_lmk)
 
     mode = 0
 
-    # target_id = np.loadtxt('logger.csv')
     logger_id = []
     time_s = time.time()
     time0 = time.time()
@@ -39,7 +38,7 @@ if __name__ == "__main__":
             # lmks[:, 1] = 1 - lmks[:, 1]
             # lmks[:, 1] -= 0.05
 
-            nn_img, best_nn_id = nearest_neighber(lmks, dataset_lmk[..., :3], add_dataset_pth, dataset_pth, only_mouth=True)
+            nn_img, best_nn_id = nearest_neighber(lmks, dataset_lmk[..., :3], dataset_pth, only_mouth=True)
 
             # plt.scatter(lmks[:,0],lmks[:,1], label='me')
             # plt.scatter(dataset_lmk[best_nn_id,:,0],dataset_lmk[best_nn_id,:,1], label='nn_robot face')
@@ -47,10 +46,13 @@ if __name__ == "__main__":
             # plt.show()
 
             logger_id.append(best_nn_id)
-        np.savetxt('emo_logger_smooth.csv', np.asarray(logger_id), fmt='%i')
+        np.savetxt('emo_purple_nn_id(smooth).csv', np.asarray(logger_id), fmt='%i')
 
 
     elif mode == 1:
+
+        target_id = np.loadtxt('logger.csv')
+
         for i in range(len(target_lmks)):
             best_nn_id = int(target_id[i])
             cmds = dataset_cmd[best_nn_id]
