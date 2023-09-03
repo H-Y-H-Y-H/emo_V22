@@ -357,29 +357,32 @@ if __name__ == "__main__":
     ##########################################
     ############ Random babbling #############
     ##########################################
-    np.random.seed(3)
-    # eyes_open()
-    restart_face = []
-    for m in all_motors:
-        restart_face.append(round(m.norm_v_cur,5))
-    print(restart_face)
 
-    move_all(restart_face)
+    # np.random.seed(3)
+    # # eyes_open()
+    # restart_face = []
+    # for m in all_motors:
+    #     restart_face.append(round(m.norm_v_cur,5))
+    # print(restart_face)
 
-    scale = 0.5
-    random_move(pout_face, scale)
+    # move_all(restart_face)
 
-    quit()
+    # scale = 0.5
+    # random_move(pout_face, scale)
+
+    ##########################################
+    ############ Random babbling #############
+    ##########################################
 
     time_interval = 1/30
-    ID_or_CMD = 0
+    ID_or_CMD = 1
 
     if ID_or_CMD == 0:
         load_cmd_idx = np.loadtxt('../dataset/emo_logger_smooth.csv').astype(int)
         load_cmd_nn = np.load('data/R_cmds_data.npy')
         load_cmd = load_cmd_nn[load_cmd_idx]
     elif ID_or_CMD ==1:
-        load_cmd = np.loadtxt('data/en_1_cmds.csv')
+         load_cmd = np.loadtxt('mimic_synced_cmds.csv')
     load_cmd_filt = np.copy(load_cmd)
 
     # visualize commands
@@ -397,7 +400,7 @@ if __name__ == "__main__":
     #     plt.savefig('../signal_processing_plots/savgol_%d_%d'%(window,order))
     #     plt.clf()
 
-    record = False
+    record = True
     # Smooth:
     filter_flag = True
     window = 7 #13
@@ -507,7 +510,7 @@ if __name__ == "__main__":
                 m_lmks_logger.append(m_lmks)
 
                 # SAVE
-                cv2.imwrite('../dataset/img/%d.png' % img_i, image_show)
+                cv2.imwrite('../gpt_demo_output/img/%d.png' % img_i, image_show)
                 img_i += 1
                 # if img_i % 20 == 0:
                     # np.save('../dataset/resting_r_lmks.npy', np.asarray(r_lmks_logger))
@@ -516,7 +519,7 @@ if __name__ == "__main__":
 
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
-            np.save('../dataset/en1_m_lmks.npy', np.asarray(m_lmks_logger))
+            np.save('../gpt_demo_output/en1_m_lmks.npy', np.asarray(m_lmks_logger))
         cap.cap.release()
 
 # Record
