@@ -269,7 +269,7 @@ if __name__ == "__main__":
     elif mode == 1:
 
         # video_source = "data/en1-emo-synced.mp4"
-        video_source = '/Users/yuhang/Downloads/EMO_GPTDEMO/new/natural_babbling-synced.mp4'
+        video_source = '/Users/yuhang/Downloads/EMO_GPTDEMO/new/rdm_b-synced.mp4'
 
         cap = cv2.VideoCapture(video_source)
         cap.set(cv2.CAP_PROP_FPS, 30)
@@ -325,6 +325,6 @@ if __name__ == "__main__":
                 count+=1
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
-            np.save('data/en1_emo_purple_lmks.npy', m_lmks_logger)
+            np.save('data/emo_synced_lmks.npy', m_lmks_logger)
 
         cap.release()

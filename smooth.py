@@ -1,8 +1,5 @@
 from visualization import *
 
-
-
-
 def folder_frames2video(dir_pth):
 
     fourcc = cv2.VideoWriter_fourcc(*'MP4V')

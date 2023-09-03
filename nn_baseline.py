@@ -8,16 +8,14 @@ if __name__ == "__main__":
     data_path = 'data/'
     dataset_pth = '/Users/yuhang/Downloads/EMO_GPTDEMO/data0901/'
 
-    # dataset_lmk = np.load(data_path + 'R_lmks_data.npy')
-    # dataset_cmd = np.load(data_path + 'R_cmds_data.npy')
     dataset_lmk = np.load(dataset_pth + 'm_lmks.npy')
     dataset_cmd = np.loadtxt(dataset_pth + 'action.csv')
 
     # Landmarks that the robot wants to mimic.
-    target_lmks = np.load(data_path + 'en1_emo_purple_lmks.npy')
+    target_lmks = np.load(data_path + 'emo_synced_lmks.npy')
 
     #####  SMOOTH LANDMARKS)
-    target_lmks = smooth_lmks(target_lmks)
+    # target_lmks = smooth_lmks(target_lmks)
     # dataset_lmk = smooth_lmks(dataset_lmk)
 
     mode = 0
@@ -47,7 +45,6 @@ if __name__ == "__main__":
 
             logger_id.append(best_nn_id)
         np.savetxt('emo_purple_nn_id(smooth).csv', np.asarray(logger_id), fmt='%i')
-
 
     elif mode == 1:
 
