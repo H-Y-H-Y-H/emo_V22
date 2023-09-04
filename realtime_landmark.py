@@ -235,7 +235,7 @@ if __name__ == "__main__":
     #     dataset.append(add_d)
     # dataset = np.concatenate(dataset, axis=0)
 
-    dataset_pth = '/Users/yuhang/Downloads/EMO_GPTDEMO/data0901/'
+    dataset_pth = '/Users/yuhang/Downloads/EMO_GPTDEMO/data0903/'
     dataset = np.load(dataset_pth + 'm_lmks.npy')
 
     # get cap property

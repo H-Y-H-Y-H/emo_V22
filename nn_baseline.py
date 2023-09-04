@@ -5,7 +5,7 @@ from realtime_landmark import *
 
 if __name__ == "__main__":
 
-    mode = 1
+    mode = 0
 
     logger_id = []
 
@@ -18,13 +18,13 @@ if __name__ == "__main__":
         data_path = 'data/'
  
         # Landmarks that the robot wants to mimic.
-        target_lmks = np.load(data_path + 'en1_emo_purple_lmks.npy')
+        target_lmks = np.load(data_path + 'emo_synced_lmks.npy')
 
         #####  SMOOTH LANDMARKS)
         target_lmks = smooth_lmks(target_lmks)
         # dataset_lmk = smooth_lmks(dataset_lmk)
 
-        dataset_pth = '/Users/yuhang/Downloads/EMO_GPTDEMO/data0901/'
+        dataset_pth = '/Users/yuhang/Downloads/EMO_GPTDEMO/data0903/'
         dataset_lmk = np.load(dataset_pth + 'm_lmks.npy')
         dataset_cmd = np.loadtxt(dataset_pth + 'action.csv')
 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     elif mode == 1:
         from servo_m import *
-        dataset_pth = '../data0901/'
+        dataset_pth = '../data0903/'
         dataset_lmk = np.load(dataset_pth + 'm_lmks.npy')
         dataset_cmd = np.loadtxt(dataset_pth + 'action.csv')
 
