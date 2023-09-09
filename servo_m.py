@@ -78,8 +78,6 @@ lip_down = Actuator(idx_tuple=(1, 11), min_angle=80, max_angle=125, init_angle=1
 # lip_down.norm_act(0)
 
 
-
-
 r_corner_up = Actuator(idx_tuple=(0, 2), min_angle=40, max_angle=110, init_angle=60)
 l_corner_up = Actuator(idx_tuple=(0, 7), min_angle=20, max_angle=90, init_angle=65, inverse_flag=1)
 
@@ -125,7 +123,7 @@ l_inner_eyebrow = Actuator(idx_tuple=(1, 1), min_angle=75, max_angle=110, init_a
 r_outer_eyebrow = Actuator(idx_tuple=(0, 15), min_angle=80, max_angle=125, init_angle=110)
 l_outer_eyebrow = Actuator(idx_tuple=(1, 0), min_angle=60, max_angle=105, init_angle=75, inverse_flag=True)
 
-jaw = Actuator(idx_tuple=(1, 15), min_angle=40, max_angle=90, init_angle=90)
+jaw = Actuator(idx_tuple=(1, 15), min_angle=40, max_angle=94, init_angle=94)
 
 neck_mode = False
 neck_yaw = Actuator(idx_tuple=(1, 14), min_angle=20, max_angle=160, init_angle=85)
@@ -156,36 +154,54 @@ else:
 
 def check_lip_upper(cmd_lip_up,cmd_lip_up_warp,cmd_lip_low,cmd_corner_up,cmd_corner_low):
 
-    if cmd_corner_low<0.8:
-        cmd_lip_up_warp = random.uniform(0.,0.3)
+    if (cmd_corner_low<0.3) and (cmd_corner_up<0.3) and (cmd_lip_up_warp>0.5):
+        print('abnormality 0')
+        cmd_lip_up_warp = random.uniform(0.,0.5)
     
-    # Abnormality 1:
-    if (cmd_corner_up>0.7) and (cmd_lip_up<0.5):
-        # print("ABNORMALITY")
-        cmd_lip_up = random.uniform(0.5,1)
+    # # Abnormality 1:
+    # if (cmd_corner_up>0.7) and (cmd_lip_up<0.5):
+    #     print('abnormality 1')
+    #     cmd_lip_up = random.uniform(0.5,1)
     
+    # # Abnormality 2:
+    # if (cmd_corner_up<0.3) and (cmd_corner_low>0.8) and (cmd_lip_up_warp>0.8):
+    #     print('abnormality 2')
+    #     cmd_lip_up = random.uniform(0,0.5)
+
     # Abnormality 2:
-    if (cmd_corner_up<0.3) and (cmd_lip_up<0.1):
-        cmd_lip_up = random.uniform(0.5,1)
-        cmd_lip_up_warp = random.uniform(0.5,1)
+    if (cmd_corner_up<0.2) and (cmd_corner_low>0.8):
+        print('abnormality 2')
+        cmd_corner_up = random.uniform(0.6,1)
+        # cmd_lip_up_warp = random.uniform(0.8,1)
     
     # Abnormality 3:
-    if (cmd_lip_up > 0.3) and (cmd_lip_up_warp > 0.3): 
-        cmd_lip_up_warp = random.uniform(0,0.3)
+    if (cmd_lip_up > 0.6) and (cmd_lip_up_warp > 0.4): 
+        print('abnormality 3')
+        cmd_lip_up_warp = random.uniform(0,0.4)
     
-    if (cmd_corner_up<0.3):
-        cmd_lip_up_warp = random.uniform(0,0.3)
-
     # Abnormality 4:
-    if (cmd_corner_up<0.3 ) and (cmd_corner_low>0.8):
-        cmd_lip_up = random.uniform(0.9,1)
-        cmd_lip_up_warp = random.uniform(0.4,0.5)
+    if (cmd_lip_up_warp>0.8) and (cmd_lip_up>0.3):
+        print('abnormality 4')
+        cmd_lip_up_warp = random.uniform(0,0.8)
+
+
+    # if (cmd_corner_up<0.3):
+    #     print('abnormality 4')
+    #     cmd_lip_up_warp = random.uniform(0,0.3)
+
+    # # Abnormality 5:
+    # if (cmd_corner_up<0.3 ) and (cmd_corner_low>0.8):
+    #     print('abnormality 5')
+    #     cmd_lip_up = random.uniform(0.9,1)
+    #     cmd_lip_up_warp = random.uniform(0.4,0.5)
+    #     cmd_lip_low = random.uniform(0.3,1)
+
 
     # #Abnormality 5:
     # if cmd_lip_low<0.4:
 
 
-    return cmd_lip_up, cmd_lip_up_warp
+    return cmd_lip_up, cmd_lip_up_warp, cmd_lip_low, cmd_corner_up
 
 
 def random_cmds(reference=None, noise=0.2, only_mouth=True):
@@ -201,13 +217,13 @@ def random_cmds(reference=None, noise=0.2, only_mouth=True):
     # cmds_random = [1. , 1 ,0.68233284, 0.53335575, 0.53335575, 0.0, 0.0, 0.37913007, 0.42857, 0.42857, 0.66667, 0.66667]
 
     # Symmetrize
+
+    # cmds_random[2], cmds_random[3] = check_lip_low(cmds_random[2], cmds_random[3])
+    cmds_random[0],cmds_random[1],cmds_random[2],cmds_random[3] = check_lip_upper(cmds_random[0],cmds_random[1],cmds_random[2],cmds_random[3],cmds_random[5])
     cmds_random[4] = cmds_random[3]
     cmds_random[6] = cmds_random[5]
     cmds_random[9] = cmds_random[8]
     cmds_random[11] = cmds_random[10]
-    # cmds_random[2], cmds_random[3] = check_lip_low(cmds_random[2], cmds_random[3])
-    cmds_random[0],cmds_random[1] = check_lip_upper(cmds_random[0],cmds_random[1],cmds_random[2],cmds_random[3],cmds_random[5])
-
 
 
     if only_mouth:
@@ -317,13 +333,17 @@ def random_move(restf, scale_range = 0.1):
         move_all(target_cmds,interval=50)
         # time.sleep(0.5)
 
-restart_face = [0.1, 0.0, 0.55556, 0.28571, 0.35714, 0.53846, 0.4625, 1.0, 0.42857, 0.42857, 0.66667, 0.66667]
+restart_face = [0.1, 0.0, 0.55556, 0.28571, 0.35714, 0.53846, 0.4625, 1, 0.42857, 0.42857, 0.66667, 0.66667] #0.3
+restart_face0 = [0.1, 0.0, 0.55556, 0.28571, 0.35714, 0.53846, 0.4625, .5, 0.42857, 0.42857, 0.66667, 0.66667] #0.3 open mouth
+smile_face = [0.8, 0, 0.8,  0.8, 0.8, 0.6, 0.6, 0.8, 0.4286, 0.4286, 0.6667, 0.6667] # 0.5
+smile_face0 = [0.8, 0, 0.8,  0.8, 0.8, 0.6, 0.6, 0.4, 0.4286, 0.4286, 0.6667, 0.6667] # 0.3 open mouth
+pout_face = [0, 0.8, 1, 0.1, 0.1, 0.9, 0.9, 1.0, 0.42857, 0.42857, 0.66667, 0.66667] # 0.3
+pout_face0 = [0, 0.8, 1, 0.1, 0.1, 0.9, 0.9, .6, 0.42857, 0.42857, 0.66667, 0.66667] # 0.3
 
-wired_face = [0.3, 0.918, 0.2 ,   0.,    0. ,   0.8 ,0.8, 0.73,  0.429, 0.429, 0.667, 0.667]
-
-smile_face = [0.5, 0, 1,  1, 1, 0.6, 0.6, 0.8, 0.4286, 0.4286, 0.6667, 0.6667]
-
-pout_face = [0., 1, 1, 0.2, 0.2, 1, 1, 1.0, 0.42857, 0.42857, 0.66667, 0.66667]
+ref_face_list = [restart_face,restart_face0,smile_face,smile_face0,pout_face,pout_face0]
+noise_list = [0.3,0.3,0.5,0.3,0.3,0.3]
+ 
+wired_face = [0.01833095 ,0.82924096, 0.44764508, 0.      ,   0.   ,      0.91063554, 0.91063554 ,1.   ,      0.42857  ,  0.42857 ,   0.66667  ,  0.66667    ]
 
 # combin_face = [resting_face,smile_face,upper_teeth]
 from scipy.signal import savgol_filter
@@ -344,16 +364,22 @@ if __name__ == "__main__":
     ############# Abnormal test: #############
     ##########################################
 
-    # wired_face_modify = wired_face
     # for i in range(100):
+    #     print('--------------------------------------------------')
+    #     wired_face_modify = np.copy(np.asarray(wired_face))
+
     #     a = input()
     #     a = float(a)
-    #     wired_face_modify[1] = a
-    #     wired_face_modify[0],wired_face_modify[1] = check_lip_upper(wired_face_modify[0],wired_face_modify[1],wired_face_modify[2],wired_face_modify[3],wired_face_modify[5])
-    #     # wired_face_modify[4] = a
-    #     move_all(wired_face_modify)
-    # Save resting face position in normed space
 
+    #     wired_face_modify[0] = a
+    #     print("original: ")
+    #     print(wired_face_modify)
+    #     wired_face_modify[0],wired_face_modify[1],wired_face_modify[2],wired_face_modify[3] = check_lip_upper(wired_face_modify[0],wired_face_modify[1],wired_face_modify[2],wired_face_modify[3],wired_face_modify[5])
+    #     wired_face_modify[4] = wired_face_modify[3]
+    #     move_all(wired_face_modify)
+    #     print(wired_face_modify)
+    # # Save resting face position in normed space
+    # quit()
     ##########################################
     ############ Random babbling #############
     ##########################################
@@ -365,45 +391,44 @@ if __name__ == "__main__":
     #     restart_face.append(round(m.norm_v_cur,5))
     # print(restart_face)
 
-    # move_all(restart_face)
-
-    # scale = 0.5
-    # random_move(pout_face, scale)
+    # scale = 0.3
+    # random_move(pout_face0, scale)
+    # quit()
 
     ##########################################
-    ############ Random babbling #############
+    ########## Run commands (Record)##########
     ##########################################
 
     time_interval = 1/30
-    ID_or_CMD = 1
+    ID_or_CMD = 0
 
     if ID_or_CMD == 0:
-        load_cmd_idx = np.loadtxt('../dataset/emo_logger_smooth.csv').astype(int)
-        load_cmd_nn = np.load('data/R_cmds_data.npy')
-        load_cmd = load_cmd_nn[load_cmd_idx]
+        load_cmd_idx = np.loadtxt('emo_purple_nn_id(smooth).csv').astype(int)
+        load_cmd_dataset = np.loadtxt('../data0901/action.csv')
+        load_cmd = load_cmd_dataset[load_cmd_idx]
     elif ID_or_CMD ==1:
          load_cmd = np.loadtxt('mimic_synced_cmds.csv')
     load_cmd_filt = np.copy(load_cmd)
 
-    # visualize commands
+    # # visualize commands
     # load_cmd_ori = np.copy(load_cmd)
     # for j in range(1):
     #     fig, axs = plt.subplots(9)
     #     fig.suptitle('motor command plots')
     #     for i in range(9):
-    #         window = 7
+    #         window = 5
     #         order = 2
     #         load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
     #         axs[i].plot(list(range(len(load_cmd_ori[:,i]))),load_cmd_ori[:,i],label='raw')
     #         axs[i].plot(list(range(len(load_cmd_filt[:,i]))),load_cmd_filt[:,i],label='filtered')
     #     plt.legend()
-    #     plt.savefig('../signal_processing_plots/savgol_%d_%d'%(window,order))
+    #     plt.savefig('../signal_processing_plots/savgol_%d_%d'%(window,order),dpi = 300)
     #     plt.clf()
-
-    record = True
+    # quit()
+    record = False
     # Smooth:
     filter_flag = True
-    window = 7 #13
+    window = 5 #13
     order = 2 #3
     for i in range(9):
         load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
