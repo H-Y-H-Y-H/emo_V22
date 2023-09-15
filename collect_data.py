@@ -156,13 +156,13 @@ def render_img(image, face_mesh, pcf):
 if __name__ == "__main__":
     np.random.seed(2023)
 
-    mode = 1
+    mode = 0
 
 
     # Collect robot babbling data:
     if mode == 0:
         from servo_m import *
-        save_data_pth = "../data0830/"
+        save_data_pth = "../data0914/"
         os.makedirs(save_data_pth, exist_ok=True)
         os.makedirs(save_data_pth+'img/', exist_ok=True)
 
@@ -196,7 +196,7 @@ if __name__ == "__main__":
         action_logger = []
 
         step_num = 10
-        NUM_data = 6000
+        NUM_data = 30000
 
         with mp_face_mesh.FaceMesh(
                 max_num_faces=1,

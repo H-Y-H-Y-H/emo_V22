@@ -384,16 +384,18 @@ if __name__ == "__main__":
     ############ Random babbling #############
     ##########################################
 
-    # np.random.seed(3)
-    # # eyes_open()
-    # restart_face = []
-    # for m in all_motors:
-    #     restart_face.append(round(m.norm_v_cur,5))
-    # print(restart_face)
+    #np.random.seed(3)
 
-    # scale = 0.3
-    # random_move(pout_face0, scale)
-    # quit()
+    restart_face = []
+    for m in all_motors:
+        restart_face.append(round(m.norm_v_cur,5))
+    print(restart_face)
+    
+    move_all(restart_face)
+    
+    scale = 0.3
+    #random_move(restart_face, scale)
+    quit() 
 
     ##########################################
     ########## Run commands (Record)##########
@@ -451,18 +453,18 @@ if __name__ == "__main__":
             for j in range(9):
                 target_cmds[j] = np.clip(target_cmds[j],0,1)
                 all_motors[j].norm_act(target_cmds[j])
-            
-            # blink 
+
+            # blink
             if blink_count > blink_count_threshold:
                 blink_flag = True
                 blink_count = 0
-                
+
             if blink_flag:
                 blink_seg(blink_count)
                 if blink_count == 18:
                     blink_count = 0
                     blink_flag = False
-                    
+
             blink_count +=1
 
             time_used = time.time()-time0
@@ -547,5 +549,4 @@ if __name__ == "__main__":
             np.save('../gpt_demo_output/en1_m_lmks.npy', np.asarray(m_lmks_logger))
         cap.cap.release()
 
-# Record
 
