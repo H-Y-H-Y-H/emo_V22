@@ -17,8 +17,7 @@ if __name__ == "__main__":
         target_lmks = np.load(data_path + 'emo_synced_lmks.npy')
 
         #####  SMOOTH LANDMARKS)
-        # target_lmks = smooth_lmks(target_lmks)
-        # dataset_lmk = smooth_lmks(dataset_lmk)
+        target_lmks = smooth_lmks(target_lmks)
 
         ## Robot random landmarks dataset
         dataset_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data0914/'
@@ -44,6 +43,6 @@ if __name__ == "__main__":
             # plt.show()
 
             logger_id.append(best_nn_id)
-        np.savetxt('data/nvidia/emo_nn_id.csv', np.asarray(logger_id), fmt='%i')
+        np.savetxt('data/nvidia/smooth_emo_nn_id.csv', np.asarray(logger_id), fmt='%i')
         action_list = dataset_cmd[logger_id]
-        np.savetxt('data/nvidia/mimic_synced_cmds.csv', action_list)
+        np.savetxt('data/nvidia/smooth_mimic_synced_cmds.csv', action_list)
