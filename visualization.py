@@ -35,7 +35,7 @@ inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 40
 def two_lmks_compare():
     name = 'real_emo_gptdemo'
     frame_id_list = np.loadtxt('emo_purple_nn_id(smooth).csv')
-    systh_lmks0 = np.load('data/emo_synced_lmks.npy')
+    systh_lmks0 = np.load('data/desktop/emo_synced_lmks.npy')
     # systh_lmks0 = smooth_lmks(systh_lmks0)
 
     real_lmks = np.load("/Users/yuhang/Downloads/EMO_GPTDEMO/new/%s/en1_m_lmks.npy"%name)

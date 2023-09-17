@@ -234,8 +234,7 @@ if __name__ == "__main__":
     #         add_d = smooth_lmks(add_d)
     #     dataset.append(add_d)
     # dataset = np.concatenate(dataset, axis=0)
-
-    dataset_pth = '/Users/yuhang/Downloads/EMO_GPTDEMO/data0903/'
+    dataset_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data0914/'
     dataset = np.load(dataset_pth + 'm_lmks.npy')
 
     # get cap property

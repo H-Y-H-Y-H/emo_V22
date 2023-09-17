@@ -156,7 +156,7 @@ def render_img(image, face_mesh, pcf):
 if __name__ == "__main__":
     np.random.seed(2023)
 
-    mode = 0
+    mode = 1
 
 
     # Collect robot babbling data:
@@ -269,10 +269,10 @@ if __name__ == "__main__":
     elif mode == 1:
 
         # video_source = "data/en1-emo-synced.mp4"
-        video_source = '/Users/yuhang/Downloads/EMO_GPTDEMO/new/rdm_b-synced.mp4'
+        video_source = '../EMO_GPTDEMO/result-2.avi'
 
         cap = cv2.VideoCapture(video_source)
-        cap.set(cv2.CAP_PROP_FPS, 30)
+        cap.set(cv2.CAP_PROP_FPS, 25)
         # get cap property
         frame_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
         frame_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -325,6 +325,6 @@ if __name__ == "__main__":
                 count+=1
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
-            np.save('data/emo_synced_lmks.npy', m_lmks_logger)
+            np.save('data/desktop/emo_synced_lmks.npy', m_lmks_logger)
 
         cap.release()
