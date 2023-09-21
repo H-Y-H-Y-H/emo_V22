@@ -322,8 +322,8 @@ def blink_seg(ti, c = 10, n_step= 8):
         l_lower_eyelid.norm_act(1-(ti-c)/n_step)
         r_lower_eyelid.norm_act(1-(ti-c)/n_step)  
 
-def random_move(restf, scale_range = 0.1):
-    for i in range(50):
+def random_move(restf, scale_range = 0.1,loop_time =50):
+    for i in range(loop_time):
         print(i)
         target_cmds = random_cmds(reference=restf, noise=scale_range, only_mouth=True)
         # target_cmds = resting_face1
@@ -384,32 +384,25 @@ if __name__ == "__main__":
     ############ Random babbling #############
     ##########################################
 
-    #np.random.seed(3)
+    np.random.seed(3)
 
     restart_face = []
     for m in all_motors:
-        restart_face.append(round(m.norm_v_cur,5))
+         restart_face.append(round(m.norm_v_cur,5))
     print(restart_face)
     
     move_all(restart_face)
     
     scale = 0.3
-    #random_move(restart_face, scale)
-    quit() 
+    random_move(restart_face, scale,loop_time=1000)
+    quit()
 
     ##########################################
     ########## Run commands (Record)##########
     ##########################################
 
-    time_interval = 1/30
-    ID_or_CMD = 0
-
-    if ID_or_CMD == 0:
-        load_cmd_idx = np.loadtxt('emo_purple_nn_id(smooth).csv').astype(int)
-        load_cmd_dataset = np.loadtxt('../data0901/action.csv')
-        load_cmd = load_cmd_dataset[load_cmd_idx]
-    elif ID_or_CMD ==1:
-         load_cmd = np.loadtxt('mimic_synced_cmds.csv')
+    time_interval = 1/25
+    load_cmd = np.loadtxt('data/nvidia/smooth_mimic_synced_cmds.csv')
     load_cmd_filt = np.copy(load_cmd)
 
     # # visualize commands
@@ -427,11 +420,13 @@ if __name__ == "__main__":
     #     plt.savefig('../signal_processing_plots/savgol_%d_%d'%(window,order),dpi = 300)
     #     plt.clf()
     # quit()
-    record = False
+    
+    # Camera Record: 
+    record = True  # Frame by frame
     # Smooth:
-    filter_flag = True
-    window = 5 #13
-    order = 2 #3
+    filter_flag = False
+    window = 15 #7 #13
+    order = 3 #2 #3
     for i in range(9):
         load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
     time.sleep(1)
@@ -470,6 +465,8 @@ if __name__ == "__main__":
             time_used = time.time()-time0
             if time_used<time_interval:
                 time.sleep(time_interval-time_used)
+            else:
+                print('NOT REALTIME')
             time0 = time.time()
 
     else:
