@@ -64,7 +64,7 @@ class VideoCapture:
             self.q.put(frame)
 
     def read(self):
-        return self.q.get()
+        return 1, self.q.get()
 
 
 def render_img(image,face_mesh,pcf):
@@ -195,7 +195,7 @@ lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146
 inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
 
 
-def nearest_neighber(lmks,dataset,dataset_pth,only_mouth = False):
+def nearest_neighber(lmks,dataset,only_mouth = False):
     if only_mouth:
         compare_idx = lips_idx + inner_lips_idx
         duplicate_lmks = np.asarray([lmks[compare_idx]] * len(dataset))
@@ -209,37 +209,44 @@ def nearest_neighber(lmks,dataset,dataset_pth,only_mouth = False):
     best_nn_id = rank[0]
     print(distance[rank[:5]])
     print(rank[:5])
-    best_nn_id_absolute = np.copy(best_nn_id)
 
-    nn_img = cv2.imread(dataset_pth + 'img/%d.png' % best_nn_id)
-    nn_img1 = nn_img[:,160:480]
-    nn_img2 = nn_img[:,800:1120]
-    nn_img = np.hstack((nn_img1,nn_img2))
-
-    return nn_img, best_nn_id_absolute
+    return best_nn_id
 
 
 if __name__ == "__main__":
 
-    cap = VideoCapture(0)
-    SMOOTH_FLAG = False
+    source_pth = 'data/desktop/synced_video.avi'
 
-    # dataset_pth = '../dataset/'
-    # dataset = []
-    # add_dataset_pth = ['dataset_rdm_1_0', 'dataset_rdm_1_1', 'dataset_rdm_1_2', 'dataset_rdm_1_3',
-    #                    'dataset_resting1', 'dataset_resting1(1)', 'dataset_resting1_10000']
-    # for i in range(len(add_dataset_pth)):
-    #     add_d = np.load(dataset_pth + add_dataset_pth[i] + '/m_lmks.npy')
-    #     if SMOOTH_FLAG:
-    #         add_d = smooth_lmks(add_d)
-    #     dataset.append(add_d)
-    # dataset = np.concatenate(dataset, axis=0)
     dataset_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data0914/'
-    dataset = np.load(dataset_pth + 'm_lmks.npy')
 
-    # get cap property
-    frame_width = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
-    frame_height = cap.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    filter = 3043
+    dataset = np.load(dataset_pth + 'm_lmks.npy')[filter:]
+
+    dataset = smooth_lmks(dataset)
+
+    WEB_CAM = False
+    LOG_VIDEO = True
+
+    if WEB_CAM:
+        cap = VideoCapture(0)
+        # get cap property
+        frame_width = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
+        frame_height = cap.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+
+
+    else:
+        cap = cv2.VideoCapture(source_pth)
+        if not cap.isOpened():
+            print("Cannot open the source")
+            exit()
+
+        frame_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
+        frame_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+
+    if LOG_VIDEO:
+        # choose codec according to format needed
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        video = cv2.VideoWriter('data/desktop/video.avi', fourcc, 25, (640, 960))
 
     focal_length = frame_width
     center = (frame_width / 2, frame_height / 2)
@@ -269,11 +276,19 @@ if __name__ == "__main__":
             min_tracking_confidence=0.5) as face_mesh:
         id_select = []
         while 1:
-            image = cap.read()
-
+            ret,image = cap.read()
+            if not ret:
+                break
             image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
 
-            nn_img, best_nn_id = nearest_neighber(m_lmks, dataset, dataset_pth, only_mouth=True)
+            best_nn_id = nearest_neighber(m_lmks, dataset, only_mouth=True)
+
+            nn_img = cv2.imread(dataset_pth + 'img/%d.png' % (best_nn_id+filter))
+            nn_img1 = nn_img[:, 160:480]
+            nn_img2 = nn_img[:, 800:1120]
+            nn_img = np.hstack((nn_img1, nn_img2))
+
+
             selct_lmks = dataset[best_nn_id]
 
             # plt.scatter(selct_lmks[:, 0], selct_lmks[:, 1])
@@ -281,11 +296,17 @@ if __name__ == "__main__":
 
             cv2.imshow('landmarks', image_show)
             cv2.imshow('Robot', nn_img)
+            if LOG_VIDEO:
+                video.write(nn_img)
             # plt.show()
             # break
             id_select.append(best_nn_id)
+            print(len(id_select))
 
-            if cv2.waitKey(5) & 0xFF == 27:
+            if cv2.waitKey(1) == ord('q') :
                 break
-            np.savetxt('select_id.csv',np.asarray(id_select),fmt='%i')
+            # np.savetxt('select_id.csv',np.asarray(id_select),fmt='%i')
+
     cap.release()
+    cv2.destroyAllWindows()
+    video.release()
