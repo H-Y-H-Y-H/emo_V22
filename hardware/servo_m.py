@@ -384,25 +384,30 @@ if __name__ == "__main__":
     ############ Random babbling #############
     ##########################################
 
-    np.random.seed(3)
+    # np.random.seed(3)
 
-    restart_face = []
-    for m in all_motors:
-         restart_face.append(round(m.norm_v_cur,5))
-    print(restart_face)
+    # restart_face = []
+    # for m in all_motors:
+    #      restart_face.append(round(m.norm_v_cur,5))
+    # print(restart_face)
     
-    move_all(restart_face)
+    # move_all(restart_face)
     
-    scale = 0.3
-    random_move(restart_face, scale,loop_time=1000)
-    quit()
+    # scale = 0.3
+    # random_move(restart_face, scale,loop_time=1000)
+    # quit()
 
     ##########################################
     ########## Run commands (Record)##########
     ##########################################
 
     time_interval = 1/25
-    load_cmd = np.loadtxt('data/nvidia/smooth_mimic_synced_cmds.csv')
+    # load_cmd = np.loadtxt('data/nvidia/smooth_mimic_synced_cmds.csv')
+    load_cmd = np.loadtxt('../../data0914/action.csv')
+    copy_first = np.copy(load_cmd[:2])
+    load_cmd = np.vstack((copy_first,load_cmd[1:-1]))
+    np.savetxt('../../data0914/action_tuned.csv',load_cmd)
+
     load_cmd_filt = np.copy(load_cmd)
 
     # # visualize commands
@@ -422,7 +427,7 @@ if __name__ == "__main__":
     # quit()
     
     # Camera Record: 
-    record = True  # Frame by frame
+    record = False  # Frame by frame
     # Smooth:
     filter_flag = False
     window = 15 #7 #13
@@ -441,26 +446,27 @@ if __name__ == "__main__":
         blink_count = 0
         blink_flag = False
         for i in range(len(load_cmd)):
-            print(i)
-            target_cmds = load_cmd[i]
-
+            
+            A = int(input())
+            print(A)
+            target_cmds = load_cmd[A]
+            print(target_cmds)
             # Mouth movements
             for j in range(9):
                 target_cmds[j] = np.clip(target_cmds[j],0,1)
                 all_motors[j].norm_act(target_cmds[j])
 
-            # blink
-            if blink_count > blink_count_threshold:
-                blink_flag = True
-                blink_count = 0
+            ########## blink ###########
+            # if blink_count > blink_count_threshold:
+            #     blink_flag = True
+            #     blink_count = 0
 
-            if blink_flag:
-                blink_seg(blink_count)
-                if blink_count == 18:
-                    blink_count = 0
-                    blink_flag = False
-
-            blink_count +=1
+            # if blink_flag:
+            #     blink_seg(blink_count)
+            #     if blink_count == 18:
+            #         blink_count = 0
+            #         blink_flag = False
+            # blink_count +=1
 
             time_used = time.time()-time0
             if time_used<time_interval:
@@ -468,6 +474,7 @@ if __name__ == "__main__":
             else:
                 print('NOT REALTIME')
             time0 = time.time()
+            
 
     else:
         print('record mode')
