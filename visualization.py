@@ -4,12 +4,10 @@ import time
 import matplotlib.pyplot as plt
 import cv2
 import glob
-from smooth import *
 from scipy.signal import savgol_filter
 
 
 def smooth_lmks(lmks_list,window = 7, order = 2):
-
     for j in range(len(lmks_list[0])):
         for i in range(2):
             lmks_list[:, j, i] = savgol_filter(lmks_list[:,j,i], window, order)
@@ -24,8 +22,6 @@ def draw_lmks(ax, lmks, label_lmk):
     x = lmks[:, 0]
     y = -lmks[:, 1]
     ax.scatter(x, y, s=5, label=label_lmk)
-
-
 
 lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
             81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
@@ -118,6 +114,7 @@ def combine_img():
         # plt.show()
         # quit()
 
+
     width, height = img_list[0].shape[:2]
     img_size = (height, width)
     print(img_size)
@@ -127,8 +124,8 @@ def combine_img():
         out.write(img_list[i])
     out.release()
 
-combine_img()
-quit()
+# combine_img()
+# quit()
 
 
 def image2video():

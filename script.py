@@ -50,22 +50,39 @@ import matplotlib.pyplot as plt
 #     shutil.copy(datapath,savepath)
 
 # video_path = 'data/desktop/synced_video.avi'
-video_path = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/output0917_mimic(smooth_lmks)_3_13.mp4'
-save_path = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/gpt_demo_output0917/real_frame/'
+# video_path = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/output0917_mimic(smooth_lmks)_3_13.mp4'
+# save_path = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/gpt_demo_output0917/real_frame/'
+# import cv2
+# vidcap = cv2.VideoCapture(video_path)
+# # vidcap.set(cv2.CAP_PROP_FPS, 25)
+# success,image = vidcap.read()
+# cv2.imwrite(save_path+"frame%d.png" % 0, image)
+# count = 1
+# success = True
+# while success:
+#   success,image = vidcap.read()
+#   cv2.imwrite(save_path+"frame%d.png" % count, image)     # save frame as JPEG file
+#   if cv2.waitKey(10) == 27:                     # exit if Escape is hit
+#       break
+#   count += 1
+#   print(count)
+
+
 import cv2
-vidcap = cv2.VideoCapture(video_path)
-# vidcap.set(cv2.CAP_PROP_FPS, 25)
-success,image = vidcap.read()
-cv2.imwrite(save_path+"frame%d.png" % 0, image)
-count = 1
-success = True
-while success:
-  success,image = vidcap.read()
-  cv2.imwrite(save_path+"frame%d.png" % count, image)     # save frame as JPEG file
-  if cv2.waitKey(10) == 27:                     # exit if Escape is hit
-      break
-  count += 1
-  print(count)
+import glob
 
+img_array = []
+img_list = glob.glob('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data0914/img/*.png')
+for i in range(3000):
+  filename = "/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data0914/img/%d.png"%i
+  img = cv2.imread(filename)
+  height, width, layers = img.shape
+  size = (width, height)
+  img_array.append(img)
+  print(filename)
 
+out = cv2.VideoWriter('project.avi', cv2.VideoWriter_fourcc(*'DIVX'), 25, size)
 
+for i in range(len(img_array)):
+  out.write(img_array[i])
+out.release()

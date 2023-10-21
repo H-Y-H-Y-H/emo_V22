@@ -1,5 +1,5 @@
 import os
-from smooth import *
+from visualization import *
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
@@ -219,13 +219,14 @@ if __name__ == "__main__":
 
     dataset_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data0914/'
 
-    filter = 3043
-    dataset = np.load(dataset_pth + 'm_lmks.npy')[filter:]
+    filter_out = 3043
+    dataset = np.load(dataset_pth + 'm_lmks.npy')[filter_out:]
 
-    dataset = smooth_lmks(dataset)
 
-    WEB_CAM = False
-    LOG_VIDEO = True
+    # dataset = smooth_lmks(dataset)
+
+    WEB_CAM = True
+    LOG_VIDEO = False
 
     if WEB_CAM:
         cap = VideoCapture(0)
@@ -283,7 +284,7 @@ if __name__ == "__main__":
 
             best_nn_id = nearest_neighber(m_lmks, dataset, only_mouth=True)
 
-            nn_img = cv2.imread(dataset_pth + 'img/%d.png' % (best_nn_id+filter))
+            nn_img = cv2.imread(dataset_pth + 'img/%d.png' % (best_nn_id+filter_out))
             nn_img1 = nn_img[:, 160:480]
             nn_img2 = nn_img[:, 800:1120]
             nn_img = np.hstack((nn_img1, nn_img2))
