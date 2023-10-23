@@ -268,8 +268,8 @@ if __name__ == "__main__":
     # Collect landmarks from a video
     elif mode == 1:
 
-        # video_source = "data/en1-emo-synced.mp4"
-        video_source = '../EMO_GPTDEMO/result-2.avi'
+        video_source = "data/desktop/synced_video.avi"
+        # video_source = '../EMO_GPTDEMO/result-2.avi'
 
         cap = cv2.VideoCapture(video_source)
         cap.set(cv2.CAP_PROP_FPS, 25)
@@ -321,10 +321,12 @@ if __name__ == "__main__":
                 m_lmks_logger.append(m_lmks)
 
                 cv2.imshow('landmarks', image_show)
+                cv2.imwrite('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/synthesized_lmks/%d.png'%count,image_show)
                 print(count)
                 count+=1
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
+
             np.save('data/desktop/emo_synced_lmks.npy', m_lmks_logger)
 
         cap.release()

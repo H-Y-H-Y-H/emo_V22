@@ -195,22 +195,38 @@ lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146
 inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
 
 
-def nearest_neighber(lmks,dataset,only_mouth = False):
-    if only_mouth:
-        compare_idx = lips_idx + inner_lips_idx
-        duplicate_lmks = np.asarray([lmks[compare_idx]] * len(dataset))
-        distance = (duplicate_lmks - dataset[:,compare_idx]) ** 2
-    else:
-        duplicate_lmks = np.asarray([lmks] * len(dataset))
-        distance = (duplicate_lmks - dataset) ** 2
+def nearest_neighber(lmks, dataset, only_mouth = False,normalize = False,rank_data = 20):
 
-    distance = np.mean(np.mean(distance, axis=1), axis=1)
+
+    if only_mouth:
+
+        compare_idx = lips_idx + inner_lips_idx
+        dataset = dataset[:,compare_idx]
+        lmks = lmks[compare_idx]
+
+        if normalize:
+            dataset_min = dataset.min(axis=(0, 1), keepdims=True)
+            dataset_max = dataset.max(axis=(0, 1), keepdims=True)
+            dataset = (dataset - dataset_min) / (dataset_max - dataset_min)
+            lmks = (lmks - dataset_min[0]) / (dataset_max - dataset_min[0])
+
+            # distance = (lmks - dataset[:,compare_idx]) ** 2
+
+        # else:
+        #     distance = (lmks[compare_idx] - dataset[:,compare_idx]) ** 2
+
+    # MSE
+    # distance = np.mean(np.mean(distance, axis=1), axis=1)
+    distance = np.sum((dataset - lmks) ** 2, axis=(1, 2))
+
     rank = np.argsort(distance)
     best_nn_id = rank[0]
-    print(distance[rank[:5]])
-    print(rank[:5])
+    rank_nn_id = rank[:rank_data]
+    rank_distance = distance[rank_nn_id]
+    print(rank_distance)
+    print(rank_nn_id)
 
-    return best_nn_id
+    return best_nn_id, rank_nn_id,rank_distance
 
 
 if __name__ == "__main__":
@@ -282,7 +298,7 @@ if __name__ == "__main__":
                 break
             image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
 
-            best_nn_id = nearest_neighber(m_lmks, dataset, only_mouth=True)
+            best_nn_id = nearest_neighber(m_lmks, dataset, only_mouth=True,normalize=True)
 
             nn_img = cv2.imread(dataset_pth + 'img/%d.png' % (best_nn_id+filter_out))
             nn_img1 = nn_img[:, 160:480]

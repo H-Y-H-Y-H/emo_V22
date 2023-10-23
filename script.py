@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
@@ -72,16 +74,20 @@ import cv2
 import glob
 
 img_array = []
-img_list = glob.glob('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data0914/img/*.png')
-for i in range(3000):
-  filename = "/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data0914/img/%d.png"%i
+rank_num = 150
+# img_list = glob.glob('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data0914/img/*.png')
+img_pth = 'data/desktop/NN(BL)_dataset/'
+img_list = os.listdir(img_pth+"/img(%dcmds_close)/"%rank_num)
+print(len(img_list))
+for i in range(len(img_list)):
+  filename = img_pth+"/img(%dcmds_close)/%d.jpeg"%(rank_num,i)
   img = cv2.imread(filename)
   height, width, layers = img.shape
   size = (width, height)
   img_array.append(img)
   print(filename)
 
-out = cv2.VideoWriter('project.avi', cv2.VideoWriter_fourcc(*'DIVX'), 25, size)
+out = cv2.VideoWriter(img_pth+'nn(dataset)_(%dcmds_close).avi'%rank_num, cv2.VideoWriter_fourcc(*'DIVX'), 30, size)
 
 for i in range(len(img_array)):
   out.write(img_array[i])
