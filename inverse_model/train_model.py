@@ -10,7 +10,7 @@ random.seed(0)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print("start", device)
-data_path = "../data/"
+data_path = "../../EMO_GPTDEMO/data0914/"
 
 lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
             81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
@@ -19,17 +19,27 @@ inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 40
 select_lmks_id = lips_idx + inner_lips_idx
 n_lmks = len(select_lmks_id)
 
-dataset_lmk = np.load(data_path+'R_lmks_data.npy')[:, select_lmks_id]
-dataset_cmd = np.load(data_path+'R_cmds_data.npy')
+key_cmds = np.asarray([0,1,2,3,5,7])
 
-sample_id = random.sample(range(len(dataset_lmk)), len(dataset_lmk))
+dataset_lmk = np.load(data_path+'m_lmks.npy')[:, select_lmks_id]
+dataset_cmd = np.loadtxt(data_path+'action_tuned.csv')[:, key_cmds]
 
-tr_lmks = dataset_lmk[sample_id[:int(len(dataset_lmk) * 0.8)]]
-va_lmks = dataset_lmk[sample_id[int(len(dataset_lmk) * 0.8):]]
+dataset_lmk = dataset_lmk[3044:]
+dataset_cmd = dataset_cmd[3044:]
 
+sample_id = np.arange(len(dataset_lmk))
+np.random.shuffle(sample_id)
+training_num = int(len(dataset_lmk) * 0.8)
 
-tr_cmds = dataset_cmd[sample_id[:int(len(dataset_cmd) * 0.8)]][:,:9]
-va_cmds = dataset_cmd[sample_id[int(len(dataset_cmd) * 0.8):]][:,:9]
+# tr_lmks = dataset_lmk[sample_id[:training_num]]
+# va_lmks = dataset_lmk[sample_id[training_num:]]
+# tr_cmds = dataset_cmd[sample_id[:training_num]]
+# va_cmds = dataset_cmd[sample_id[training_num:]]
+tr_lmks = dataset_lmk[:training_num]
+va_lmks = dataset_lmk[training_num:]
+tr_cmds = dataset_cmd[:training_num]
+va_cmds = dataset_cmd[training_num:]
+
 
 
 # INPUT SIZE:  2(dimensions) x 113(lmks)
@@ -51,8 +61,28 @@ class Robot_face_data(Dataset):
         return len(self.input_data)
 
 
-def train_model(batchsize, lr = 1e-5):
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+def train_model():
+    wandb.init(project="IVM")
+    config = wandb.config
+    run_name = wandb.run.name
+
+
+    print(run_name)
+
+    log_path = "../data/logger_IVM/%s/"%run_name
+    os.makedirs(log_path,exist_ok=True)
+
+
+    model = inverse_model(input_size=input_dim,
+                          label_size=output_dim,
+                          num_layer=config.n_layer,
+                          d_hidden=config.d_hidden,
+                          use_bn=config.use_bn,
+                          skip_layer=config.skip_layer,
+                          final_sigmoid=config.final_sigmoid
+                          ).to(device)
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     Loss_fun = nn.MSELoss(reduction='mean')
     # Loss_fun = nn.L1Loss(reduction='mean')
 
@@ -62,8 +92,8 @@ def train_model(batchsize, lr = 1e-5):
     train_dataset = Robot_face_data(input_data=tr_lmks, label_data=tr_cmds)
     test_dataset = Robot_face_data(input_data=va_lmks, label_data=va_cmds)
 
-    train_dataloader = DataLoader(train_dataset, batch_size=batchsize, shuffle=True, num_workers=0)
-    test_dataloader = DataLoader(test_dataset, batch_size=batchsize, shuffle=True, num_workers=0)
+    train_dataloader = DataLoader(train_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
+    test_dataloader = DataLoader(test_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
 
     # mini test: check the shape of your data
     for mini_i in range(3):
@@ -75,7 +105,7 @@ def train_model(batchsize, lr = 1e-5):
     test_epoch_L = []
     min_loss = + np.inf
     patience = 0
-    for epoch in range(num_epoches):
+    for epoch in range(10000):
         t0 = time.time()
         model.train()
         temp_l = []
@@ -84,7 +114,7 @@ def train_model(batchsize, lr = 1e-5):
             input_d, label_d = bundle["input"], bundle["label"]
 
             input_d = torch.flatten(input_d, 1)
-            label_d = torch.flatten(label_d, 1)
+            # label_d = torch.flatten(label_d, 1)
 
             pred_result = model.forward(input_d)
             loss = Loss_fun(pred_result, label_d)
@@ -105,7 +135,7 @@ def train_model(batchsize, lr = 1e-5):
                 input_d, label_d = bundle["input"], bundle["label"]
 
                 input_d = torch.flatten(input_d, 1)
-                label_d = torch.flatten(label_d, 1)
+                # label_d = torch.flatten(label_d, 1)
 
                 pred_result = model.forward(input_d)
                 # loss = model.loss(pred_result, label_d)
@@ -116,7 +146,7 @@ def train_model(batchsize, lr = 1e-5):
             test_epoch_L.append(test_mean_loss)
         scheduler.step(test_mean_loss)
 
-        if test_mean_loss < min_loss:
+        if min_loss-test_mean_loss>0.0001:
             # print('Training_Loss At Epoch ' + str(epoch) + ':\t' + str(train_mean_loss))
             # print('Testing_Loss At Epoch ' + str(epoch) + ':\t' + str(test_mean_loss))
             min_loss = test_mean_loss
@@ -128,9 +158,15 @@ def train_model(batchsize, lr = 1e-5):
         np.savetxt(log_path + "testing_MSE.csv", np.asarray(test_epoch_L))
 
         t1 = time.time()
-        print(epoch, "time used: ", round((t1 - t0),3), "training mean loss: ",round(train_mean_loss,5), "Test loss: ", round(test_mean_loss,5), "lr:", round(optimizer.param_groups[0]['lr'],5))
+        wandb.log({"train_loss": train_mean_loss,
+                   'valid_loss': test_mean_loss,
+                   'epoch':epoch,
+                   'learning_rate':optimizer.param_groups[0]['lr']})
+
+        print(epoch, "time used: ", round((t1 - t0),3), "training mean loss: ",round(train_mean_loss,5), "Test loss: ",test_mean_loss, "lr:", round(optimizer.param_groups[0]['lr'],5))
         if patience>30:
             break
+
     plt.plot(np.arange(10,len(train_epoch_L)),train_epoch_L[10:])
     plt.plot(np.arange(10,len(test_epoch_L)),test_epoch_L[10:])
     plt.title('Learning Curve')
@@ -141,18 +177,33 @@ def train_model(batchsize, lr = 1e-5):
 
 
 if __name__ == '__main__':
+    import wandb
+    # wandb.login()
 
-    input_dim = va_lmks.shape[1]*va_lmks.shape[2]
+    sweep_configuration = {
+        "method": "random",
+        "metric": {"goal": "minimize", "name": "valid_loss"},
+        "parameters": {
+            'd_hidden':{"values":[128, 256, 512, 1024]},
+            'batchsize':{"values": [8, 16, 32]},
+            'learning_rate': {"max": 1e-6, "min":1e-8},
+            'n_layer':{"values": [3, 4, 5]},
+            'use_bn':{"values": [1,0]},
+            'skip_layer':{"values": [1, 2]},
+            'final_sigmoid': {"values": [1, 0]},
+        },
+    }
+    sweep_id = wandb.sweep(sweep=sweep_configuration, project="IVM")
+
+
+    input_dim = n_lmks*3
     output_dim = va_cmds.shape[1]
     print('input_dim:',input_dim)
     print('output_dim:',output_dim)
 
-    model = inverse_model(input_dim,output_dim).to(device)
 
-    batchsize = 64  # 128
-    num_epoches = 1000
+    # run = wandb.init(project="IVM")
 
-    log_path = "../data/logger_IVM/"
-    os.makedirs(log_path,exist_ok=True)
 
-    train_model(batchsize)
+    # train_model()
+    wandb.agent(sweep_id, function=train_model, count=100)

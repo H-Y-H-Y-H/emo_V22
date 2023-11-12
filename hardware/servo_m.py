@@ -219,7 +219,7 @@ def random_cmds(reference=None, noise=0.2, only_mouth=True):
     # Symmetrize
 
     # cmds_random[2], cmds_random[3] = check_lip_low(cmds_random[2], cmds_random[3])
-    cmds_random[0],cmds_random[1],cmds_random[2],cmds_random[3] = check_lip_upper(cmds_random[0],cmds_random[1],cmds_random[2],cmds_random[3],cmds_random[5])
+    cmds_random[0], cmds_random[1],cmds_random[2],cmds_random[3] = check_lip_upper(cmds_random[0],cmds_random[1],cmds_random[2],cmds_random[3],cmds_random[5])
     cmds_random[4] = cmds_random[3]
     cmds_random[6] = cmds_random[5]
     cmds_random[9] = cmds_random[8]

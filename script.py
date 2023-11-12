@@ -73,22 +73,79 @@ import matplotlib.pyplot as plt
 import cv2
 import glob
 
-img_array = []
-rank_num = 150
-# img_list = glob.glob('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data0914/img/*.png')
-img_pth = 'data/desktop/NN(BL)_dataset/'
-img_list = os.listdir(img_pth+"/img(%dcmds_close)/"%rank_num)
-print(len(img_list))
-for i in range(len(img_list)):
-  filename = img_pth+"/img(%dcmds_close)/%d.jpeg"%(rank_num,i)
-  img = cv2.imread(filename)
-  height, width, layers = img.shape
-  size = (width, height)
-  img_array.append(img)
-  print(filename)
 
-out = cv2.VideoWriter(img_pth+'nn(dataset)_(%dcmds_close).avi'%rank_num, cv2.VideoWriter_fourcc(*'DIVX'), 30, size)
+def frames_2_video():
+  # img_array = []
+  # img_list = glob.glob('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data1105/img/*.png')
+  img_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1109/img/'
+  frame_n = 900
+  fps = 30
+  fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+  out = cv2.VideoWriter('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1109/data_%ds.mp4'%(frame_n//fps), fourcc, fps, (480, 480))
 
-for i in range(len(img_array)):
-  out.write(img_array[i])
-out.release()
+  for i in range(frame_n):
+    filename = img_pth+"/%d.png"%(i)
+
+    img = cv2.imread(filename)[:,80:560]
+    # img = img[:,80:560]
+
+    print(filename)
+
+    out.write(img)
+
+  out.release()
+
+# frames_2_video()
+
+def frames_video():
+  img_array = []
+  rank_num = 200
+  d_root = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/'
+
+  img_pth = d_root+'desktop/NN(BL)_dataset/'
+  img_list = os.listdir(img_pth+"/img(%d_m_lmks_mouth)/"%rank_num)
+  print(len(img_list))
+  for i in range(len(img_list)):
+    filename = img_pth+"/img(%d_m_lmks_mouth)/%d.jpeg"%(rank_num,i)
+    img = cv2.imread(filename)
+    height, width, layers = img.shape
+    size = (width, height)
+    img_array.append(img)
+    print(filename)
+
+  out = cv2.VideoWriter(img_pth+'nn(dataset)_(%d_m_lmks_mouth).avi'%rank_num, cv2.VideoWriter_fourcc(*'DIVX'), 30, size)
+
+  for i in range(len(img_array)):
+    out.write(img_array[i])
+  out.release()
+
+frames_video()
+
+def visualize_dataset():
+  import time
+  dataset_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data0914/'
+  filter_out = 3043
+  dataset = np.load(dataset_pth + 'm_lmks.npy')[filter_out:]
+  cv2.namedWindow("Robot")
+
+  curr_id = 0
+  for i in range(len(dataset)):
+    t1 = time.time()
+    if curr_id >= i:
+      continue
+    curr_id = i + np.random.randint(0,3)
+    img = cv2.imread(dataset_pth+ "img/%d.png"%curr_id)
+
+    cv2.imshow('Dataset_Review', img)
+    if cv2.waitKey(1) == ord('q'):
+      break
+    t2 = time.time()
+    if t2-t1 < (1/25):
+      time.sleep(1/25-(t2-t1))
+
+# visualize_dataset()
+
+
+
+
+
