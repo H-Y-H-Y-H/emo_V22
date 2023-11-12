@@ -3,10 +3,14 @@ from model import *
 import os
 
 def lmks2cmds(target_lmks, log_path):
-    pre_init_cmds = groundtruth_data[0]
+    # pre_init_cmds = groundtruth_data[0]
+    # outputs = groundtruth_data[1]
+    # outputs_data = [groundtruth_data[0],groundtruth_data[1]]
 
-    outputs = groundtruth_data[1]
-    outputs_data = [groundtruth_data[0],groundtruth_data[1]]
+    pre_init_cmds = init_cmds
+    outputs = init_cmds
+    outputs_data = [init_cmds,init_cmds]
+
     for i in range(2,len(target_lmks)):
         pre_pre_init_cmds = np.copy(pre_init_cmds)
         pre_init_cmds = np.copy(outputs)
@@ -28,7 +32,31 @@ def lmks2cmds(target_lmks, log_path):
     # loss = (outputs_log - label_data)**2
     # print('error:', np.mean(loss))
 
+def use_model(target_lmks, log_path):
+    # pre_init_cmds = groundtruth_data[0]
+    # outputs = groundtruth_data[1]
+    # outputs_data = [groundtruth_data[0],groundtruth_data[1]]
 
+    pre_init_cmds = init_cmds
+    outputs = init_cmds
+    outputs_data = [init_cmds,init_cmds]
+
+    for i in range(2,len(target_lmks)):
+        pre_pre_init_cmds = np.copy(pre_init_cmds)
+        pre_init_cmds = np.copy(outputs)
+        flatten_lmks = target_lmks[i].flatten()
+        input_data = np.concatenate((pre_pre_init_cmds, pre_init_cmds, flatten_lmks))
+
+        inputs_v = torch.from_numpy(input_data.astype('float32')).to(device)
+
+        inputs_v = inputs_v.unsqueeze(0)
+        outputs = model.forward(inputs_v)[0]
+        outputs = outputs.detach().cpu().numpy()
+        outputs_data.append(outputs)
+    np.savetxt(log_path, outputs_data)
+    return outputs_data
+    # loss = (outputs_log - label_data)**2
+    # print('error:', np.mean(loss))
 
 lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
             81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
@@ -87,8 +115,9 @@ if __name__ == '__main__':
     model.eval()
 
 
-    # lmks2cmds(target_lmks, log_path="../data/nvidia/fs2_nn_cmds.csv")
+    use_model(target_lmks, log_path="../data/nvidia/fs2_nn_cmds.csv")
 
+    quit()
     lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
                 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
     inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
@@ -124,4 +153,4 @@ if __name__ == '__main__':
     # loss = np.mean((np.asarray(outputs_data) - groundtruth_data)**2)
     # print(loss)
 
-    pred_cmds = lmks2cmds(dataset_lmk, log_path="../data/nvidia/pred_cmds.csv")
+    # pred_cmds = lmks2cmds(dataset_lmk, log_path="../data/nvidia/pred_cmds.csv")

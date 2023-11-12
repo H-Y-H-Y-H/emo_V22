@@ -211,7 +211,10 @@ def train_model():
                    'learning_rate':optimizer.param_groups[0]['lr'],
                    'min_valid_loss': min_loss})
 
-        print(epoch, "time used: ", round((t1 - t0),3), "training mean loss: ",round(train_mean_loss,5), "Test loss: ",test_mean_loss, "lr:", round(optimizer.param_groups[0]['lr'],5))
+        print(epoch, "time used: ", round((t1 - t0),3),
+              "training mean loss: ",round(train_mean_loss,5),
+              "Test loss: ",test_mean_loss, "lr:", round(optimizer.param_groups[0]['lr'],5),
+              " patience:",patience)
         if patience>20:
             break
 
