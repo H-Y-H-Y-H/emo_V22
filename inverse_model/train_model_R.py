@@ -117,6 +117,9 @@ def train_model():
     test_dataloader = DataLoader(test_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+
+
+
     Loss_fun = nn.L1Loss(reduction='mean')
     # Loss_fun = nn.L1Loss(reduction='mean')
 
@@ -157,8 +160,6 @@ def train_model():
         train_epoch_L.append(train_mean_loss)
 
         model.eval()
-
-
         with torch.no_grad():
             temp_l = []
             # for data_type_id in range(3):
@@ -169,9 +170,9 @@ def train_model():
             #         # loss = model.loss(pred_result, label_d)
             #         loss = Loss_fun(pred_result, label_d)
             #         temp_l.append(loss.item())
-            pre_init_cmds = groundtruth_data[0]
-            outputs = groundtruth_data[1]
-            # outputs_data = [groundtruth_data[0], groundtruth_data[1]]
+            pre_init_cmds = init_cmds
+            outputs = init_cmds
+            # outputs_data = [init_cmds, init_cmds]
             for i in range(2, len(test_lmk_data)):
                 pre_pre_init_cmds = np.copy(pre_init_cmds)
                 pre_init_cmds = np.copy(outputs)
@@ -183,7 +184,8 @@ def train_model():
                 inputs_v = inputs_v.unsqueeze(0)
                 outputs = model.forward(inputs_v)[0]
                 outputs = outputs.detach().cpu().numpy()
-                loss = Loss_fun(outputs, groundtruth_data[i])
+
+                loss = np.mean(np.abs((outputs-groundtruth_data[i])))
                 temp_l.append(loss)
 
 
