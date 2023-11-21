@@ -118,10 +118,10 @@ def train_model():
     #                       ).to(device)
     model = TransformerInverse().to(device)
 
-    train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=0)
-    test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=True, num_workers=0)
+    train_dataloader = DataLoader(train_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
+    test_dataloader = DataLoader(test_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=10-9)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
     Loss_fun = nn.L1Loss(reduction='mean')
     # Loss_fun = nn.L1Loss(reduction='mean')
 
@@ -246,8 +246,8 @@ if __name__ == '__main__':
         "metric": {"goal": "minimize", "name": "valid_loss"},
         "parameters": {
             'dim_feedforward':{"values":[128, 256, 512,1024]},
-            'batchsize':{"values": [8, 16, 32,64,128]},
-            'learning_rate': {"max": 5e-5, "min":1e-6},
+            'batchsize':{"values": [8, 16, 32,64]},
+            'lr': {"max": 10e-5, "min":10e-6},
             'num_encoder_layers':{"values": [2,3,4,5,6]},
             'num_decoder_layers':{"values": [2,3,4,5,6]},
             'nhead':{"values": [1,2]}
@@ -274,5 +274,5 @@ if __name__ == '__main__':
     groundtruth_data = torch.from_numpy(groundtruth_data).to(device, dtype=torch.float)
     test_lmk_data = torch.from_numpy(test_lmk_data).to(device, dtype=torch.float)
 
-    train_model()
-    # wandb.agent(sweep_id, function=train_model, count=100)
+    # train_model()
+    wandb.agent(sweep_id, function=train_model, count=100)
