@@ -8,7 +8,8 @@ import numpy as np
 
 
 class inverse_model(nn.Module):
-    def __init__(self, input_size=478*3,
+    def __init__(self,
+                 input_size=478*3,
                  label_size=13,
                  num_layer= 4,
                  d_hidden = 128,
@@ -62,47 +63,77 @@ class inverse_model(nn.Module):
     def loss(self, pred, target):
         return torch.mean((pred - target) ** 2)
 
-    # def __init__(self, input_size=478*3,label_size=13, hid_size = 1024):
-    #     super(inverse_model, self).__init__()
-    #
-    #     self.hid_size = hid_size
-    #     self.inputsize = input_size
-    #     self.outputsize = label_size
-    #
-    #     self.fc1 = nn.Linear(self.inputsize,  self.hid_size)
-    #     self.fc2 = nn.Linear( self.hid_size,  self.hid_size)
-    #     self.fc3= nn.Linear( self.hid_size,  self.hid_size)
-    #     self.fc4 = nn.Linear( self.hid_size, self.outputsize)
-    #
-    #     self.bn1 = nn.BatchNorm1d( self.hid_size)
-    #     self.bn2 = nn.BatchNorm1d( self.hid_size)
-    #     self.bn3 = nn.BatchNorm1d( self.hid_size)
-    #     # (2) no batch norm
-    # def forward(self, x):
-    #     x = F.relu(self.fc1(x))
-    #     x = self.bn1(x)
-    #     x2 = F.relu(self.fc2(x))
-    #     x = self.bn2(x)
-    #     x = F.relu(self.fc3(torch.add(x,x2)))
-    #     x = self.bn3(x)
-    #     x = torch.sigmoid(self.fc4(x))
-    #     return x
+
+# class ImprovedInverseModel(nn.
+import torch
+import torch.nn as nn
+from torch.nn import Transformer
+
+class TransformerInverse(nn.Module):
+    def __init__(self,
+                encoder_input_size = 6,
+                decoder_input_size = 60,
+                output_size = 6,
+                nhead = 2     ,
+                num_encoder_layers = 2  ,
+                num_decoder_layers = 2  ,
+                dim_feedforward = 512
+                 ):
+        super(TransformerInverse, self).__init__()
+
+        self.encoder_embedding = nn.Linear(encoder_input_size, dim_feedforward)
+        self.decoder_embedding = nn.Linear(decoder_input_size, dim_feedforward)
+        self.transformer = Transformer(d_model=dim_feedforward, nhead=nhead,
+                                       num_encoder_layers=num_encoder_layers,
+                                       num_decoder_layers=num_decoder_layers,
+                                       dim_feedforward=dim_feedforward,
+                                       batch_first=True)  # Set batch_first to True
+        self.output_layer = nn.Linear(dim_feedforward, output_size)
+
+    def forward(self, encoder_input, decoder_input):
+        encoder_input = self.encoder_embedding(encoder_input)
+        decoder_input = self.decoder_embedding(decoder_input)
+
+        output = self.transformer(encoder_input, decoder_input)
+        output = self.output_layer(output[:, -1, :])  # Adjusted for batch_first
+        return output
 
 
 if __name__ == "__main__":
     import time
 
-    d_input = 60 * 3 * 3 + 6 * 2
-    d_output = 6
-    model = inverse_model(input_size=d_input,label_size=d_output,d_hidden=2048)
-    model.eval()
-    with torch.no_grad():
-        input_data = torch.ones((1, d_input))
-        run_times = 1000
-        t0 = time.time()
-        for i in range(run_times):
-            output_data = model.forward(input_data)
-            # print(output_data.shape)
-        t1 = time.time()
-        print(1/((t1-t0)/run_times))
-        print(((t1-t0)/run_times))
+    # Example Usage
+    encoder_input_size = 6
+    decoder_input_size = 60
+    output_size = 6
+    nhead = 2
+    num_encoder_layers = 2
+    num_decoder_layers = 2
+    dim_feedforward = 512
+
+    model = TransformerInverse(encoder_input_size, decoder_input_size, output_size, nhead, num_encoder_layers,
+                              num_decoder_layers, dim_feedforward)
+
+    # Adjust inputs for batch_first
+    # For batch size = 1
+    encoder_input = torch.rand(1, 2, 6)  # Example encoder input
+    decoder_input = torch.rand(1, 3, 60)  # Example decoder input
+
+    output = model(encoder_input, decoder_input)
+    print(output)
+
+
+    # d_input = 60 * 3 * 1 + 6 * 2
+    # d_output = 6
+    # model = inverse_model(input_size=d_input,label_size=d_output,d_hidden=2048)
+    # model.eval()
+    # with torch.no_grad():
+    #     input_data = torch.ones((1, d_input))
+    #     run_times = 1000
+    #     t0 = time.time()
+    #     for i in range(run_times):
+    #         output_data = model.forward(input_data)
+    #         # print(output_data.shape)
+    #     t1 = time.time()
+    #     print(1/((t1-t0)/run_times))
+    #     print(((t1-t0)/run_times))

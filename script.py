@@ -3,24 +3,7 @@ import os
 import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
-# cap = cv.VideoCapture('en-1.mp4')
-# list_img = []
-# while cap.isOpened():
-#     ret, frame = cap.read()
-#     # if frame is read correctly ret is True
-#     if not ret:
-#         print("Can't receive frame (stream end?). Exiting ...")
-#         break
-#     # RGB_img = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
-#     cv.imshow('frame', frame)
-#     list_img.append(frame)
-#     if cv.waitKey(1) == ord('q'):
-#         break
-# cap.release()
-# cv.destroyAllWindows()
-#
-#
-# print(list_img)
+
 
 # Combine the dataset arr
 # dataset_saved = '/Users/yuhang/Downloads/EMO_GPTDEMO/data0903/'
@@ -119,7 +102,7 @@ def frames_video():
     out.write(img_array[i])
   out.release()
 
-frames_video()
+# frames_video()
 
 def visualize_dataset():
   import time
@@ -146,6 +129,213 @@ def visualize_dataset():
 # visualize_dataset()
 
 
+def video_2_frames(video_source):
+  cap = cv.VideoCapture(video_source)
+  list_img = []
+  while cap.isOpened():
+      ret, frame = cap.read()
+      # if frame is read correctly ret is True
+      if not ret:
+          print("Can't receive frame (stream end?). Exiting ...")
+          break
+
+      # frame = frame[:,30:510]
+      cv.imshow('frame', frame)
+      list_img.append(frame)
+      if cv.waitKey(1) == ord('q'):
+          break
+  cap.release()
+  cv.destroyAllWindows()
+  return list_img
 
 
+def cut_video():
+  size = (480,480)
+  shift_frame = 3
+  method_name = 'wav_bl'
+  for demo_id in range(9,10):
+    lmks_path = f'../EMO_GPTDEMO/synthesized_target/om/lmks/m_lmks_{demo_id}.npy'
+    length_f = len(np.load(lmks_path))
+    video_source = f'../EMO_GPTDEMO/output_cmds/{method_name}_video/output{demo_id}.mp4'
+    img_array = video_2_frames(video_source)
+    img_array = np.asarray(img_array)[-length_f+shift_frame:]
+    img_array = np.concatenate((img_array,img_array[-1:],img_array[-1:],img_array[-1:]))
+    out = cv2.VideoWriter(f'../EMO_GPTDEMO/output_cmds/{method_name}_video/{demo_id}.mp4',
+                          cv2.VideoWriter_fourcc(*'MP4V'),
+                          30,
+                          size)
 
+    for i in range(len(img_array)):
+      out.write(img_array[i])
+    out.release()
+
+# cut_video()
+
+def compare_lmks_dist():
+  method_name = 'wav_bl'
+  for demo_id in range(10):
+    results = np.load(f'../EMO_GPTDEMO/output_cmds/{method_name}_video/m_lmks_{demo_id}.npy')
+    label_lmks_path = f'../EMO_GPTDEMO/synthesized_target/om/lmks/m_lmks_{demo_id}.npy'
+    label_lmks = np.load(label_lmks_path)
+
+    error_list = [np.mean(np.abs(label_lmks - results))]
+    for shif_length in range(1,10):
+      error = np.mean(np.abs(label_lmks[:-shif_length] - results[shif_length:]))
+      error_list.append(error)
+    print(np.argmin(error_list),error_list)
+# compare_lmks_dist()
+
+from moviepy.editor import VideoFileClip, AudioFileClip
+
+def combine_audio_video(audio_file_path, video_file_path, output_file_path):
+    # Load the audio file
+    audio_clip = AudioFileClip(audio_file_path)
+
+    # Load the video file
+    video_clip = VideoFileClip(video_file_path)
+
+    # Set the audio of the video clip as the audio file
+    final_clip = video_clip.set_audio(audio_clip)
+
+    # Write the result to a file
+    final_clip.write_videofile(output_file_path, codec="libx264", audio_codec="aac")
+
+lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
+            81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
+inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
+
+select_lmks_id = lips_idx + inner_lips_idx
+def sidebyside(demo_id = 0):
+  import matplotlib
+  matplotlib.use('Agg')
+
+  source_path = f'../EMO_GPTDEMO/output_cmds/'
+  method_names = ['syn', 'eager',  'nn_400', 'wav_bl']
+  save_path = f'../EMO_GPTDEMO/compare/'
+  os.makedirs(save_path,exist_ok=True)
+  os.makedirs(save_path+f'demo{demo_id}/',exist_ok=True)
+  video_frames_list = []
+  for i in range(len(method_names)):
+    met_n = method_names[i]
+    video_path = source_path + met_n + f'_video/{demo_id}.mp4'
+    frames = video_2_frames(video_path)
+    video_frames_list.append(frames)
+
+  img_list = []
+
+  scale_change = (45/0.15)
+  gt_lmks     = np.load(f'../EMO_GPTDEMO/synthesized_target/om/lmks/m_lmks_{demo_id}.npy')*scale_change
+  eager_lmks  = np.load(f'../EMO_GPTDEMO/output_cmds/eager_video/m_lmks_{demo_id}.npy')*scale_change
+  nn_400_lmks = np.load(f'../EMO_GPTDEMO/output_cmds/nn_400_video/m_lmks_{demo_id}.npy')*scale_change
+  wav_bl_lmks = np.load(f'../EMO_GPTDEMO/output_cmds/wav_bl_video/m_lmks_{demo_id}.npy')*scale_change
+
+  gt_lmks     = gt_lmks     [:,select_lmks_id]
+  eager_lmks  = eager_lmks  [:,select_lmks_id]
+  nn_400_lmks = nn_400_lmks [:,select_lmks_id]
+  wav_bl_lmks = wav_bl_lmks [:,select_lmks_id]
+
+  dist_eager   = np.mean(np.abs(gt_lmks - eager_lmks) ,axis=(1,2))
+  dist_nn_400  = np.mean(np.abs(gt_lmks - nn_400_lmks),axis=(1,2))
+  dist_wav_bl = np.mean(np.abs(gt_lmks - wav_bl_lmks),axis=(1,2))
+
+  dist_eager  [:2] = dist_eager  [2]
+  dist_nn_400 [:2] = dist_nn_400 [2]
+  dist_wav_bl [:2] = dist_wav_bl [2]
+
+  for f in range(len(video_frames_list[0])):
+    plt.figure(figsize=(480 / 96, 480 / 96), dpi=96)
+    plt.ylim(0,5)
+
+    plt.plot(dist_eager,c = 'black',label='Overall L1 Distance')
+    mean_dist = np.mean(dist_eager)
+    plt.plot([0,len(dist_eager)], [mean_dist]*2,c='deepskyblue', linestyle='--', label =f'Mean L1 Distance')
+    plt.scatter([f],[dist_eager[f]],c = 'lightgreen',label=f'Current Distance: {dist_eager[f]:.3f}')
+    plt.xlabel("Frame Index")
+    plt.ylabel("L1 Distance")
+    plt.title(f"Mean L1 Landmarks Distance: {mean_dist:.3f}")
+    plt.legend()
+    plt.gca().figure.canvas.draw()
+    # Convert to a NumPy array
+    data = np.frombuffer(plt.gca().figure.canvas.tostring_rgb(), dtype=np.uint8)
+    data = data.reshape(plt.gcf().canvas.get_width_height()[::-1] + (3,))
+    eager_curve = cv2.cvtColor(data,cv2.COLOR_RGB2BGR)
+
+
+    plt.figure(figsize=(480 / 96, 480 / 96), dpi=96)
+    plt.ylim(0,5)
+    plt.plot(dist_nn_400,c = 'black',label='Overall L1 Distance')
+    mean_dist = np.mean(dist_nn_400)
+    plt.plot([0,len(dist_nn_400)], [mean_dist]*2,c='deepskyblue', linestyle='--', label =f'Mean L1 Distance')
+    plt.scatter([f],[dist_nn_400[f]],c = 'lightgreen',label=f'Current Distance: {dist_nn_400[f]:.3f}')
+    plt.xlabel("Frame Index")
+    plt.ylabel("L1 Distance")
+    plt.title(f"Mean L1 Landmarks Distance: {mean_dist:.3f}")
+    plt.legend()
+    plt.gca().figure.canvas.draw()
+    # Convert to a NumPy array
+    data = np.frombuffer(plt.gca().figure.canvas.tostring_rgb(), dtype=np.uint8)
+    data = data.reshape(plt.gcf().canvas.get_width_height()[::-1] + (3,))
+    nn_curve = cv2.cvtColor(data,cv2.COLOR_RGB2BGR)
+
+
+    plt.figure(figsize=(480 / 96, 480 / 96), dpi=96)
+    plt.ylim(0,5)
+
+    plt.plot(dist_wav_bl,c = 'black',label='Overall L1 Distance')
+    mean_dist = np.mean(dist_wav_bl)
+    plt.plot([0,len(dist_wav_bl)], [mean_dist]*2,c='deepskyblue', linestyle='--', label =f'Mean L1 Distance')
+    plt.scatter([f],[dist_wav_bl[f]],c = 'lightgreen',label=f'Current Distance: {dist_wav_bl[f]:.3f}')
+    plt.xlabel("Frame Index")
+    plt.ylabel("L1 Distance")
+    plt.title(f"Mean L1 Landmarks Distance: {mean_dist:.3f}")
+    plt.legend()
+    plt.gca().figure.canvas.draw()
+    # Convert to a NumPy array
+    data = np.frombuffer(plt.gca().figure.canvas.tostring_rgb(), dtype=np.uint8)
+    data = data.reshape(plt.gcf().canvas.get_width_height()[::-1] + (3,))
+    wav_bl_curve = cv2.cvtColor(data,cv2.COLOR_RGB2BGR)
+    ###############################
+
+
+    img0 = video_frames_list[0][f]
+    img1 = video_frames_list[1][f]
+    img2 = video_frames_list[2][f]
+    img3 = video_frames_list[3][f]
+
+    img_1= np.zeros_like(img0).astype(np.uint8)
+    paddding = np.zeros((480,30,3))
+
+    paddding = paddding.astype(np.uint8)
+
+    img_com0 = np.hstack((img0,paddding,img1,paddding,img2,paddding,img3))
+    img_com1 = np.hstack((img_1,paddding,eager_curve,paddding,nn_curve,paddding,wav_bl_curve))
+    paddding_h = np.ones((30,img_com0.shape[1],3)).astype(np.uint8)
+
+    img_com = np.vstack((img_com0,paddding_h,img_com1))
+
+    # cv2.imshow('frame',data)
+    cv2.imwrite(save_path+f'/demo{demo_id}/{f}.jpeg',img_com)
+    img_list.append(img_com)
+    imgshape = img_com.shape
+    size = (imgshape[1],imgshape[0])
+
+  out = cv2.VideoWriter(save_path+f'{demo_id}.mp4',
+                        cv2.VideoWriter_fourcc(*'MP4V'),
+                        30,
+                        size)
+
+
+  for i in range(len(img_list)):
+    out.write(img_list[i])
+  out.release()
+
+  audio_path = f'../EMO_GPTDEMO/audio/emo/emo{demo_id}.wav'
+
+  syn_video_path = save_path + f'{demo_id}.mp4'
+  out_video_path = save_path + f'final_{demo_id}.mp4'
+
+  # Usage
+  combine_audio_video(audio_path, syn_video_path, out_video_path)
+
+for i in range(1,10):
+  sidebyside(i)
