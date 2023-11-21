@@ -140,7 +140,6 @@ def image2video():
         # best_nn_id = frame_id_list[i]
         # nn_img = cv2.imread(dataset_pth + '/img/%d.png' % best_nn_id)
 
-
         nn_img = cv2.imread(dataset_pth + '/img/%d.png' % i)
         # empty_img = np.zeros((height,width,layers))
 

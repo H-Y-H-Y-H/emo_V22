@@ -197,8 +197,6 @@ mouth_lmks = lips_idx+inner_lips_idx
 
 def nearest_neighber(lmks, dataset, only_mouth = False, normalize = False,rank_data = 20):
 
-
-
     if only_mouth:
         if lmks.shape[0]==478:
             lmks = lmks[mouth_lmks]
@@ -208,14 +206,11 @@ def nearest_neighber(lmks, dataset, only_mouth = False, normalize = False,rank_d
             lmks = lmks[49:]
             dataset = dataset[:,49:]
 
-
-
         if normalize:
             dataset_min = dataset.min(axis=(0, 1), keepdims=True)
             dataset_max = dataset.max(axis=(0, 1), keepdims=True)
             dataset = (dataset - dataset_min) / (dataset_max - dataset_min)
             lmks = (lmks - dataset_min[0]) / (dataset_max - dataset_min[0])
-
 
     # MSE
     # distance = np.mean(np.mean(distance, axis=1), axis=1)

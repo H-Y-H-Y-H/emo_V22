@@ -8,28 +8,23 @@ if __name__ == "__main__":
 
     mode = 0
     import sys
+    demo_id = 9
     d_root = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/'
     ## Robot random landmarks dataset
     dataset_pth = d_root+'robot_data/data1109/'
     dataset_image_lmks = d_root+'robot_data/data1109/robot_dataset_img'
-    dataset_synthsize_pth = d_root+'robot_data/data1109/data_lmks_media_syn'
+    target_synthesize_img_path = d_root + f'synthesized_target/om/lmks_rendering/{demo_id}'
     dataset_lmk = np.load(d_root+'robot_data/data1109/m_lmks.npy')
-    dataset_cmd = np.loadtxt(dataset_pth + 'action.csv')
+    dataset_cmd = np.loadtxt(d_root+'robot_data/data1109/action_tuned.csv')
     print(dataset_lmk.shape)
-    # all_images = []
-    # for i in range(100):
-    #     print(i)
-    #     img = plt.imread(dataset_pth+'/img/%d.png'%i)[(480-320)//2:(480+320)//2:,(640-320)//2:(640+320)//2]
-    #     all_images.append(img)
-    # all_images = np.asarray(all_images)
-
 
     if mode == 0:
         NORM_FLAG = False
         mouth_re_localize = False
         # Landmarks that the robot wants to mimic.
         # target_lmks = np.load(data_path + 'emo_synced_lmks_close.npy')
-        target_lmks = np.load(d_root+'robot_data/data1109/m_lmks_synthesized.npy')
+        target_lmks = np.load(d_root+f'synthesized_target/om/lmks/m_lmks_{demo_id}.npy')
+
         #####  SMOOTH LANDMARKS)
         # target_lmks = smooth_lmks(target_lmks)
 
@@ -40,16 +35,14 @@ if __name__ == "__main__":
         logger_id = []
         distance_list = []
         current_action = 0
-        mutli_nn_cmds_rank = 5
+        mutli_nn_cmds_rank = 1
 
-        # if NORM_FLAG:
-        #     img_savepath = "data/desktop/NN(BL)_dataset/norm_img(%dcmds_close)"%mutli_nn_cmds_rank
-        # else:
-        img_savepath = d_root+"desktop/NN(BL)_dataset/img(%d_m_lmks_mouth)"%mutli_nn_cmds_rank
+        nn_root = d_root + f'output_cmds/nn_{mutli_nn_cmds_rank}/'
 
-        os.makedirs(img_savepath,exist_ok=True)
+        img_savepath = nn_root+ f'demo{demo_id}/visualization'
+        os.makedirs(img_savepath, exist_ok=True)
         for i in range(len(target_lmks)):
-            img_read_synthesized = plt.imread(dataset_synthsize_pth + '/%d.png' % i)  # [:480,:640]
+            img_read_synthesized = plt.imread(target_synthesize_img_path + '/%d.png' % i)  # [:480,:640]
 
             # compute offline:
             lmks = target_lmks[i]
@@ -65,8 +58,6 @@ if __name__ == "__main__":
                 only_mouth=True,
                 normalize=NORM_FLAG,
                 rank_data = mutli_nn_cmds_rank)
-
-
 
             five_action = dataset_cmd[rank_nn_id]
             dist = np.sum((five_action-current_action)**2,axis=1)
@@ -123,17 +114,13 @@ if __name__ == "__main__":
             plt.close()
             logger_id.append(best_nn_id)
         action_list = dataset_cmd[logger_id]
+        lmks_list =dataset_lmk[logger_id]
 
-        # if NORM_FLAG:
-        #     np.savetxt('data/nvidia/emo_nn_id(rank%d)_norm.csv'%mutli_nn_cmds_rank, np.asarray(logger_id), fmt='%i')
-        #     np.savetxt('data/nvidia/mimic_synced_cmds(rank%d)_norm.csv'%mutli_nn_cmds_rank, action_list)
-        # else:
         # np.savetxt('data/nvidia/emo_nn_id(rank%d).csv' % mutli_nn_cmds_rank, np.asarray(logger_id), fmt='%i')
-        # np.savetxt('data/nvidia/mimic_synced_cmds(rank%d).csv' % mutli_nn_cmds_rank, action_list)
-    # img_array = []
-    # img_list = glob.glob('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data1105/img/*.png')
+        np.save(nn_root+f'lmks_{demo_id}.npy', lmks_list)
+        np.savetxt(nn_root+f'cmds_{demo_id}.csv', action_list)
+
         img_array = []
-        img_pth = 'data/desktop/NN(BL)_dataset/'
         img_list = os.listdir(img_savepath)
         print(len(img_list))
         for i in range(len(img_list)):
