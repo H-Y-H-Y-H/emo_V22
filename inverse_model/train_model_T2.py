@@ -7,7 +7,7 @@ import random
 random.seed(0)
 
 # Check GPU
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 print("start", device)
 data_path = "../../../Downloads/data1109/"
@@ -77,19 +77,22 @@ class Robot_face_data(Dataset):
         rdm_future_state_id = idx + np.random.randint(2, self.future_n_state) # [low, high)
         # print('see the fucking rdm_future_state_id',rdm_future_state_id)
 
-        lmks_2 = self.input_data[rdm_future_state_id]
+        lmks_2 = self.input_data[rdm_future_state_id].flatten()
+        lmks_3 = self.input_data[rdm_future_state_id+1].flatten()
+
 
         label_cmd = self.label_data[rdm_future_state_id]
 
         encoder_input = torch.cat((cmds_0.unsqueeze(0),cmds_1.unsqueeze(0)),dim=0)
-        decoder_input = torch.transpose(lmks_2,1,0)
+        decoder_input = torch.cat((lmks_2.unsqueeze(0),lmks_3.unsqueeze(0)),dim=0)
+
 
 
         sample = {"input": (encoder_input,decoder_input), "label": label_cmd}
         return sample
 
     def __len__(self):
-        return len(self.input_data)-self.future_n_state
+        return len(self.input_data)-self.future_n_state-1
 
 train_dataset = Robot_face_data(input_data=tr_lmks, label_data=tr_cmds)
 test_dataset  = Robot_face_data(input_data=va_lmks, label_data=va_cmds,data_type_Flag=2)
@@ -110,11 +113,11 @@ def train_model():
     log_path = "../data/%s/%s/"%(project_name,run_name)
     os.makedirs(log_path,exist_ok=True)
 
-    model = TransformerInverse(
-                nhead              = config.nhead               ,
-                num_encoder_layers = config.num_encoder_layers  ,
-                num_decoder_layers = config.num_decoder_layers  ,
-                dim_feedforward    = config.dim_feedforward
+    model = TransformerInverse(decoder_input_size = 180,
+                                nhead              = config.nhead               ,
+                                num_encoder_layers = config.num_encoder_layers  ,
+                                num_decoder_layers = config.num_decoder_layers  ,
+                                dim_feedforward    = config.dim_feedforward
                           ).to(device)
     # model = TransformerInverse().to(device)
 
@@ -176,20 +179,23 @@ def train_model():
             temp_l = []
             pre_init_cmds = torch.from_numpy(init_cmds).to(device, dtype=torch.float).unsqueeze(0)  # Assuming init_cmds is a PyTorch tensor
             outputs       = torch.from_numpy(init_cmds).to(device, dtype=torch.float).unsqueeze(0)
-            for i in range(len(test_lmk_data)):
+            for i in range(len(test_lmk_data)-1):
                 pre_pre_init_cmds = pre_init_cmds.clone()
                 pre_init_cmds = outputs.clone()
 
                 # Assuming test_lmk_data is a list of PyTorch tensors
-                flatten_lmks = torch.transpose(test_lmk_data[i],1,0) # Flattening using PyTorch
+                flatten_lmks0 = test_lmk_data[i].flatten().unsqueeze(0) # Flattening using PyTorch
+                flatten_lmks1 = test_lmk_data[i+1].flatten().unsqueeze(0) # Flattening using PyTorch
+
 
                 # Concatenation using PyTorch
                 input_data = torch.cat((pre_pre_init_cmds, pre_init_cmds), dim=0)
+                input_lmks = torch.cat((flatten_lmks0, flatten_lmks1), dim=0)
 
                 # Forward pass
                 inputs_v = input_data.unsqueeze(0).to(device)
-                flatten_lmks = flatten_lmks.unsqueeze(0).to(device)
-                outputs = model.forward(inputs_v,flatten_lmks)
+                input_lmks = input_lmks.unsqueeze(0).to(device)
+                outputs = model.forward(inputs_v,input_lmks)
 
                 # Loss calculation using PyTorch
                 loss = torch.mean(torch.abs(outputs - groundtruth_data[i]))  # Assuming groundtruth_data is a tensor
@@ -245,7 +251,7 @@ if __name__ == '__main__':
         "method": "random",
         "metric": {"goal": "minimize", "name": "valid_loss"},
         "parameters": {
-            'dim_feedforward':{"values":[128, 256, 512,1024]},
+            'dim_feedforward':{"values":[512,1024,2048,4096]},
             'batchsize':{"values": [8, 16, 32,64]},
             'lr': {"max": 10e-5, "min":10e-6},
             'num_encoder_layers':{"values": [2,3,4,5,6]},
@@ -258,7 +264,7 @@ if __name__ == '__main__':
 
 
 
-    project_name = 'IVMT'
+    project_name = 'IVMT2'
     sweep_id = wandb.sweep(sweep=sweep_configuration, project=project_name)
 
 
