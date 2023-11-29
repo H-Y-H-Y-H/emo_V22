@@ -156,7 +156,7 @@ def render_img(image, face_mesh, pcf):
 if __name__ == "__main__":
     np.random.seed(2023)
 
-    mode = 1
+    mode = 2
 
     # Collect robot babbling data:
     if mode == 0:
@@ -267,13 +267,13 @@ if __name__ == "__main__":
     # Collect landmarks from a video
     elif mode == 1:
         video_id = 9
-        method_name = 'wav_bl'
-
-        save_path = f'../EMO_GPTDEMO/output_cmds/{method_name}_video/'
-
-        video_source =save_path +f'{video_id}.mp4'
-
-        os.makedirs(save_path+'lmks_rendering/%d'%video_id,exist_ok=True)
+        # method_name = 'wav_bl'
+        # save_path = f'../EMO_GPTDEMO/output_cmds/{method_name}_video/'
+        # video_source =save_path +f'{video_id}.mp4'
+        # os.makedirs(save_path+'lmks_rendering/%d'%video_id,exist_ok=True)
+        save_path = f'../EMO_GPTDEMO/robot_data/synthesized/'
+        video_source = f'../EMO_GPTDEMO/robot_data/synthesized/video/{video_id}.mp4'
+        os.makedirs(save_path + f'lmks_rendering/{video_id}/', exist_ok=True)
 
         print(video_source)
         cap = cv2.VideoCapture(video_source)
@@ -330,7 +330,6 @@ if __name__ == "__main__":
                 m_lmks_logger.append(m_lmks)
 
                 cv2.imshow('landmarks', image_show)
-
                 cv2.imwrite(save_path+'lmks_rendering/%d/%d.png'%(video_id,count),image_show)
 
                 print(count)
@@ -344,9 +343,9 @@ if __name__ == "__main__":
 
     elif mode == 2:
 
-        img_source = "../EMO_GPTDEMO/robot_data/data1109/"
-        #
-        Num_data = 51410
+        img_source = "../EMO_GPTDEMO/robot_data/data1128/"
+        os.makedirs(img_source+'robot_dataset_img',exist_ok=True)
+        Num_data = 23030
 
         # get cap property
         frame_width = 480 #= cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
@@ -390,7 +389,7 @@ if __name__ == "__main__":
                 # if not ret:
                 #     print("Can't receive frame (stream end?). Exiting ...")
                 #     break
-                image = cv2.imread('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1109/img/%d.png'%i)
+                image = cv2.imread(img_source+'/img/%d.png'%i)
                 # image = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
                 # image = np.dstack((image,image,image))
                 image = image[:,(640-480)//2:(640+480)//2 ]
@@ -400,11 +399,11 @@ if __name__ == "__main__":
                 m_lmks_logger.append(m_lmks)
 
                 # cv2.imshow('landmarks', image_show)
-                cv2.imwrite('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1109/robot_dataset_img/%d.png'%i,image_show)
+                cv2.imwrite(img_source+'/robot_dataset_img/%d.png'%i,image_show)
 
                 # if cv2.waitKey(5) & 0xFF == 27:
                 #     break
 
-            np.save('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1109/m_lmks.npy', m_lmks_logger)
-            np.save('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1109/r_lmks.npy', r_lmks_logger)
+            np.save(img_source+'/m_lmks.npy', m_lmks_logger)
+            np.save(img_source+'/r_lmks.npy', r_lmks_logger)
 

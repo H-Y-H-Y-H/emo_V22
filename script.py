@@ -60,13 +60,13 @@ import glob
 def frames_2_video():
   # img_array = []
   # img_list = glob.glob('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data1105/img/*.png')
-  img_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1109/img/'
-  frame_n = 900
+  img_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1127/img/'
+  frame_n = 10000
   fps = 30
   fourcc = cv2.VideoWriter_fourcc(*'MP4V')
-  out = cv2.VideoWriter('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1109/data_%ds.mp4'%(frame_n//fps), fourcc, fps, (480, 480))
+  out = cv2.VideoWriter('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1127/data_%ds.mp4'%(frame_n//fps), fourcc, fps, (480, 480))
 
-  for i in range(frame_n):
+  for i in range(0,frame_n):
     filename = img_pth+"/%d.png"%(i)
 
     img = cv2.imread(filename)[:,80:560]
@@ -200,11 +200,20 @@ def combine_audio_video(audio_file_path, video_file_path, output_file_path):
     # Write the result to a file
     final_clip.write_videofile(output_file_path, codec="libx264", audio_codec="aac")
 
+
+for idx in range(10):
+  combine_audio_video(audio_file_path='../EMO_GPTDEMO/audio/emo/emo%d.wav'%idx,
+                      video_file_path='../EMO_GPTDEMO/robot_data/output_cmds/nn_5/%d.avi'%idx,
+                      output_file_path = '../EMO_GPTDEMO/robot_data/output_cmds/nn5_%d.avi'%idx
+                    )
+
+
 lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
             81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
 inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
 
 select_lmks_id = lips_idx + inner_lips_idx
+
 def sidebyside(demo_id = 0):
   import matplotlib
   matplotlib.use('Agg')
@@ -337,5 +346,19 @@ def sidebyside(demo_id = 0):
   # Usage
   combine_audio_video(audio_path, syn_video_path, out_video_path)
 
-for i in range(1,10):
-  sidebyside(i)
+# for i in range(1,10):
+#   sidebyside(i)
+
+def debug_compare():
+  method_name = 'eager'
+  for demo_id in range(10):
+    results = np.load(f'../EMO_GPTDEMO/output_cmds/{method_name}_video/m_lmks_{demo_id}.npy')
+    label_lmks_path = f'../EMO_GPTDEMO/synthesized_target/om/lmks/m_lmks_{demo_id}.npy'
+    label_lmks = np.load(label_lmks_path)
+
+    error_list = [np.mean(np.abs(label_lmks - results))]
+    for shif_length in range(1,10):
+      error = np.mean(np.abs(label_lmks[:-shif_length] - results[shif_length:]))
+      error_list.append(error)
+    print(np.argmin(error_list),error_list)
+

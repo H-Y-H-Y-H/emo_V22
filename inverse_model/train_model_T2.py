@@ -10,7 +10,7 @@ random.seed(0)
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 print("start", device)
-data_path = "../../../Downloads/data1109/"
+data_path = "../../../Downloads/data1128/"
 
 lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
             81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
@@ -22,7 +22,7 @@ n_lmks = len(select_lmks_id)
 key_cmds = np.asarray([0,1,2,3,5,7])
 
 dataset_lmk = np.load(data_path+'m_lmks.npy')[:, select_lmks_id]
-dataset_cmd = np.loadtxt(data_path+'action_tuned.csv')[:, key_cmds]
+dataset_cmd = np.loadtxt(data_path+'action.csv')[:, key_cmds]
 
 sample_id = np.arange(len(dataset_lmk))
 np.random.shuffle(sample_id)
@@ -33,14 +33,13 @@ va_lmks = dataset_lmk[training_num:]
 tr_cmds = dataset_cmd[:training_num]
 va_cmds = dataset_cmd[training_num:]
 
-init_cmds = np.asarray([9.999999999999997780e-02,
-                        0.000000000000000000e+00,
-                        5.555555555555555802e-01,
-                        2.857142857142856984e-01,
-                        5.384615384615384359e-01,
-                        1.000000000000000000e+00
+init_cmds = np.asarray([0.1,
+                        0.0,
+                        0.55556,
+                        0.42857,
+                        0.32353,
+                        1.00000
                         ])
-
 
 class Robot_face_data(Dataset):
     def __init__(self, input_data, label_data, sequence=2,data_type_Flag = 0):

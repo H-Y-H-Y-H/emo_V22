@@ -9,13 +9,25 @@ if __name__ == "__main__":
     mode = 0
     import sys
     demo_id = 9
-    d_root = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/'
+
+    d_root = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/'
     ## Robot random landmarks dataset
-    dataset_pth = d_root+'robot_data/data1109/'
-    dataset_image_lmks = d_root+'robot_data/data1109/robot_dataset_img'
-    target_synthesize_img_path = d_root + f'synthesized_target/om/lmks_rendering/{demo_id}'
-    dataset_lmk = np.load(d_root+'robot_data/data1109/m_lmks.npy')
-    dataset_cmd = np.loadtxt(d_root+'robot_data/data1109/action_tuned.csv')
+    dataset_pth = d_root+'data1128/'
+    dataset_image_lmks = d_root+'data1128/robot_dataset_img'
+
+    # dataset_pth_coarse= d_root+'data1126(coarse)/'
+    # dataset_image_lmks_coarse = d_root+'data1126(coarse)/robot_dataset_img'
+
+    target_synthesize_img_path = d_root + f'synthesized/lmks_rendering/{demo_id}'
+
+
+    dataset_lmk = np.load(d_root+'data1128/m_lmks.npy')
+    dataset_cmd = np.loadtxt(d_root+'data1128/action.csv')
+    # dataset_lmk_coarse = np.load(d_root+'data1126(coarse)/m_lmks.npy')[:9810]
+    # dataset_cmd_coarse = np.loadtxt(d_root+'data1126(coarse)/action.csv')[:9810]
+    # dataset_lmk = np.concatenate((dataset_lmk,dataset_lmk_coarse))
+    # dataset_cmd = np.concatenate((dataset_cmd,dataset_cmd_coarse))
+
     print(dataset_lmk.shape)
 
     if mode == 0:
@@ -23,7 +35,7 @@ if __name__ == "__main__":
         mouth_re_localize = False
         # Landmarks that the robot wants to mimic.
         # target_lmks = np.load(data_path + 'emo_synced_lmks_close.npy')
-        target_lmks = np.load(d_root+f'synthesized_target/om/lmks/m_lmks_{demo_id}.npy')
+        target_lmks = np.load(d_root+f'synthesized/lmks/m_lmks_{demo_id}.npy')
 
         #####  SMOOTH LANDMARKS)
         # target_lmks = smooth_lmks(target_lmks)
@@ -35,7 +47,7 @@ if __name__ == "__main__":
         logger_id = []
         distance_list = []
         current_action = 0
-        mutli_nn_cmds_rank = 1
+        mutli_nn_cmds_rank = 5
 
         nn_root = d_root + f'output_cmds/nn_{mutli_nn_cmds_rank}/'
 
@@ -64,6 +76,7 @@ if __name__ == "__main__":
             min_id_action = np.argmin(dist)
             current_action = five_action[min_id_action]
             best_nn_id = rank_nn_id[min_id_action]
+
             print(i, best_nn_id)
             distance_list.append(rank_distance[min_id_action])
 
@@ -92,9 +105,15 @@ if __name__ == "__main__":
 
             ax[0][0].legend()
             ax[0][1].legend()
-
-            img_read_dataset = plt.imread(dataset_pth+'img/%d.png'%best_nn_id)#[:480,:640]
-            image_lmks = plt.imread(dataset_image_lmks+'/%d.png'%best_nn_id)
+            img_read_dataset = plt.imread(dataset_pth + 'img/%d.png' % best_nn_id)  # [:480,:640]
+            image_lmks = plt.imread(dataset_image_lmks + '/%d.png' % best_nn_id)
+            # if best_nn_id < 15260:
+            #     img_read_dataset = plt.imread(dataset_pth+'img/%d.png'%best_nn_id)#[:480,:640]
+            #     image_lmks = plt.imread(dataset_image_lmks+'/%d.png'%best_nn_id)
+            # else:
+            #
+            #     img_read_dataset = plt.imread(dataset_pth_coarse+'img/%d.png'%(best_nn_id-15260))#[:480,:640]
+            #     image_lmks = plt.imread(dataset_image_lmks_coarse+'/%d.png'%(best_nn_id-15260))
             ax[1][0].imshow(img_read_synthesized)
             ax[1][0].title.set_text('Synthsized Image')
 
@@ -107,7 +126,7 @@ if __name__ == "__main__":
 
             ax[0][0].axis('equal')
             ax[0][1].axis('equal')
-            # plt.show()
+            #plt.show()
             plt.savefig(img_savepath+'/%d.jpeg'%i)
             plt.clf()
             plt.cla()
@@ -116,7 +135,7 @@ if __name__ == "__main__":
         action_list = dataset_cmd[logger_id]
         lmks_list =dataset_lmk[logger_id]
 
-        # np.savetxt('data/nvidia/emo_nn_id(rank%d).csv' % mutli_nn_cmds_rank, np.asarray(logger_id), fmt='%i')
+        np.savetxt(nn_root+f'nn_lmks_id_{demo_id}.csv', np.asarray(logger_id), fmt='%i')
         np.save(nn_root+f'lmks_{demo_id}.npy', lmks_list)
         np.savetxt(nn_root+f'cmds_{demo_id}.csv', action_list)
 
@@ -131,7 +150,7 @@ if __name__ == "__main__":
             img_array.append(img)
             print(filename)
 
-        out = cv2.VideoWriter(img_savepath + '.avi', cv2.VideoWriter_fourcc(*'DIVX'), 30,size)
+        out = cv2.VideoWriter(nn_root + f'{demo_id}.avi', cv2.VideoWriter_fourcc(*'DIVX'), 30,size)
 
         for i in range(len(img_array)):
             out.write(img_array[i])
