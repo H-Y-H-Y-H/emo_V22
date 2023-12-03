@@ -10,7 +10,7 @@ random.seed(0)
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 print("start", device)
-data_path = "../../../Downloads/data1128/"
+data_path = "../../../Downloads/data1201/"
 
 lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
             81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
@@ -23,6 +23,9 @@ key_cmds = np.asarray([0,1,2,3,5,7])
 
 dataset_lmk = np.load(data_path+'m_lmks.npy')[:, select_lmks_id]
 dataset_cmd = np.loadtxt(data_path+'action.csv')[:, key_cmds]
+mean_0 = np.mean(dataset_lmk[:,:1],axis=0)
+dist = dataset_lmk[:,:1]-mean_0
+dataset_lmk = dataset_lmk-dist
 
 sample_id = np.arange(len(dataset_lmk))
 np.random.shuffle(sample_id)
@@ -60,14 +63,14 @@ class Robot_face_data(Dataset):
             cmds_0 = self.init_cmds
             cmds_1 = self.label_data[idx+1]
 
-        elif self.data_type_Flag == 2:
-            cmds_0 = self.label_data[idx]
-            cmds_1 = self.label_data[idx+1]
-            noise_0 = torch.randn_like(cmds_0) * 0.1
-            cmds_0 = cmds_0 + noise_0
-
-            noise_1 = torch.randn_like(cmds_1) * 0.1
-            cmds_1 = cmds_1 + noise_1
+        # elif self.data_type_Flag == 2:
+        #     cmds_0 = self.label_data[idx]
+        #     cmds_1 = self.label_data[idx+1]
+        #     noise_0 = torch.randn_like(cmds_0) * 0.1
+        #     cmds_0 = cmds_0 + noise_0
+        #
+        #     noise_1 = torch.randn_like(cmds_1) * 0.1
+        #     cmds_1 = cmds_1 + noise_1
 
         else:
             cmds_0 = self.label_data[idx]
@@ -118,6 +121,12 @@ def train_model():
                                 num_decoder_layers = config.num_decoder_layers  ,
                                 dim_feedforward    = config.dim_feedforward
                           ).to(device)
+    # model = TransformerInverse(decoder_input_size = 180,
+    #                             nhead              = 1               ,
+    #                             num_encoder_layers = 2  ,
+    #                             num_decoder_layers = 2  ,
+    #                             dim_feedforward    = 256
+    #                       ).to(device)
     # model = TransformerInverse().to(device)
 
     train_dataloader = DataLoader(train_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
@@ -146,9 +155,9 @@ def train_model():
         t0 = time.time()
         model.train()
         temp_l = []
-        running_loss = 0.0
-        for data_type_id in range(12):
-            train_dataloader.dataset.data_type_Flag = data_type_id%4
+
+        for data_type_id in range(6):
+            train_dataloader.dataset.data_type_Flag = data_type_id%3
             for i, bundle in enumerate(train_dataloader):
                 input_d, label_d = bundle["input"], bundle["label"]
                 pred_result = model.forward(input_d[0],input_d[1])
@@ -157,7 +166,34 @@ def train_model():
                 loss.backward()
                 optimizer.step()
                 temp_l.append(loss.item())
-                running_loss += loss.item()
+
+        pre_init_cmds = torch.from_numpy(init_cmds).to(device, dtype=torch.float).unsqueeze(0)  # Assuming init_cmds is a PyTorch tensor
+        outputs       = torch.from_numpy(init_cmds).to(device, dtype=torch.float).unsqueeze(0)
+        for i in range(len(test_lmk_data)-1):
+
+            pre_pre_init_cmds = pre_init_cmds.detach().clone()
+            pre_init_cmds = outputs.detach().clone()
+
+            # Assuming test_lmk_data is a list of PyTorch tensors
+            flatten_lmks0 = test_lmk_data[i].flatten().unsqueeze(0) # Flattening using PyTorch
+            flatten_lmks1 = test_lmk_data[i+1].flatten().unsqueeze(0) # Flattening using PyTorch
+
+            # Concatenation using PyTorch
+            input_data = torch.cat((pre_pre_init_cmds, pre_init_cmds), dim=0)
+            input_lmks = torch.cat((flatten_lmks0, flatten_lmks1), dim=0)
+
+            # Forward pass
+            inputs_v = input_data.unsqueeze(0).to(device)
+            input_lmks = input_lmks.unsqueeze(0).to(device)
+
+            outputs = model.forward(inputs_v,input_lmks)
+
+            # Loss calculation using PyTorch
+            loss2 = Loss_fun(outputs, groundtruth_data[i].unsqueeze(0))  # Assuming groundtruth_data is a tensor
+            optimizer.zero_grad()
+            loss2.backward()
+            optimizer.step()
+            temp_l.append(loss2.item())  # Convert tensor to a Python scalar
 
         train_mean_loss = np.mean(temp_l)
         train_epoch_L.append(train_mean_loss)
@@ -165,16 +201,6 @@ def train_model():
         model.eval()
 
         with torch.no_grad():
-
-            # for data_type_id in range(3):
-            #     train_dataloader.dataset.data_type_Flag = data_type_id % 3
-            #     for i, bundle in enumerate(test_dataloader):
-            #         input_d, label_d = bundle["input"], bundle["label"]
-            #         pred_result = model.forward(input_d)
-            #         # loss = model.loss(pred_result, label_d)
-            #         loss = Loss_fun(pred_result, label_d)
-            #         temp_l.append(loss.item())
-            # outputs_data = [groundtruth_data[0], groundtruth_data[1]]
             temp_l = []
             pre_init_cmds = torch.from_numpy(init_cmds).to(device, dtype=torch.float).unsqueeze(0)  # Assuming init_cmds is a PyTorch tensor
             outputs       = torch.from_numpy(init_cmds).to(device, dtype=torch.float).unsqueeze(0)
@@ -223,8 +249,9 @@ def train_model():
         wandb.log({"train_loss": train_mean_loss,
                    'valid_loss': test_mean_loss,
                    'epoch':epoch,
-                   'learning_rate':optimizer.param_groups[0]['lr'],
-                   'min_valid_loss': min_loss})
+                   'learning_rate':config.lr,
+                   'min_valid_loss': min_loss,
+                   'dim_feedforward': config.dim_feedforward})
 
         print(epoch, "time used: ", round((t1 - t0),3),
               "training mean loss: ",round(train_mean_loss,5),
@@ -250,7 +277,7 @@ if __name__ == '__main__':
         "method": "random",
         "metric": {"goal": "minimize", "name": "valid_loss"},
         "parameters": {
-            'dim_feedforward':{"values":[512,1024,2048,4096]},
+            'dim_feedforward':{"values":[512,1024,2048]},
             'batchsize':{"values": [8, 16, 32,64]},
             'lr': {"max": 10e-5, "min":10e-6},
             'num_encoder_layers':{"values": [2,3,4,5,6]},
@@ -263,7 +290,7 @@ if __name__ == '__main__':
 
 
 
-    project_name = 'IVMT2'
+    project_name = 'IVMT2_1202'
     sweep_id = wandb.sweep(sweep=sweep_configuration, project=project_name)
 
 
@@ -273,8 +300,8 @@ if __name__ == '__main__':
     # print('input_dim:',input_dim)
     # print('output_dim:',output_dim)
 
-    groundtruth_data = np.loadtxt(data_path + 'action_tuned.csv')[-training_num:, key_cmds]
-    test_lmk_data = np.load(data_path+'m_lmks.npy')[-training_num:, select_lmks_id]
+    groundtruth_data = np.loadtxt(data_path + 'action.csv')[training_num:, key_cmds]
+    test_lmk_data = np.load(data_path+'m_lmks.npy')[training_num:, select_lmks_id]
 
     groundtruth_data = torch.from_numpy(groundtruth_data).to(device, dtype=torch.float)
     test_lmk_data = torch.from_numpy(test_lmk_data).to(device, dtype=torch.float)
