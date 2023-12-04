@@ -12,7 +12,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("start", device)
 data_path = "../../EMO_GPTDEMO/robot_data/data1201/"
 
-
 lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
             81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
 inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
@@ -24,27 +23,21 @@ key_cmds = np.asarray([0,1,2,3,5,7])
 
 dataset_lmk = np.load(data_path+'m_lmks.npy')[:, select_lmks_id]
 dataset_cmd = np.loadtxt(data_path+'action.csv')[:, key_cmds]
-# for i in range(100):
-#     lmks = dataset_lmk[i]
-#     plt.scatter(dataset_lmk[i,:,0],dataset_lmk[i,:,1],c='r')
-
-
-mean_0 = np.mean(dataset_lmk[:,:1],axis=0)
+mean_0 = np.mean(dataset_lmk[:, :1],axis=0)
 dist = dataset_lmk[:,:1]-mean_0
-dataset_lmk = dataset_lmk-dist
+dataset_lmk = dataset_lmk - dist
 
-# for i in range(100):
+# for i in range(1):
 #     lmks = dataset_lmk[i]
-#     plt.scatter(dataset_lmk[i,:,0],dataset_lmk[i,:,1],c='b')
-
-# Invert the Y-axis
+#     plt.scatter(dataset_lmk[i,:,0],dataset_lmk[i,:,1])
+#
+# # Invert the Y-axis
 # plt.gca().invert_yaxis()
 # plt.axis('equal')
 # # Hide the axes
-# # plt.axis('off')
+# plt.axis('off')
 #
 # plt.show()
-
 
 
 sample_id = np.arange(len(dataset_lmk))
@@ -102,6 +95,7 @@ class Robot_face_data(Dataset):
         lmks_2 = self.input_data[rdm_future_state_id].flatten()
         lmks_3 = self.input_data[rdm_future_state_id+1].flatten()
 
+
         label_cmd = self.label_data[rdm_future_state_id]
 
         encoder_input = torch.cat((cmds_0.unsqueeze(0),cmds_1.unsqueeze(0)),dim=0)
@@ -123,13 +117,11 @@ test_dataset  = Robot_face_data(input_data=va_lmks, label_data=va_cmds,data_type
 
 
 def train_model():
-    wandb.init(project=project_name)
-    config = wandb.config
+    wandb.init(project=proj_name)
+    print(run_id)
     run_name = wandb.run.name
 
-    print(run_name)
-
-    log_path = "../data/%s/%s/"%(project_name,run_name)
+    log_path = "../data/%s(finetuning)/%s/"%(proj_name,run_name)
     os.makedirs(log_path,exist_ok=True)
 
     model = TransformerInverse(decoder_input_size = 180,
@@ -138,13 +130,8 @@ def train_model():
                                 num_decoder_layers = config.num_decoder_layers  ,
                                 dim_feedforward    = config.dim_feedforward
                           ).to(device)
-    # model = TransformerInverse(decoder_input_size = 180,
-    #                             nhead              = 1               ,
-    #                             num_encoder_layers = 2  ,
-    #                             num_decoder_layers = 2  ,
-    #                             dim_feedforward    = 256
-    #                       ).to(device)
     # model = TransformerInverse().to(device)
+    model.load_state_dict(torch.load(model_path+'best_model_MSE.pt', map_location=torch.device(device)))
 
     train_dataloader = DataLoader(train_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
     test_dataloader = DataLoader(test_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
@@ -168,11 +155,11 @@ def train_model():
     patience = 0
 
 
+
     for epoch in range(10000):
         t0 = time.time()
         model.train()
         temp_l = []
-
         for data_type_id in range(4):
             train_dataloader.dataset.data_type_Flag = data_type_id%4
             for i, bundle in enumerate(train_dataloader):
@@ -183,7 +170,6 @@ def train_model():
                 loss.backward()
                 optimizer.step()
                 temp_l.append(loss.item())
-
 
         train_mean_loss = np.mean(temp_l)
         train_epoch_L.append(train_mean_loss)
@@ -211,7 +197,6 @@ def train_model():
                 flatten_lmks0 = test_lmk_data[i].flatten().unsqueeze(0) # Flattening using PyTorch
                 flatten_lmks1 = test_lmk_data[i+1].flatten().unsqueeze(0) # Flattening using PyTorch
 
-
                 # Concatenation using PyTorch
                 input_data = torch.cat((pre_pre_init_cmds, pre_init_cmds), dim=0)
                 input_lmks = torch.cat((flatten_lmks0, flatten_lmks1), dim=0)
@@ -227,6 +212,7 @@ def train_model():
             valid_loss2 = np.mean(temp_l)
             valid_combine_loss = valid_loss1*0.75 + valid_loss2*0.25
             test_epoch_L.append(valid_combine_loss)
+
 
         scheduler.step(valid_combine_loss)
 
@@ -270,27 +256,22 @@ def train_model():
 
 if __name__ == '__main__':
     import wandb
-    # wandb.login()
+    import argparse
 
-    sweep_configuration = {
-        "method": "random",
-        "metric": {"goal": "minimize", "name": "valid_loss"},
-        "parameters": {
-            'dim_feedforward':{"values":[512,1024,2048]},
-            'batchsize':{"values": [8, 16, 32,64]},
-            'lr': {"max": 10e-5, "min":10e-6},
-            'num_encoder_layers':{"values": [2,3,4,5,6]},
-            'num_decoder_layers':{"values": [2,3,4,5,6]},
-            'nhead':{"values": [1,2]}
+    api = wandb.Api()
+    proj_name = 'IVMT2_1202'
+    runs = api.runs("robotics/%s"%proj_name)
+    run_id = 'fanciful-sweep-1' # 'laced-sweep-24'
 
-        },
-    }
+    model_path = '../data/%s/%s/'%(proj_name, run_id)
+    config = None
+    for run in runs:
+        if run.name == run_id:
+            print('loading configuration')
+            config = {k: v for k, v in run.config.items() if not k.startswith('_')}
 
+    config = argparse.Namespace(**config)
 
-
-
-    project_name = 'IVMT2_1204'
-    sweep_id = wandb.sweep(sweep=sweep_configuration, project=project_name)
 
 
     # output_dim = va_cmds.shape[1]
@@ -300,12 +281,9 @@ if __name__ == '__main__':
     # print('output_dim:',output_dim)
 
     groundtruth_data = np.loadtxt(data_path + 'action.csv')[training_num:, key_cmds]
-    # train_lmk_data = np.load(data_path+'m_lmks.npy')[:training_num, select_lmks_id]
     test_lmk_data = np.load(data_path+'m_lmks.npy')[training_num:, select_lmks_id]
 
     groundtruth_data = torch.from_numpy(groundtruth_data).to(device, dtype=torch.float)
-    # train_lmk_data = torch.from_numpy(train_lmk_data).to(device, dtype=torch.float)
     test_lmk_data = torch.from_numpy(test_lmk_data).to(device, dtype=torch.float)
 
-    # train_model()
-    wandb.agent(sweep_id, function=train_model, count=100)
+    train_model()

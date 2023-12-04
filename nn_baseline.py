@@ -8,12 +8,13 @@ if __name__ == "__main__":
 
     mode = 0
     import sys
-    demo_id = 9
+    demo_id = 1
+    dataset_name = 'data1201'
 
     d_root = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/'
     ## Robot random landmarks dataset
-    dataset_pth = d_root+'data1128/'
-    dataset_image_lmks = d_root+'data1128/robot_dataset_img'
+    dataset_pth = d_root+f'{dataset_name}/'
+    dataset_image_lmks = d_root+f'{dataset_name}/robot_dataset_img'
 
     # dataset_pth_coarse= d_root+'data1126(coarse)/'
     # dataset_image_lmks_coarse = d_root+'data1126(coarse)/robot_dataset_img'
@@ -21,8 +22,8 @@ if __name__ == "__main__":
     target_synthesize_img_path = d_root + f'synthesized/lmks_rendering/{demo_id}'
 
 
-    dataset_lmk = np.load(d_root+'data1128/m_lmks.npy')
-    dataset_cmd = np.loadtxt(d_root+'data1128/action.csv')
+    dataset_lmk = np.load(d_root+f'{dataset_name}/m_lmks.npy')
+    dataset_cmd = np.loadtxt(d_root+f'{dataset_name}/action.csv')
     # dataset_lmk_coarse = np.load(d_root+'data1126(coarse)/m_lmks.npy')[:9810]
     # dataset_cmd_coarse = np.loadtxt(d_root+'data1126(coarse)/action.csv')[:9810]
     # dataset_lmk = np.concatenate((dataset_lmk,dataset_lmk_coarse))
@@ -32,14 +33,14 @@ if __name__ == "__main__":
 
     if mode == 0:
         NORM_FLAG = False
-        mouth_re_localize = False
+        mouth_re_localize = True
+        mutli_nn_cmds_rank = 200
         # Landmarks that the robot wants to mimic.
         # target_lmks = np.load(data_path + 'emo_synced_lmks_close.npy')
         target_lmks = np.load(d_root+f'synthesized/lmks/m_lmks_{demo_id}.npy')
 
         #####  SMOOTH LANDMARKS)
         # target_lmks = smooth_lmks(target_lmks)
-
         # dataset_lmk = dataset_lmk[:, mouth_lmks]
 
         print(len(target_lmks))
@@ -47,12 +48,13 @@ if __name__ == "__main__":
         logger_id = []
         distance_list = []
         current_action = 0
-        mutli_nn_cmds_rank = 5
-
         nn_root = d_root + f'output_cmds/nn_{mutli_nn_cmds_rank}/'
 
         img_savepath = nn_root+ f'demo{demo_id}/visualization'
         os.makedirs(img_savepath, exist_ok=True)
+
+        dataset_lmk = dataset_lmk - dataset_lmk[:, :1]
+
         for i in range(len(target_lmks)):
             img_read_synthesized = plt.imread(target_synthesize_img_path + '/%d.png' % i)  # [:480,:640]
 
@@ -60,9 +62,9 @@ if __name__ == "__main__":
             lmks = target_lmks[i]
 
             if mouth_re_localize:
-                lmks = lmks[mouth_lmks]
+                # lmks = lmks[mouth_lmks]
                 lmks -= lmks[0]
-                dataset_lmk = dataset_lmk - dataset_lmk[:, :1]
+
 
             min_dist_nn_id, rank_nn_id, rank_distance = nearest_neighber(
                 lmks,

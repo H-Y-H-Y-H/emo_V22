@@ -60,11 +60,11 @@ import glob
 def frames_2_video():
   # img_array = []
   # img_list = glob.glob('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data1105/img/*.png')
-  img_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1127/img/'
+  img_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1201/img/'
   frame_n = 10000
   fps = 30
   fourcc = cv2.VideoWriter_fourcc(*'MP4V')
-  out = cv2.VideoWriter('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1127/data_%ds.mp4'%(frame_n//fps), fourcc, fps, (480, 480))
+  out = cv2.VideoWriter('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1201/data_%ds.mp4'%(frame_n//fps), fourcc, fps, (480, 480))
 
   for i in range(0,frame_n):
     filename = img_pth+"/%d.png"%(i)
@@ -201,10 +201,10 @@ def combine_audio_video(audio_file_path, video_file_path, output_file_path):
     final_clip.write_videofile(output_file_path, codec="libx264", audio_codec="aac")
 
 
-for idx in range(10):
+for idx in range(2):
   combine_audio_video(audio_file_path='../EMO_GPTDEMO/audio/emo/emo%d.wav'%idx,
-                      video_file_path='../EMO_GPTDEMO/robot_data/output_cmds/nn_5/%d.avi'%idx,
-                      output_file_path = '../EMO_GPTDEMO/robot_data/output_cmds/nn5_%d.avi'%idx
+                      video_file_path='../EMO_GPTDEMO/robot_data/output_cmds/nn_200/%d.avi'%idx,
+                      output_file_path = '../EMO_GPTDEMO/robot_data/output_cmds/nn200_%d.avi'%idx
                     )
 
 

@@ -156,7 +156,7 @@ def render_img(image, face_mesh, pcf):
 if __name__ == "__main__":
     np.random.seed(2023)
 
-    mode = 2
+    mode = 1
 
     # Collect robot babbling data:
     if mode == 0:
@@ -267,13 +267,12 @@ if __name__ == "__main__":
     # Collect landmarks from a video
     elif mode == 1:
         video_id = 9
-        # method_name = 'wav_bl'
-        # save_path = f'../EMO_GPTDEMO/output_cmds/{method_name}_video/'
-        # video_source =save_path +f'{video_id}.mp4'
-        # os.makedirs(save_path+'lmks_rendering/%d'%video_id,exist_ok=True)
+
         save_path = f'../EMO_GPTDEMO/robot_data/synthesized/'
         video_source = f'../EMO_GPTDEMO/robot_data/synthesized/video/{video_id}.mp4'
         os.makedirs(save_path + f'lmks_rendering/{video_id}/', exist_ok=True)
+        os.makedirs(save_path + 'lmks/', exist_ok=True)
+
 
         print(video_source)
         cap = cv2.VideoCapture(video_source)
@@ -337,15 +336,15 @@ if __name__ == "__main__":
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
 
-            np.save(save_path+'m_lmks_%d.npy'%video_id, m_lmks_logger)
+            np.save(save_path+'lmks/m_lmks_%d.npy'%video_id, m_lmks_logger)
             # np.save(save_path+'r_lmks_%d.npy'%video_id, r_lmks_logger)
         cap.release()
 
     elif mode == 2:
 
-        img_source = "../EMO_GPTDEMO/robot_data/data1128/"
+        img_source = "../EMO_GPTDEMO/robot_data/data1201/"
         os.makedirs(img_source+'robot_dataset_img',exist_ok=True)
-        Num_data = 23030
+        Num_data = 40000
 
         # get cap property
         frame_width = 480 #= cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`

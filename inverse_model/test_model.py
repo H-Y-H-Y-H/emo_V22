@@ -9,23 +9,26 @@ def lmks2cmds(target_lmks, gt, log_path):
 
     pre_init_cmds = init_cmds
     outputs = init_cmds
-    outputs_data = [init_cmds,init_cmds]
+    outputs_data = []
 
-    for i in range(2,len(target_lmks)):
+    for i in range(len(target_lmks)-1):
         pre_pre_init_cmds = np.copy(pre_init_cmds)
         pre_init_cmds = np.copy(outputs)
-        flatten_lmks = target_lmks[i].flatten()
-        input_data = np.concatenate((pre_pre_init_cmds, pre_init_cmds, flatten_lmks))
+        flatten_lmks1 = target_lmks[i].flatten()
+        flatten_lmks2 = target_lmks[i+1].flatten()
 
-        inputs_v = torch.from_numpy(input_data.astype('float32')).to(device)
+        input_data_e = np.concatenate((np.expand_dims(pre_pre_init_cmds,axis=0), np.expand_dims(pre_init_cmds,axis=0)))
+        input_data_d = np.concatenate((np.expand_dims(flatten_lmks1,axis=0), np.expand_dims(flatten_lmks2,axis=0)))
 
-        inputs_v = inputs_v.unsqueeze(0)
-        outputs = model.forward(inputs_v)[0]
+        inputs_e = torch.from_numpy(input_data_e.astype('float32')).to(device).unsqueeze(0)
+        inputs_d = torch.from_numpy(input_data_d.astype('float32')).to(device).unsqueeze(0)
+
+        outputs = model.forward(inputs_e,inputs_d)[0]
         outputs = outputs.detach().cpu().numpy()
         outputs_data.append(outputs)
         loss = np.mean(np.abs(outputs - gt[i]))
-        # print(loss)
-    final_loss = np.mean(np.abs(np.asarray(outputs_data) - gt)[2:])
+        print(loss)
+    final_loss = np.mean(np.abs(np.asarray(outputs_data) - gt[:-1]))
     print('Mean',final_loss)
     np.savetxt(log_path, outputs_data)
     return outputs_data
@@ -38,18 +41,23 @@ def use_model(target_lmks, log_path):
 
     pre_init_cmds = init_cmds
     outputs = init_cmds
-    outputs_data = [init_cmds,init_cmds]
+    outputs_data = []
 
-    for i in range(2,len(target_lmks)):
+    for i in range(len(target_lmks)):
+
         pre_pre_init_cmds = np.copy(pre_init_cmds)
         pre_init_cmds = np.copy(outputs)
-        flatten_lmks = target_lmks[i].flatten()
-        input_data = np.concatenate((pre_pre_init_cmds, pre_init_cmds, flatten_lmks))
+        flatten_lmks1 = target_lmks[i].flatten()
+        if i == len(target_lmks) - 1:
+            flatten_lmks2 = target_lmks[i].flatten()
+        else:
+            flatten_lmks2 = target_lmks[i+1].flatten()
 
-        inputs_v = torch.from_numpy(input_data.astype('float32')).to(device)
-
-        inputs_v = inputs_v.unsqueeze(0)
-        outputs = model.forward(inputs_v)[0]
+        input_data_e = np.concatenate((np.expand_dims(pre_pre_init_cmds,axis=0), np.expand_dims(pre_init_cmds,axis=0)))
+        input_data_d = np.concatenate((np.expand_dims(flatten_lmks1,axis=0), np.expand_dims(flatten_lmks2,axis=0)))
+        inputs_e = torch.from_numpy(input_data_e.astype('float32')).to(device).unsqueeze(0)
+        inputs_d = torch.from_numpy(input_data_d.astype('float32')).to(device).unsqueeze(0)
+        outputs = model.forward(inputs_e,inputs_d)[0]
         outputs = outputs.detach().cpu().numpy()
         outputs_data.append(outputs)
     np.savetxt(log_path, outputs_data)
@@ -72,22 +80,19 @@ if __name__ == '__main__':
 
     lmks_id = lips_idx + inner_lips_idx
 
-    init_cmds = np.asarray([9.999999999999997780e-02,
-                            0.000000000000000000e+00,
-                            5.555555555555555802e-01,
-                            2.857142857142856984e-01,
-                            5.384615384615384359e-01,
-                            1.000000000000000000e+00
+    init_cmds = np.asarray([0.1,
+                            0.0,
+                            0.55556,
+                            0.42857,
+                            0.32353,
+                            1.00000
                             ])
 
     # MODEL LOADING
-    input_dim = 60 * 3 * 1 + 6 * 2
-    output_dim = 6
     api = wandb.Api()
-    proj_name = 'IVM-R_fs2_3(1112)'
+    proj_name = 'IVMT2_1202'
     runs = api.runs("robotics/%s"%proj_name)
-    # run_id = 'elated-sweep-2' # 'laced-sweep-24' 'eager-sweep-2
-    run_id = 'eager-sweep-2' # 'laced-sweep-24'
+    run_id = 'fanciful-sweep-1' # 'laced-sweep-24'
 
     model_path = '../data/%s/%s/'%(proj_name, run_id)
     config = None
@@ -98,14 +103,21 @@ if __name__ == '__main__':
 
     config = argparse.Namespace(**config)
 
-    model = inverse_model(input_size=input_dim,
-                          label_size=output_dim,
-                          num_layer=config.n_layer,
-                          d_hidden=config.d_hidden,
-                          use_bn=config.use_bn,
-                          skip_layer=config.skip_layer,
-                          final_sigmoid=config.final_sigmoid
+    # model = inverse_model(input_size=input_dim,
+    #                       label_size=output_dim,
+    #                       num_layer=config.n_layer,
+    #                       d_hidden=config.d_hidden,
+    #                       use_bn=config.use_bn,
+    #                       skip_layer=config.skip_layer,
+    #                       final_sigmoid=config.final_sigmoid
+    #                       ).to(device)
+    model = TransformerInverse(decoder_input_size = 180,
+                                nhead              = config.nhead               ,
+                                num_encoder_layers = config.num_encoder_layers  ,
+                                num_decoder_layers = config.num_decoder_layers  ,
+                                dim_feedforward    = config.dim_feedforward
                           ).to(device)
+
     model.load_state_dict(torch.load(model_path+'best_model_MSE.pt', map_location=torch.device(device)))
     model.eval()
 
@@ -113,25 +125,26 @@ if __name__ == '__main__':
 
     if mode == 0:
         # use model to generate cmds
-        save_path = f'../../EMO_GPTDEMO/output_cmds/{run_id}/'
+        save_path = f'../../EMO_GPTDEMO/robot_data/output_cmds/{run_id}/'
         os.makedirs(save_path, exist_ok=True)
         for demo_id in range(10):
             print(f'process: {demo_id}')
-            target_lmks = np.load(d_root + f'synthesized_target/om/lmks/m_lmks_{demo_id}.npy')[:, lmks_id]
+            target_lmks = np.load(d_root + f'robot_data/synthesized/lmks/m_lmks_{demo_id}.npy')[:, lmks_id]
 
             use_model(target_lmks, log_path=save_path+f"{demo_id}.csv")
 
     elif mode == 1:
         # evaluations: lmks and cmds
 
-        data_path = "../../EMO_GPTDEMO/robot_data/data1109/"
+        data_path = "../../EMO_GPTDEMO/robot_data/data1128/"
         dataset_lmk = np.load(data_path+'m_lmks.npy')
-        groundtruth_data = np.loadtxt(data_path+'action_tuned.csv')
+        groundtruth_data = np.loadtxt(data_path+'action.csv')
+        training_num = int(len(dataset_lmk) * 0.8)
 
-        test_data_num = 10000
+        test_data_num = 4000
         key_cmds = np.asarray([0, 1, 2, 3, 5, 7])
-        dataset_lmk = dataset_lmk[-test_data_num:, lmks_id]
-        groundtruth_data = groundtruth_data[-test_data_num:, key_cmds]
+        dataset_lmk = dataset_lmk[-training_num:, lmks_id]
+        groundtruth_data = groundtruth_data[-training_num:, key_cmds]
 
 
         # outputs_data = [groundtruth_data[0], groundtruth_data[1]]
@@ -163,7 +176,6 @@ if __name__ == '__main__':
         for demo_id in range(10):
             dataset_lmk = np.load(data_path+f'lmks_{demo_id}.npy')
             groundtruth_data = np.loadtxt(data_path+f'cmds_{demo_id}.csv')
-
 
             key_cmds = np.asarray([0, 1, 2, 3, 5, 7])
             dataset_lmk = dataset_lmk[:,lmks_id]
