@@ -121,7 +121,9 @@ def train_model():
     print(run_id)
     run_name = wandb.run.name
 
-    log_path = "../data/%s(finetuning)/%s/"%(proj_name,run_name)
+    k0 = 0.01
+    k1 = 0.01
+    log_path = "../data/%s/%s/"%(proj_name,run_name)
     os.makedirs(log_path,exist_ok=True)
 
     model = TransformerInverse(decoder_input_size = 180,
@@ -130,7 +132,6 @@ def train_model():
                                 num_decoder_layers = config.num_decoder_layers  ,
                                 dim_feedforward    = config.dim_feedforward
                           ).to(device)
-    # model = TransformerInverse().to(device)
     model.load_state_dict(torch.load(model_path+'best_model_MSE.pt', map_location=torch.device(device)))
 
     train_dataloader = DataLoader(train_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
@@ -154,8 +155,7 @@ def train_model():
     min_loss = + np.inf
     patience = 0
 
-
-
+    relu = nn.ReLU()
     for epoch in range(10000):
         t0 = time.time()
         model.train()
@@ -182,7 +182,8 @@ def train_model():
                 for i, bundle in enumerate(test_dataloader):
                     input_d, label_d = bundle["input"], bundle["label"]
                     pred_result = model.forward(input_d[0], input_d[1])
-                    loss = Loss_fun(pred_result, label_d)
+                    loss = Loss_fun(pred_result, label_d) + k0 * (torch.exp(relu(pred_result[:,0]-label_d[:,0]))-1).sum()\
+                            + k1 * (torch.exp(relu(label_d[:,2]-pred_result[:,2]))-1).sum()
                     temp_l.append(loss.item())
             # outputs_data = [groundtruth_data[0], groundtruth_data[1]]
             valid_loss1 = np.mean(temp_l)
@@ -204,10 +205,12 @@ def train_model():
                 # Forward pass
                 inputs_v = input_data.unsqueeze(0).to(device)
                 input_lmks = input_lmks.unsqueeze(0).to(device)
-                outputs = model.forward(inputs_v,input_lmks)
+                pred_result = model.forward(inputs_v,input_lmks)
 
                 # Loss calculation using PyTorch
-                loss = torch.mean(torch.abs(outputs - groundtruth_data[i]))  # Assuming groundtruth_data is a tensor
+                loss = Loss_fun(pred_result, groundtruth_data[i]) + k0 * (
+                            torch.exp(relu(pred_result[:, 0] - groundtruth_data[i][:, 0])) - 1).sum() \
+                       + k1 * (torch.exp(relu(groundtruth_data[i][:, 2] - pred_result[:, 2])) - 1).sum()
                 temp_l.append(loss.item())  # Convert tensor to a Python scalar
             valid_loss2 = np.mean(temp_l)
             valid_combine_loss = valid_loss1*0.75 + valid_loss2*0.25
@@ -236,7 +239,9 @@ def train_model():
                    'epoch':epoch,
                    'learning_rate':optimizer.param_groups[0]['lr'],
                    'min_valid_loss': min_loss,
-                   'dim_feedforward':config.dim_feedforward})
+                   'dim_feedforward':config.dim_feedforward,
+                   'k0':k0,
+                   'k1':k1})
 
         print(epoch, "time used: ", round((t1 - t0),3),
               "training mean loss: ",round(train_mean_loss,5),
@@ -259,11 +264,13 @@ if __name__ == '__main__':
     import argparse
 
     api = wandb.Api()
-    proj_name = 'IVMT2_1202'
-    runs = api.runs("robotics/%s"%proj_name)
-    run_id = 'fanciful-sweep-1' # 'laced-sweep-24'
+    proj_name = 'IVMT2_1205(closure)'
 
-    model_path = '../data/%s/%s/'%(proj_name, run_id)
+    pre_proj_name = 'IVMT2_1202'
+    runs = api.runs("robotics/%s"%pre_proj_name)
+    run_id = 'celestial-sweep-5' # 'laced-sweep-24'
+
+    model_path = '../data/%s/%s/'%(pre_proj_name, run_id)
     config = None
     for run in runs:
         if run.name == run_id:
@@ -272,13 +279,6 @@ if __name__ == '__main__':
 
     config = argparse.Namespace(**config)
 
-
-
-    # output_dim = va_cmds.shape[1]
-    # input_dim = n_lmks*3 + output_dim*2
-
-    # print('input_dim:',input_dim)
-    # print('output_dim:',output_dim)
 
     groundtruth_data = np.loadtxt(data_path + 'action.csv')[training_num:, key_cmds]
     test_lmk_data = np.load(data_path+'m_lmks.npy')[training_num:, select_lmks_id]

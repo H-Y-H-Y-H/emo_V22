@@ -29,9 +29,9 @@ dataset_cmd = np.loadtxt(data_path+'action.csv')[:, key_cmds]
 #     plt.scatter(dataset_lmk[i,:,0],dataset_lmk[i,:,1],c='r')
 
 
-mean_0 = np.mean(dataset_lmk[:,:1],axis=0)
-dist = dataset_lmk[:,:1]-mean_0
-dataset_lmk = dataset_lmk-dist
+# mean_0 = np.mean(dataset_lmk[:,:1],axis=0)
+# dist = dataset_lmk[:,:1]-mean_0
+# dataset_lmk = dataset_lmk-dist
 
 # for i in range(100):
 #     lmks = dataset_lmk[i]
@@ -289,7 +289,7 @@ if __name__ == '__main__':
 
 
 
-    project_name = 'IVMT2_1204'
+    project_name = 'IVMT2_1202'
     sweep_id = wandb.sweep(sweep=sweep_configuration, project=project_name)
 
 
