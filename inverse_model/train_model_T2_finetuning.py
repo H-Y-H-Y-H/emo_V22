@@ -205,12 +205,12 @@ def train_model():
                 # Forward pass
                 inputs_v = input_data.unsqueeze(0).to(device)
                 input_lmks = input_lmks.unsqueeze(0).to(device)
-                outputs = model.forward(inputs_v,input_lmks)[0]
+                outputs = model.forward(inputs_v,input_lmks)
 
                 # Loss calculation using PyTorch
-                loss = Loss_fun(outputs, groundtruth_data[i]) + k0 * (
-                            torch.exp(relu(outputs[0] - groundtruth_data[i][0])) - 1) \
-                       + k1 * (torch.exp(relu(groundtruth_data[i][2] - outputs[2])) - 1)
+                loss = Loss_fun(outputs[0], groundtruth_data[i]) + k0 * (
+                            torch.exp(relu(outputs[0][0] - groundtruth_data[i][0])) - 1) \
+                       + k1 * (torch.exp(relu(groundtruth_data[i][2] - outputs[0][2])) - 1)
                 temp_l.append(loss.item())  # Convert tensor to a Python scalar
             valid_loss2 = np.mean(temp_l)
             valid_combine_loss = valid_loss1*0.75 + valid_loss2*0.25
