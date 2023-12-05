@@ -24,7 +24,7 @@ key_cmds = np.asarray([0,1,2,3,5,7])
 dataset_lmk = np.load(data_path+'m_lmks.npy')[:, select_lmks_id]
 dataset_cmd = np.loadtxt(data_path+'action.csv')[:, key_cmds]
 mean_0 = np.mean(dataset_lmk[:, :1],axis=0)
-dist = dataset_lmk[:,:1]-mean_0
+dist = dataset_lmk[:, :1]-mean_0
 dataset_lmk = dataset_lmk - dist
 
 # for i in range(1):
