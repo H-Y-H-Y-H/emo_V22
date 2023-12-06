@@ -126,7 +126,8 @@ def train_model():
     wandb.init(project=project_name)
     config = wandb.config
     run_name = wandb.run.name
-
+    k0 = 0.01
+    k1 = 0.01
     print(run_name)
 
     log_path = "../data/%s/%s/"%(project_name,run_name)
@@ -167,7 +168,7 @@ def train_model():
     min_loss = + np.inf
     patience = 0
 
-
+    relu = nn.ReLU()
     for epoch in range(10000):
         t0 = time.time()
         model.train()
@@ -178,7 +179,10 @@ def train_model():
             for i, bundle in enumerate(train_dataloader):
                 input_d, label_d = bundle["input"], bundle["label"]
                 pred_result = model.forward(input_d[0],input_d[1])
-                loss = Loss_fun(pred_result, label_d)
+                loss = Loss_fun(pred_result, label_d) + k0 * (
+                            torch.exp(relu(pred_result[:, 0] - label_d[:, 0])) - 1).sum() \
+                       + k1 * (torch.exp(relu(label_d[:, 2] - pred_result[:, 2])) - 1).sum()
+
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -196,7 +200,9 @@ def train_model():
                 for i, bundle in enumerate(test_dataloader):
                     input_d, label_d = bundle["input"], bundle["label"]
                     pred_result = model.forward(input_d[0], input_d[1])
-                    loss = Loss_fun(pred_result, label_d)
+                    loss = Loss_fun(pred_result, label_d) + k0 * (
+                                torch.exp(relu(pred_result[:, 0] - label_d[:, 0])) - 1).sum() \
+                           + k1 * (torch.exp(relu(label_d[:, 2] - pred_result[:, 2])) - 1).sum()
                     temp_l.append(loss.item())
             # outputs_data = [groundtruth_data[0], groundtruth_data[1]]
             valid_loss1 = np.mean(temp_l)
@@ -222,7 +228,11 @@ def train_model():
                 outputs = model.forward(inputs_v,input_lmks)
 
                 # Loss calculation using PyTorch
-                loss = torch.mean(torch.abs(outputs - groundtruth_data[i]))  # Assuming groundtruth_data is a tensor
+                # Loss calculation using PyTorch
+                loss = Loss_fun(outputs[0], groundtruth_data[i]) + k0 * (
+                        torch.exp(relu(outputs[0][0] - groundtruth_data[i][0])) - 1) \
+                       + k1 * (torch.exp(relu(groundtruth_data[i][2] - outputs[0][2])) - 1)
+
                 temp_l.append(loss.item())  # Convert tensor to a Python scalar
             valid_loss2 = np.mean(temp_l)
             valid_combine_loss = valid_loss1*0.75 + valid_loss2*0.25
@@ -250,7 +260,10 @@ def train_model():
                    'epoch':epoch,
                    'learning_rate':optimizer.param_groups[0]['lr'],
                    'min_valid_loss': min_loss,
-                   'dim_feedforward':config.dim_feedforward})
+                   'dim_feedforward':config.dim_feedforward,
+                   'k0': k0,
+                   'k1': k1
+                   })
 
         print(epoch, "time used: ", round((t1 - t0),3),
               "training mean loss: ",round(train_mean_loss,5),
@@ -286,18 +299,9 @@ if __name__ == '__main__':
         },
     }
 
-
-
-
-    project_name = 'IVMT2_1202'
+    project_name = 'IVMT2_1205(closure)'
     sweep_id = wandb.sweep(sweep=sweep_configuration, project=project_name)
 
-
-    # output_dim = va_cmds.shape[1]
-    # input_dim = n_lmks*3 + output_dim*2
-
-    # print('input_dim:',input_dim)
-    # print('output_dim:',output_dim)
 
     groundtruth_data = np.loadtxt(data_path + 'action.csv')[training_num:, key_cmds]
     # train_lmk_data = np.load(data_path+'m_lmks.npy')[:training_num, select_lmks_id]
