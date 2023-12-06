@@ -98,6 +98,40 @@ class TransformerInverse(nn.Module):
         output = self.output_layer(output[:, -1, :])  # Adjusted for batch_first
         return output
 
+class TransformerInverse_baseline(nn.Module):
+    def __init__(self,
+                encoder_input_size = 6,
+                decoder_input_size = 60,
+                output_size = 6,
+                nhead = 2     ,
+                num_encoder_layers = 2  ,
+                num_decoder_layers = 2  ,
+                dim_feedforward = 512,
+                 baseline = ''
+                 ):
+        super(TransformerInverse_baseline, self).__init__()
+        self.baseline= baseline
+        self.encoder_embedding = nn.Linear(encoder_input_size, dim_feedforward)
+        self.decoder_embedding = nn.Linear(decoder_input_size, dim_feedforward)
+        self.transformer = Transformer(d_model=dim_feedforward, nhead=nhead,
+                                       num_encoder_layers=num_encoder_layers,
+                                       num_decoder_layers=num_decoder_layers,
+                                       dim_feedforward=dim_feedforward,
+                                       batch_first=True)  # Set batch_first to True
+        self.output_layer = nn.Linear(dim_feedforward, output_size)
+
+    def forward(self, encoder_input, decoder_input):
+        encoder_input = self.encoder_embedding(encoder_input)
+
+        if self.baseline == 'no_encoder':
+            output = self.transformer(encoder_input, encoder_input)
+            output = self.output_layer(output[:, -1, :])  # Adjusted for batch_first
+        else:
+            decoder_input = self.decoder_embedding(decoder_input)
+
+            output = self.transformer(encoder_input, decoder_input)
+            output = self.output_layer(output[:, -1, :])  # Adjusted for batch_first
+        return output
 
 if __name__ == "__main__":
     import time
