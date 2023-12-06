@@ -268,8 +268,14 @@ if __name__ == "__main__":
     elif mode == 1:
         video_id = 9
 
-        save_path = f'../EMO_GPTDEMO/robot_data/synthesized/'
-        video_source = f'../EMO_GPTDEMO/robot_data/synthesized/video/{video_id}.mp4'
+        # save_path = f'../EMO_GPTDEMO/robot_data/synthesized/'
+        # video_source = f'../EMO_GPTDEMO/robot_data/synthesized/video/{video_id}.mp4'
+
+        real_data_method = 'wandering-sweep-1' #'nn_100' #'wav_bl'#'om'
+        save_path = f'../EMO_GPTDEMO/robot_data/output_cmds/{real_data_method}_video/'
+        video_source = f'../EMO_GPTDEMO/robot_data/output_cmds/{real_data_method}_video/{video_id}.mp4'
+
+
         os.makedirs(save_path + f'lmks_rendering/{video_id}/', exist_ok=True)
         os.makedirs(save_path + 'lmks/', exist_ok=True)
 

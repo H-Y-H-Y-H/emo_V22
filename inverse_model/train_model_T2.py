@@ -128,6 +128,8 @@ def train_model():
     run_name = wandb.run.name
     k0 = 0.01
     k1 = 0.01
+    k2= 0.01
+
     print(run_name)
 
     log_path = "../data/%s/%s/"%(project_name,run_name)
@@ -181,7 +183,8 @@ def train_model():
                 pred_result = model.forward(input_d[0],input_d[1])
                 loss = Loss_fun(pred_result, label_d) + k0 * (
                             torch.exp(relu(pred_result[:, 0] - label_d[:, 0])) - 1).sum() \
-                       + k1 * (torch.exp(relu(label_d[:, 2] - pred_result[:, 2])) - 1).sum()
+                       + k1 * (torch.exp(relu(label_d[:, 2] - pred_result[:, 2])) - 1).sum()\
+                        + k2 * (torch.exp(relu(label_d[:, 5] - pred_result[:, 5])) - 1).sum()
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -202,7 +205,9 @@ def train_model():
                     pred_result = model.forward(input_d[0], input_d[1])
                     loss = Loss_fun(pred_result, label_d) + k0 * (
                                 torch.exp(relu(pred_result[:, 0] - label_d[:, 0])) - 1).sum() \
-                           + k1 * (torch.exp(relu(label_d[:, 2] - pred_result[:, 2])) - 1).sum()
+                           + k1 * (torch.exp(relu(label_d[:, 2] - pred_result[:, 2])) - 1).sum()\
+                           + k2 * (torch.exp(relu(label_d[:, 5] - pred_result[:, 5])) - 1).sum()
+
                     temp_l.append(loss.item())
             # outputs_data = [groundtruth_data[0], groundtruth_data[1]]
             valid_loss1 = np.mean(temp_l)
@@ -231,8 +236,8 @@ def train_model():
                 # Loss calculation using PyTorch
                 loss = Loss_fun(outputs[0], groundtruth_data[i]) + k0 * (
                         torch.exp(relu(outputs[0][0] - groundtruth_data[i][0])) - 1) \
-                       + k1 * (torch.exp(relu(groundtruth_data[i][2] - outputs[0][2])) - 1)
-
+                       + k1 * (torch.exp(relu(groundtruth_data[i][2] - outputs[0][2])) - 1)\
+                       + k2 * (torch.exp(relu(groundtruth_data[i][5] - outputs[0][5])) - 1)
                 temp_l.append(loss.item())  # Convert tensor to a Python scalar
             valid_loss2 = np.mean(temp_l)
             valid_combine_loss = valid_loss1*0.75 + valid_loss2*0.25
@@ -289,11 +294,11 @@ if __name__ == '__main__':
         "method": "random",
         "metric": {"goal": "minimize", "name": "valid_loss"},
         "parameters": {
-            'dim_feedforward':{"values":[512,1024,2048]},
-            'batchsize':{"values": [8, 16, 32,64]},
+            'dim_feedforward':{"values":[512,1024]},
+            'batchsize':{"values": [8, 32]},
             'lr': {"max": 10e-5, "min":10e-6},
-            'num_encoder_layers':{"values": [2,3,4,5,6]},
-            'num_decoder_layers':{"values": [2,3,4,5,6]},
+            'num_encoder_layers':{"values": [2,3,4]},
+            'num_decoder_layers':{"values": [2,3,4]},
             'nhead':{"values": [1,2]}
 
         },

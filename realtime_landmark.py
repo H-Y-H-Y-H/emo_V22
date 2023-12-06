@@ -230,10 +230,10 @@ if __name__ == "__main__":
 
     source_pth = 'data/desktop/synced_video_1103heygen.mp4'
 
-    dataset_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1105/'
+    dataset_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1201/'
 
     # filter_out = 3043
-    dataset = np.load(dataset_pth + 'm_lmks_media.npy')
+    dataset = np.load(dataset_pth + 'm_lmks.npy')
 
 
     # dataset = smooth_lmks(dataset)

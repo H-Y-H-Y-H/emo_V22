@@ -8,7 +8,7 @@ if __name__ == "__main__":
 
     mode = 0
     import sys
-    demo_id = 1
+    demo_id = 9
     dataset_name = 'data1201'
 
     d_root = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/'
@@ -16,28 +16,24 @@ if __name__ == "__main__":
     dataset_pth = d_root+f'{dataset_name}/'
     dataset_image_lmks = d_root+f'{dataset_name}/robot_dataset_img'
 
-    # dataset_pth_coarse= d_root+'data1126(coarse)/'
-    # dataset_image_lmks_coarse = d_root+'data1126(coarse)/robot_dataset_img'
-
     target_synthesize_img_path = d_root + f'synthesized/lmks_rendering/{demo_id}'
 
-
     dataset_lmk = np.load(d_root+f'{dataset_name}/m_lmks.npy')
+    target_lmks = np.load(d_root + f'synthesized/lmks/m_lmks_{demo_id}.npy')
+    mean_0 = np.mean(dataset_lmk[:, :1], axis=0)
+    dist_dataset = dataset_lmk[:, :1] - mean_0
+    dataset_lmk = dataset_lmk - dist_dataset
+    dist_target = target_lmks[:, :1] - mean_0
+    target_lmks = target_lmks - dist_target
+
     dataset_cmd = np.loadtxt(d_root+f'{dataset_name}/action.csv')
-    # dataset_lmk_coarse = np.load(d_root+'data1126(coarse)/m_lmks.npy')[:9810]
-    # dataset_cmd_coarse = np.loadtxt(d_root+'data1126(coarse)/action.csv')[:9810]
-    # dataset_lmk = np.concatenate((dataset_lmk,dataset_lmk_coarse))
-    # dataset_cmd = np.concatenate((dataset_cmd,dataset_cmd_coarse))
 
     print(dataset_lmk.shape)
 
     if mode == 0:
         NORM_FLAG = False
         mouth_re_localize = True
-        mutli_nn_cmds_rank = 200
-        # Landmarks that the robot wants to mimic.
-        # target_lmks = np.load(data_path + 'emo_synced_lmks_close.npy')
-        target_lmks = np.load(d_root+f'synthesized/lmks/m_lmks_{demo_id}.npy')
+        mutli_nn_cmds_rank = 1
 
         #####  SMOOTH LANDMARKS)
         # target_lmks = smooth_lmks(target_lmks)

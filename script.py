@@ -60,13 +60,20 @@ import glob
 def frames_2_video():
   # img_array = []
   # img_list = glob.glob('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data1105/img/*.png')
-  img_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1201/img/'
-  frame_n = 10000
+  # img_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1201/img/'
+  # frame_n = 10000
+  # fps = 30
+  # fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+  # out = cv2.VideoWriter('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1201/data_%ds.mp4'%(frame_n//fps), fourcc, fps, (480, 480))
+  method_name = 'wandering-sweep-1'
+  idx = 9
+  img_pth = f'/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/output_cmds/{method_name}/img{idx}/'
+  frame_n = len(os.listdir(img_pth))
   fps = 30
   fourcc = cv2.VideoWriter_fourcc(*'MP4V')
-  out = cv2.VideoWriter('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1201/data_%ds.mp4'%(frame_n//fps), fourcc, fps, (480, 480))
+  out = cv2.VideoWriter(f'/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/output_cmds/{method_name}/{idx}.mp4', fourcc, fps, (480, 480))
 
-  for i in range(0,frame_n):
+  for i in range(frame_n):
     filename = img_pth+"/%d.png"%(i)
 
     img = cv2.imread(filename)[:,80:560]
@@ -79,6 +86,7 @@ def frames_2_video():
   out.release()
 
 # frames_2_video()
+# quit()
 
 def frames_video():
   img_array = []
@@ -102,7 +110,6 @@ def frames_video():
     out.write(img_array[i])
   out.release()
 
-# frames_video()
 
 def visualize_dataset():
   import time
@@ -129,7 +136,7 @@ def visualize_dataset():
 # visualize_dataset()
 
 
-def video_2_frames(video_source):
+def video_2_frames(video_source,crop_flag=False):
   cap = cv.VideoCapture(video_source)
   list_img = []
   while cap.isOpened():
@@ -138,8 +145,8 @@ def video_2_frames(video_source):
       if not ret:
           print("Can't receive frame (stream end?). Exiting ...")
           break
-
-      # frame = frame[:,30:510]
+      if crop_flag:
+        frame = frame[:,80:560]
       cv.imshow('frame', frame)
       list_img.append(frame)
       if cv.waitKey(1) == ord('q'):
@@ -151,16 +158,19 @@ def video_2_frames(video_source):
 
 def cut_video():
   size = (480,480)
+  method_name = 'wav_bl'#'nn_100' #'wav_bl'#'om'
   shift_frame = 3
-  method_name = 'wav_bl'
-  for demo_id in range(9,10):
-    lmks_path = f'../EMO_GPTDEMO/synthesized_target/om/lmks/m_lmks_{demo_id}.npy'
+  for demo_id in range(10):
+    lmks_path = f'../EMO_GPTDEMO/robot_data/synthesized/lmks/m_lmks_{demo_id}.npy'
     length_f = len(np.load(lmks_path))
-    video_source = f'../EMO_GPTDEMO/output_cmds/{method_name}_video/output{demo_id}.mp4'
-    img_array = video_2_frames(video_source)
+    print('length_f:',length_f)
+    # video_source = '../EMO_GPTDEMO/robot_data/real_video/output%d.mp4'%demo_id
+    video_source = f'../EMO_GPTDEMO/robot_data/output_cmds/{method_name}_video/output%d.mp4'%demo_id
+
+    img_array = video_2_frames(video_source,crop_flag=True)
     img_array = np.asarray(img_array)[-length_f+shift_frame:]
     img_array = np.concatenate((img_array,img_array[-1:],img_array[-1:],img_array[-1:]))
-    out = cv2.VideoWriter(f'../EMO_GPTDEMO/output_cmds/{method_name}_video/{demo_id}.mp4',
+    out = cv2.VideoWriter(f'../EMO_GPTDEMO/robot_data/output_cmds/{method_name}_video/{demo_id}.mp4',
                           cv2.VideoWriter_fourcc(*'MP4V'),
                           30,
                           size)
@@ -170,6 +180,7 @@ def cut_video():
     out.release()
 
 # cut_video()
+
 
 def compare_lmks_dist():
   method_name = 'wav_bl'
@@ -184,6 +195,8 @@ def compare_lmks_dist():
       error_list.append(error)
     print(np.argmin(error_list),error_list)
 # compare_lmks_dist()
+
+
 
 from moviepy.editor import VideoFileClip, AudioFileClip
 
@@ -201,11 +214,19 @@ def combine_audio_video(audio_file_path, video_file_path, output_file_path):
     final_clip.write_videofile(output_file_path, codec="libx264", audio_codec="aac")
 
 
-for idx in range(2):
-  combine_audio_video(audio_file_path='../EMO_GPTDEMO/audio/emo/emo%d.wav'%idx,
-                      video_file_path='../EMO_GPTDEMO/robot_data/output_cmds/nn_200/%d.avi'%idx,
-                      output_file_path = '../EMO_GPTDEMO/robot_data/output_cmds/nn200_%d.avi'%idx
-                    )
+# for idx in range(5,10):
+#   method_name = 'om_video'
+#   combine_audio_video(audio_file_path='../EMO_GPTDEMO/audio/emo/emo%d.wav'%idx,
+#                       video_file_path=f'../EMO_GPTDEMO/robot_data/output_cmds/{method_name}/{idx}.mp4',
+#                       output_file_path = f'../EMO_GPTDEMO/robot_data/output_cmds/{method_name}/%d(audio).mp4'%idx,
+#                     )
+
+# for idx in range(10):
+#   method_name = 'nn_100'
+#   combine_audio_video(audio_file_path='../EMO_GPTDEMO/audio/emo/emo%d.wav'%idx,
+#                       video_file_path=f'../EMO_GPTDEMO/robot_data/output_cmds/{method_name}/{idx}.avi',
+#                       output_file_path = f'../EMO_GPTDEMO/robot_data/output_cmds/{method_name}_%d.avi'%idx,
+#                     )
 
 
 lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
@@ -218,10 +239,9 @@ def sidebyside(demo_id = 0):
   import matplotlib
   matplotlib.use('Agg')
 
-  source_path = f'../EMO_GPTDEMO/output_cmds/'
-  method_names = ['syn', 'eager',  'nn_400', 'wav_bl']
+  source_path = f'../EMO_GPTDEMO/robot_data/output_cmds/'
+  method_names = ['syn', 'wandering-sweep-1',  'nn_100', 'wav_bl']
   save_path = f'../EMO_GPTDEMO/compare/'
-  os.makedirs(save_path,exist_ok=True)
   os.makedirs(save_path+f'demo{demo_id}/',exist_ok=True)
   video_frames_list = []
   for i in range(len(method_names)):
@@ -233,10 +253,10 @@ def sidebyside(demo_id = 0):
   img_list = []
 
   scale_change = (45/0.15)
-  gt_lmks     = np.load(f'../EMO_GPTDEMO/synthesized_target/om/lmks/m_lmks_{demo_id}.npy')*scale_change
-  eager_lmks  = np.load(f'../EMO_GPTDEMO/output_cmds/eager_video/m_lmks_{demo_id}.npy')*scale_change
-  nn_400_lmks = np.load(f'../EMO_GPTDEMO/output_cmds/nn_400_video/m_lmks_{demo_id}.npy')*scale_change
-  wav_bl_lmks = np.load(f'../EMO_GPTDEMO/output_cmds/wav_bl_video/m_lmks_{demo_id}.npy')*scale_change
+  gt_lmks     = np.load(f'../EMO_GPTDEMO/robot_data/output_cmds/{method_names[0]}_video/lmks/m_lmks_{demo_id}.npy')*scale_change
+  eager_lmks  = np.load(f'../EMO_GPTDEMO/robot_data/output_cmds/{method_names[1]}_video/lmks/m_lmks_{demo_id}.npy')*scale_change
+  nn_400_lmks = np.load(f'../EMO_GPTDEMO/robot_data/output_cmds/{method_names[2]}_video/lmks/m_lmks_{demo_id}.npy')*scale_change
+  wav_bl_lmks = np.load(f'../EMO_GPTDEMO/robot_data/output_cmds/{method_names[3]}_video/lmks/m_lmks_{demo_id}.npy')*scale_change
 
   gt_lmks     = gt_lmks     [:,select_lmks_id]
   eager_lmks  = eager_lmks  [:,select_lmks_id]
@@ -247,9 +267,9 @@ def sidebyside(demo_id = 0):
   dist_nn_400  = np.mean(np.abs(gt_lmks - nn_400_lmks),axis=(1,2))
   dist_wav_bl = np.mean(np.abs(gt_lmks - wav_bl_lmks),axis=(1,2))
 
-  dist_eager  [:2] = dist_eager  [2]
-  dist_nn_400 [:2] = dist_nn_400 [2]
-  dist_wav_bl [:2] = dist_wav_bl [2]
+  # dist_eager  [:2] = dist_eager  [2]
+  # dist_nn_400 [:2] = dist_nn_400 [2]
+  # dist_wav_bl [:2] = dist_wav_bl [2]
 
   for f in range(len(video_frames_list[0])):
     plt.figure(figsize=(480 / 96, 480 / 96), dpi=96)
@@ -258,7 +278,7 @@ def sidebyside(demo_id = 0):
     plt.plot(dist_eager,c = 'black',label='Overall L1 Distance')
     mean_dist = np.mean(dist_eager)
     plt.plot([0,len(dist_eager)], [mean_dist]*2,c='deepskyblue', linestyle='--', label =f'Mean L1 Distance')
-    plt.scatter([f],[dist_eager[f]],c = 'lightgreen',label=f'Current Distance: {dist_eager[f]:.3f}')
+    plt.scatter([f],[dist_eager[f]],c = 'r',label=f'Current Distance: {dist_eager[f]:.3f}')
     plt.xlabel("Frame Index")
     plt.ylabel("L1 Distance")
     plt.title(f"Mean L1 Landmarks Distance: {mean_dist:.3f}")
@@ -275,7 +295,7 @@ def sidebyside(demo_id = 0):
     plt.plot(dist_nn_400,c = 'black',label='Overall L1 Distance')
     mean_dist = np.mean(dist_nn_400)
     plt.plot([0,len(dist_nn_400)], [mean_dist]*2,c='deepskyblue', linestyle='--', label =f'Mean L1 Distance')
-    plt.scatter([f],[dist_nn_400[f]],c = 'lightgreen',label=f'Current Distance: {dist_nn_400[f]:.3f}')
+    plt.scatter([f],[dist_nn_400[f]],c = 'r',label=f'Current Distance: {dist_nn_400[f]:.3f}')
     plt.xlabel("Frame Index")
     plt.ylabel("L1 Distance")
     plt.title(f"Mean L1 Landmarks Distance: {mean_dist:.3f}")
@@ -293,7 +313,7 @@ def sidebyside(demo_id = 0):
     plt.plot(dist_wav_bl,c = 'black',label='Overall L1 Distance')
     mean_dist = np.mean(dist_wav_bl)
     plt.plot([0,len(dist_wav_bl)], [mean_dist]*2,c='deepskyblue', linestyle='--', label =f'Mean L1 Distance')
-    plt.scatter([f],[dist_wav_bl[f]],c = 'lightgreen',label=f'Current Distance: {dist_wav_bl[f]:.3f}')
+    plt.scatter([f],[dist_wav_bl[f]],c = 'r',label=f'Current Distance: {dist_wav_bl[f]:.3f}')
     plt.xlabel("Frame Index")
     plt.ylabel("L1 Distance")
     plt.title(f"Mean L1 Landmarks Distance: {mean_dist:.3f}")
@@ -305,13 +325,12 @@ def sidebyside(demo_id = 0):
     wav_bl_curve = cv2.cvtColor(data,cv2.COLOR_RGB2BGR)
     ###############################
 
-
     img0 = video_frames_list[0][f]
     img1 = video_frames_list[1][f]
     img2 = video_frames_list[2][f]
     img3 = video_frames_list[3][f]
 
-    img_1= np.zeros_like(img0).astype(np.uint8)
+    img_1 = np.zeros_like(img0).astype(np.uint8)
     paddding = np.zeros((480,30,3))
 
     paddding = paddding.astype(np.uint8)
@@ -346,14 +365,14 @@ def sidebyside(demo_id = 0):
   # Usage
   combine_audio_video(audio_path, syn_video_path, out_video_path)
 
-# for i in range(1,10):
-#   sidebyside(i)
+for i in range(9,10):
+  sidebyside(i)
 
 def debug_compare():
-  method_name = 'eager'
+  method_name = 'nn_100'
   for demo_id in range(10):
-    results = np.load(f'../EMO_GPTDEMO/output_cmds/{method_name}_video/m_lmks_{demo_id}.npy')
-    label_lmks_path = f'../EMO_GPTDEMO/synthesized_target/om/lmks/m_lmks_{demo_id}.npy'
+    results = np.load(f'../EMO_GPTDEMO/robot_data/output_cmds/{method_name}_video/lmks/m_lmks_{demo_id}.npy')
+    label_lmks_path = f'../EMO_GPTDEMO/robot_data/synthesized/lmks/m_lmks_{demo_id}.npy'
     label_lmks = np.load(label_lmks_path)
 
     error_list = [np.mean(np.abs(label_lmks - results))]
@@ -362,3 +381,4 @@ def debug_compare():
       error_list.append(error)
     print(np.argmin(error_list),error_list)
 
+# debug_compare()

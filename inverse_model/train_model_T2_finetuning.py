@@ -79,10 +79,10 @@ class Robot_face_data(Dataset):
         elif self.data_type_Flag == 2:
             cmds_0 = self.label_data[idx]
             cmds_1 = self.label_data[idx+1]
-            noise_0 = torch.randn_like(cmds_0) * 0.1
+            noise_0 = torch.randn_like(cmds_0) * 0.05
             cmds_0 = cmds_0 + noise_0
 
-            noise_1 = torch.randn_like(cmds_1) * 0.1
+            noise_1 = torch.randn_like(cmds_1) * 0.05
             cmds_1 = cmds_1 + noise_1
 
         else:
@@ -123,6 +123,7 @@ def train_model():
 
     k0 = 0.01
     k1 = 0.01
+    k2= 0.01
     log_path = "../data/%s/%s/"%(proj_name,run_name)
     os.makedirs(log_path,exist_ok=True)
 
@@ -165,7 +166,10 @@ def train_model():
             for i, bundle in enumerate(train_dataloader):
                 input_d, label_d = bundle["input"], bundle["label"]
                 pred_result = model.forward(input_d[0],input_d[1])
-                loss = Loss_fun(pred_result, label_d)
+                loss = Loss_fun(pred_result, label_d) + k0 * (torch.exp(relu(pred_result[:,0]-label_d[:,0]))-1).sum()\
+                            + k1 * (torch.exp(relu(label_d[:,2] - pred_result[:,2]))-1).sum() \
+                            + k2 * (torch.exp(relu(label_d[:, 5] - pred_result[:, 5])) - 1).sum()
+
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -183,10 +187,13 @@ def train_model():
                     input_d, label_d = bundle["input"], bundle["label"]
                     pred_result = model.forward(input_d[0], input_d[1])
                     loss = Loss_fun(pred_result, label_d) + k0 * (torch.exp(relu(pred_result[:,0]-label_d[:,0]))-1).sum()\
-                            + k1 * (torch.exp(relu(label_d[:,2]-pred_result[:,2]))-1).sum()
+                            + k1 * (torch.exp(relu(label_d[:,2]-pred_result[:,2]))-1).sum() \
+                            + k2 * (torch.exp(relu(label_d[:, 5] - pred_result[:, 5])) - 1).sum()
                     temp_l.append(loss.item())
             # outputs_data = [groundtruth_data[0], groundtruth_data[1]]
             valid_loss1 = np.mean(temp_l)
+
+
             temp_l = []
             pre_init_cmds = torch.from_numpy(init_cmds).to(device, dtype=torch.float).unsqueeze(0)  # Assuming init_cmds is a PyTorch tensor
             outputs       = torch.from_numpy(init_cmds).to(device, dtype=torch.float).unsqueeze(0)
@@ -210,7 +217,8 @@ def train_model():
                 # Loss calculation using PyTorch
                 loss = Loss_fun(outputs[0], groundtruth_data[i]) + k0 * (
                             torch.exp(relu(outputs[0][0] - groundtruth_data[i][0])) - 1) \
-                       + k1 * (torch.exp(relu(groundtruth_data[i][2] - outputs[0][2])) - 1)
+                            + k1 * (torch.exp(relu(groundtruth_data[i][2] - outputs[0][2])) - 1) \
+                            + k2 * (torch.exp(relu(groundtruth_data[i][5] - outputs[0][5])) - 1)
                 temp_l.append(loss.item())  # Convert tensor to a Python scalar
             valid_loss2 = np.mean(temp_l)
             valid_combine_loss = valid_loss1*0.75 + valid_loss2*0.25
