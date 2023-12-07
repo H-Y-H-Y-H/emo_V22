@@ -68,6 +68,8 @@ class inverse_model(nn.Module):
 import torch
 import torch.nn as nn
 from torch.nn import Transformer
+from torch.nn import TransformerEncoder, TransformerEncoderLayer
+from torch.nn import TransformerDecoder, TransformerDecoderLayer
 
 class TransformerInverse(nn.Module):
     def __init__(self,
@@ -133,25 +135,88 @@ class TransformerInverse_baseline(nn.Module):
             output = self.output_layer(output[:, -1, :])  # Adjusted for batch_first
         return output
 
+
+class TransformerInverse1207(nn.Module):
+    def __init__(self,
+                encoder_input_size = 6,
+                decoder_input_size = 60,
+                output_size = 6,
+                nhead = 2     ,
+                num_encoder_layers = 2  ,
+                num_decoder_layers = 2  ,
+                dim_feedforward = 512,
+                mode = ''
+                 ):
+        super(TransformerInverse1207, self).__init__()
+        self.mode= mode
+        self.relu = nn.ReLU()
+        self.encoder_embedding = nn.Linear(encoder_input_size, dim_feedforward)
+        self.decoder_embedding = nn.Linear(decoder_input_size, dim_feedforward)
+        self.transformer = Transformer(d_model=dim_feedforward, nhead=nhead,
+                                       num_encoder_layers=num_encoder_layers,
+                                       num_decoder_layers=num_decoder_layers,
+                                       dim_feedforward=dim_feedforward,
+                                       batch_first=True)  # Set batch_first to True
+        # Encoder
+        encoder_layers = TransformerEncoderLayer(d_model=dim_feedforward, nhead=nhead, dim_feedforward=dim_feedforward)
+        self.transformer_encoder = TransformerEncoder(encoder_layers, num_encoder_layers)
+        self.pred_lmks_mlp0 = nn.Linear(dim_feedforward, dim_feedforward//2)
+        self.pred_lmks_mlp1 = nn.Linear(dim_feedforward//2, dim_feedforward // 2)
+        self.pred_lmks_mlp2 = nn.Linear(dim_feedforward // 2, decoder_input_size)
+
+        # Decoder
+        decoder_layers = TransformerDecoderLayer(d_model=dim_feedforward, nhead=nhead, dim_feedforward=dim_feedforward)
+        self.transformer_decoder = TransformerDecoder(decoder_layers, num_decoder_layers)
+        self.output_layer0 = nn.Linear(dim_feedforward, dim_feedforward//2)
+        self.output_layer1 = nn.Linear(dim_feedforward//2, output_size)
+
+
+    def forward(self, encoder_input, decoder_input):
+        encoder_input = self.encoder_embedding(encoder_input)
+
+        # Get encoder output
+        encoder_output = self.transformer_encoder(encoder_input)
+
+        if self.mode == 'encoder':
+            x = self.pred_lmks_mlp0(encoder_output)
+            x = self.relu(x)
+            x = self.pred_lmks_mlp1(x)
+            x = self.relu(x)
+            x = self.pred_lmks_mlp2(x)
+
+            # Return encoder output directly
+            return x
+        else:
+            decoder_input = self.decoder_embedding(decoder_input)
+            # Pass through decoder
+            output = self.transformer_decoder(decoder_input, encoder_output)
+            output = self.relu(output)
+            output = self.output_layer0(output)
+            output = self.relu(output)
+            output = self.output_layer1(output)
+
+            return output
+
+
 if __name__ == "__main__":
     import time
 
     # Example Usage
     encoder_input_size = 6
-    decoder_input_size = 60
+    decoder_input_size = 180
     output_size = 6
     nhead = 2
     num_encoder_layers = 2
     num_decoder_layers = 2
     dim_feedforward = 512
 
-    model = TransformerInverse(encoder_input_size, decoder_input_size, output_size, nhead, num_encoder_layers,
+    model = TransformerInverse1207(encoder_input_size, decoder_input_size, output_size, nhead, num_encoder_layers,
                               num_decoder_layers, dim_feedforward)
 
     # Adjust inputs for batch_first
     # For batch size = 1
     encoder_input = torch.rand(1, 2, 6)  # Example encoder input
-    decoder_input = torch.rand(1, 3, 60)  # Example decoder input
+    decoder_input = torch.rand(1, 2, 180)  # Example decoder input
 
     output = model(encoder_input, decoder_input)
     print(output)
