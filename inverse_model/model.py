@@ -170,8 +170,28 @@ class TransformerInverse1207(nn.Module):
         self.output_layer0 = nn.Linear(dim_feedforward, dim_feedforward//2)
         self.output_layer1 = nn.Linear(dim_feedforward//2, output_size)
 
+    def freeze_encoder(self):
+        """Freeze the encoder parameters."""
+        for param in self.encoder_embedding.parameters():
+            param.requires_grad = False
+        for param in self.transformer_encoder.parameters():
+            param.requires_grad = False
 
-    def forward(self, encoder_input, decoder_input):
+    def unfreeze_encoder(self):
+        """Unfreeze the encoder parameters."""
+        for param in self.encoder_embedding.parameters():
+            param.requires_grad = True
+        for param in self.transformer_encoder.parameters():
+            param.requires_grad = True
+
+    def forward(self, encoder_input, decoder_input, current_epoch = 100):
+
+        # Check the current epoch and freeze/unfreeze encoder accordingly
+        if current_epoch < 50:
+            self.freeze_encoder()
+        else:
+            self.unfreeze_encoder()
+
         encoder_input = self.encoder_embedding(encoder_input)
 
         # Get encoder output

@@ -67,6 +67,64 @@ class Robot_face_data(Dataset):
     def __len__(self):
         return len(self.lmks_data)-2
 
+def use_all_model(target_lmks, log_path):
+    pre_init_cmds = init_cmds
+    outputs = init_cmds
+    outputs_data = []
+
+    for i in range(len(target_lmks)):
+
+        pre_pre_init_cmds = np.copy(pre_init_cmds)
+        pre_init_cmds = np.copy(outputs)
+        flatten_lmks1 = target_lmks[i].flatten()
+
+        if i == len(target_lmks) - 1:
+            flatten_lmks2 = target_lmks[i].flatten()
+        else:
+            flatten_lmks2 = target_lmks[i + 1].flatten()
+
+        input_data_e = np.concatenate(
+            (np.expand_dims(pre_pre_init_cmds, axis=0), np.expand_dims(pre_init_cmds, axis=0)))
+        input_data_d = np.concatenate((np.expand_dims(flatten_lmks1, axis=0), np.expand_dims(flatten_lmks2, axis=0)))
+        inputs_e = torch.from_numpy(input_data_e.astype('float32')).to(device).unsqueeze(0)
+        inputs_d = torch.from_numpy(input_data_d.astype('float32')).to(device).unsqueeze(0)
+        outputs = model.forward(inputs_e, inputs_d)[0][0]
+        outputs = outputs.detach().cpu().numpy()
+        outputs_data.append(outputs)
+    np.savetxt(log_path, outputs_data)
+    return outputs_data
+
+
+def lmks_eval(target_lmks, gt):
+    pre_init_cmds = init_cmds
+    outputs = init_cmds
+    outputs_data = []
+
+    for i in range(len(target_lmks)-1):
+        pre_pre_init_cmds = np.copy(pre_init_cmds)
+        pre_init_cmds = np.copy(outputs)
+        flatten_lmks1 = target_lmks[i].flatten()
+        flatten_lmks2 = target_lmks[i+1].flatten()
+
+        input_data_e = np.concatenate((np.expand_dims(pre_pre_init_cmds,axis=0), np.expand_dims(pre_init_cmds,axis=0)))
+        input_data_d = np.concatenate((np.expand_dims(flatten_lmks1,axis=0), np.expand_dims(flatten_lmks2,axis=0)))
+
+        inputs_e = torch.from_numpy(input_data_e.astype('float32')).to(device).unsqueeze(0)
+        inputs_d = torch.from_numpy(input_data_d.astype('float32')).to(device).unsqueeze(0)
+
+        outputs = model.forward(inputs_e,inputs_d)[0][0]
+        outputs = outputs.detach().cpu().numpy()
+        outputs_data.append(outputs)
+        loss = np.mean(np.abs(outputs - gt[i]))
+        print(loss)
+    final_loss = np.mean(np.abs(np.asarray(outputs_data) - gt[:-1]))
+    print(final_loss)
+
+    return outputs_data
+
+
+
+
 
 lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
             81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
@@ -94,8 +152,10 @@ if __name__ == '__main__':
     proj_name = 'IVMT2_1207(encoder)'
     run_id = 'eager-sweep-1' #'tough-grass-13'#'celestial-sweep-5'
 
+    mode_all_id = 'proud-valley-19'
+
     runs = api.runs("robotics/%s"%proj_name)
-    model_path = '../data/%s/%s/'%(proj_name, run_id)
+    model_path = '../data/%s/%s/'%(proj_name, mode_all_id)
     config = None
     for run in runs:
         if run.name == run_id:
@@ -104,20 +164,57 @@ if __name__ == '__main__':
 
     config = argparse.Namespace(**config)
 
-    model = TransformerInverse1207(decoder_input_size = 180,
-                                nhead              = config.nhead               ,
-                                num_encoder_layers = config.num_encoder_layers  ,
-                                num_decoder_layers = config.num_decoder_layers  ,
-                                dim_feedforward    = config.dim_feedforward,
-                                mode = 'encoder'
-                          ).to(device)
+    mode = 0
+    if mode == 0:
+        model = TransformerInverse1207(decoder_input_size=180,
+                                       nhead=config.nhead,
+                                       num_encoder_layers=config.num_encoder_layers,
+                                       num_decoder_layers=config.num_decoder_layers,
+                                       dim_feedforward=config.dim_feedforward,
+                                       mode='all'
+                                       ).to(device)
 
-    model.load_state_dict(torch.load(model_path+'best_model_MSE.pt', map_location=torch.device(device)))
-    model.eval()
+        model.load_state_dict(torch.load(model_path + 'best_model_MSE.pt', map_location=torch.device(device)))
+        model.eval()
 
-    mode = 1
+        d_root = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/'
+        data_path = "../../EMO_GPTDEMO/robot_data/data1201/"
+        dataset_lmk = np.load(data_path + 'm_lmks.npy')
+        init_lmks = dataset_lmk[9]
+
+        # use model to generate cmds
+        save_path = f'../../EMO_GPTDEMO/robot_data/output_cmds/{run_id}/'
+        os.makedirs(save_path, exist_ok=True)
+
+        use_model_or_eval_model = 1
+
+        if use_model_or_eval_model == 0:
+            for demo_id in range(8,11):
+                print(f'process: {demo_id}')
+                target_lmks = np.load(d_root + f'robot_data/synthesized/lmks/m_lmks_{demo_id}.npy')[:, lmks_id]
+                use_all_model(target_lmks, log_path=save_path+f"{demo_id}.csv")
+
+        else:
+            groundtruth_data = np.loadtxt(data_path + 'action.csv')
+            training_num = int(len(dataset_lmk) * 0.8)
+            key_cmds = np.asarray([0, 1, 2, 3, 5, 7])
+            dataset_lmk = dataset_lmk[training_num:, lmks_id]
+            groundtruth_data = groundtruth_data[training_num:, key_cmds]
+            lmks_eval(dataset_lmk,gt=groundtruth_data)
 
     if mode == 1:
+        model = TransformerInverse1207(decoder_input_size=180,
+                                       nhead=config.nhead,
+                                       num_encoder_layers=config.num_encoder_layers,
+                                       num_decoder_layers=config.num_decoder_layers,
+                                       dim_feedforward=config.dim_feedforward,
+                                       mode='encoder'
+                                       ).to(device)
+
+        model.load_state_dict(torch.load(model_path + 'best_model_MSE.pt', map_location=torch.device(device)))
+        model.eval()
+
+
         # evaluations: lmks and cmds
         data_path = "../../../Downloads/data1201/"
         dataset_lmk = np.load(data_path+'m_lmks.npy')[:, lmks_id]
@@ -148,8 +245,6 @@ if __name__ == '__main__':
                 plt.legend()
                 plt.show()
             print(loss)
-
-
 
 
 

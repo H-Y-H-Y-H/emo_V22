@@ -10,7 +10,7 @@ random.seed(0)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 print("start", device)
-data_path = "../../../Downloads/data1201/"
+data_path = "../../EMO_GPTDEMO/robot_data/data1201/"
 
 
 lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
@@ -86,35 +86,41 @@ class Robot_face_data(Dataset):
             cmds_label0 = self.label_data[idx + 2]
             cmds_label1 = self.label_data[idx + 3]
 
-        # elif self.data_type_Flag == 3:
-        #     cmds_0 = self.label_data[idx]
-        #     cmds_1 = self.label_data[idx + 1]
-        #
-        #     lmks_0 = self.lmks_data[idx + 3]
-        #     lmks_1 = self.lmks_data[idx + 4]
-        #
-        #     cmds_label0 = self.label_data[idx + 3]
-        #     cmds_label1 = self.label_data[idx + 4]
-        #
-        # elif self.data_type_Flag == 4:
-        #     cmds_0 = self.label_data[idx + 3]
-        #     cmds_1 = self.label_data[idx + 2]
-        #
-        #     lmks_0 = self.lmks_data[idx + 1]
-        #     lmks_1 = self.lmks_data[idx]
-        #
-        #     cmds_label0 = self.label_data[idx + 1]
-        #     cmds_label1 = self.label_data[idx]
-        #
-        # else:
-        #     cmds_0 = self.label_data[idx + 4]
-        #     cmds_1 = self.label_data[idx + 3]
-        #
-        #     lmks_0 = self.lmks_data[idx + 1]
-        #     lmks_1 = self.lmks_data[idx]
-        #
-        #     cmds_label0 = self.label_data[idx + 1]
-        #     cmds_label1 = self.label_data[idx]
+        elif self.data_type_Flag == 3:
+            cmds_0 = self.label_data[idx]
+            cmds_1 = self.label_data[idx + 1]
+
+            lmks_0 = self.lmks_data[idx + 3]
+            lmks_1 = self.lmks_data[idx + 4]
+
+            cmds_label0 = self.label_data[idx + 3]
+            cmds_label1 = self.label_data[idx + 4]
+
+        elif self.data_type_Flag == 4:
+            cmds_0 = self.label_data[idx + 3]
+            cmds_1 = self.label_data[idx + 2]
+
+            lmks_0 = self.lmks_data[idx + 1]
+            lmks_1 = self.lmks_data[idx]
+
+            cmds_label0 = self.label_data[idx + 1]
+            cmds_label1 = self.label_data[idx]
+
+        else:
+            cmds_0 = self.label_data[idx + 4]
+            cmds_1 = self.label_data[idx + 3]
+
+            lmks_0 = self.lmks_data[idx + 1]
+            lmks_1 = self.lmks_data[idx]
+
+            cmds_label0 = self.label_data[idx + 1]
+            cmds_label1 = self.label_data[idx]
+
+        noise_0 = torch.randn_like(cmds_0) * 0.1
+        cmds_0 = cmds_0 + noise_0
+
+        noise_1 = torch.randn_like(cmds_1) * 0.1
+        cmds_1 = cmds_1 + noise_1
 
         encoder_input = torch.cat((cmds_0.unsqueeze(0), cmds_1.unsqueeze(0)), dim=0)
         target_lmks = torch.cat((lmks_0.unsqueeze(0), lmks_1.unsqueeze(0)), dim=0)
@@ -147,6 +153,9 @@ def train_model():
                                    mode = mode
                           ).to(device)
 
+    model.load_state_dict(torch.load(model_path + 'best_model_MSE.pt', map_location=torch.device(device)))
+
+
     train_dataloader = DataLoader(train_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
     test_dataloader = DataLoader(test_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
 
@@ -167,7 +176,7 @@ def train_model():
         temp_l = []
 
         for data_type_id in range(5):
-            train_dataloader.dataset.data_type_Flag = data_type_id%3
+            train_dataloader.dataset.data_type_Flag = data_type_id%5
             for i, bundle in enumerate(train_dataloader):
                 input_e,input_d, label_d = bundle["input_encoder"],bundle["input_decoder"], bundle["label_cmds"]
                 pred_result = model.forward(input_e,input_d)
@@ -184,7 +193,7 @@ def train_model():
         with torch.no_grad():
             temp_l = []
             for data_type_id in range(5):
-                train_dataloader.dataset.data_type_Flag = data_type_id % 3
+                train_dataloader.dataset.data_type_Flag = data_type_id % 5
                 for i, bundle in enumerate(test_dataloader):
                     input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
                     pred_result = model.forward(input_e, input_d)
