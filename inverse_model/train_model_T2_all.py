@@ -7,7 +7,7 @@ import random
 random.seed(0)
 
 # Check GPU
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 print("start", device)
 data_path = "../../../Downloads/data1201/"
@@ -86,35 +86,35 @@ class Robot_face_data(Dataset):
             cmds_label0 = self.label_data[idx + 2]
             cmds_label1 = self.label_data[idx + 3]
 
-        elif self.data_type_Flag == 3:
-            cmds_0 = self.label_data[idx]
-            cmds_1 = self.label_data[idx + 1]
-
-            lmks_0 = self.lmks_data[idx + 3]
-            lmks_1 = self.lmks_data[idx + 4]
-
-            cmds_label0 = self.label_data[idx + 3]
-            cmds_label1 = self.label_data[idx + 4]
-
-        elif self.data_type_Flag == 4:
-            cmds_0 = self.label_data[idx + 3]
-            cmds_1 = self.label_data[idx + 2]
-
-            lmks_0 = self.lmks_data[idx + 1]
-            lmks_1 = self.lmks_data[idx]
-
-            cmds_label0 = self.label_data[idx + 1]
-            cmds_label1 = self.label_data[idx]
-
-        else:
-            cmds_0 = self.label_data[idx + 4]
-            cmds_1 = self.label_data[idx + 3]
-
-            lmks_0 = self.lmks_data[idx + 1]
-            lmks_1 = self.lmks_data[idx]
-
-            cmds_label0 = self.label_data[idx + 1]
-            cmds_label1 = self.label_data[idx]
+        # elif self.data_type_Flag == 3:
+        #     cmds_0 = self.label_data[idx]
+        #     cmds_1 = self.label_data[idx + 1]
+        #
+        #     lmks_0 = self.lmks_data[idx + 3]
+        #     lmks_1 = self.lmks_data[idx + 4]
+        #
+        #     cmds_label0 = self.label_data[idx + 3]
+        #     cmds_label1 = self.label_data[idx + 4]
+        #
+        # elif self.data_type_Flag == 4:
+        #     cmds_0 = self.label_data[idx + 3]
+        #     cmds_1 = self.label_data[idx + 2]
+        #
+        #     lmks_0 = self.lmks_data[idx + 1]
+        #     lmks_1 = self.lmks_data[idx]
+        #
+        #     cmds_label0 = self.label_data[idx + 1]
+        #     cmds_label1 = self.label_data[idx]
+        #
+        # else:
+        #     cmds_0 = self.label_data[idx + 4]
+        #     cmds_1 = self.label_data[idx + 3]
+        #
+        #     lmks_0 = self.lmks_data[idx + 1]
+        #     lmks_1 = self.lmks_data[idx]
+        #
+        #     cmds_label0 = self.label_data[idx + 1]
+        #     cmds_label1 = self.label_data[idx]
 
         encoder_input = torch.cat((cmds_0.unsqueeze(0), cmds_1.unsqueeze(0)), dim=0)
         target_lmks = torch.cat((lmks_0.unsqueeze(0), lmks_1.unsqueeze(0)), dim=0)
@@ -167,7 +167,7 @@ def train_model():
         temp_l = []
 
         for data_type_id in range(5):
-            train_dataloader.dataset.data_type_Flag = data_type_id%5
+            train_dataloader.dataset.data_type_Flag = data_type_id%3
             for i, bundle in enumerate(train_dataloader):
                 input_e,input_d, label_d = bundle["input_encoder"],bundle["input_decoder"], bundle["label_cmds"]
                 pred_result = model.forward(input_e,input_d)
@@ -184,7 +184,7 @@ def train_model():
         with torch.no_grad():
             temp_l = []
             for data_type_id in range(5):
-                train_dataloader.dataset.data_type_Flag = data_type_id % 5
+                train_dataloader.dataset.data_type_Flag = data_type_id % 3
                 for i, bundle in enumerate(test_dataloader):
                     input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
                     pred_result = model.forward(input_e, input_d)
