@@ -187,6 +187,7 @@ class TransformerInverse1207(nn.Module):
             # Return encoder output directly
             return x
         else:
+
             decoder_input = self.decoder_embedding(decoder_input)
             # Pass through decoder
             output = self.transformer_decoder(decoder_input, encoder_output)
