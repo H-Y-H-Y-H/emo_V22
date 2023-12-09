@@ -152,20 +152,19 @@ class TransformerInverse1207(nn.Module):
         self.relu = nn.ReLU()
         self.encoder_embedding = nn.Linear(encoder_input_size, dim_feedforward)
         self.decoder_embedding = nn.Linear(decoder_input_size, dim_feedforward)
-        self.transformer = Transformer(d_model=dim_feedforward, nhead=nhead,
-                                       num_encoder_layers=num_encoder_layers,
-                                       num_decoder_layers=num_decoder_layers,
-                                       dim_feedforward=dim_feedforward,
-                                       batch_first=True)  # Set batch_first to True
+
+        # Positional Embeddings for sequence of length 2
+        self.positional_embeddings = nn.Embedding(2, dim_feedforward)
+
         # Encoder
-        encoder_layers = TransformerEncoderLayer(d_model=dim_feedforward, nhead=nhead, dim_feedforward=dim_feedforward)
+        encoder_layers = TransformerEncoderLayer(d_model=dim_feedforward, nhead=nhead, dim_feedforward=dim_feedforward,batch_first=True)
         self.transformer_encoder = TransformerEncoder(encoder_layers, num_encoder_layers)
         self.pred_lmks_mlp0 = nn.Linear(dim_feedforward, dim_feedforward//2)
         self.pred_lmks_mlp1 = nn.Linear(dim_feedforward//2, dim_feedforward // 2)
         self.pred_lmks_mlp2 = nn.Linear(dim_feedforward // 2, decoder_input_size)
 
         # Decoder
-        decoder_layers = TransformerDecoderLayer(d_model=dim_feedforward, nhead=nhead, dim_feedforward=dim_feedforward)
+        decoder_layers = TransformerDecoderLayer(d_model=dim_feedforward, nhead=nhead, dim_feedforward=dim_feedforward,batch_first=True)
         self.transformer_decoder = TransformerDecoder(decoder_layers, num_decoder_layers)
         self.output_layer0 = nn.Linear(dim_feedforward, dim_feedforward//2)
         self.output_layer1 = nn.Linear(dim_feedforward//2, output_size)
@@ -186,13 +185,17 @@ class TransformerInverse1207(nn.Module):
 
     def forward(self, encoder_input, decoder_input, current_epoch = 100):
 
-        # Check the current epoch and freeze/unfreeze encoder accordingly
-        if current_epoch < 50:
-            self.freeze_encoder()
-        else:
-            self.unfreeze_encoder()
+        # # Check the current epoch and freeze/unfreeze encoder accordingly
+        # if current_epoch < 50:
+        #     self.freeze_encoder()
+        # else:
+        #     self.unfreeze_encoder()
 
-        encoder_input = self.encoder_embedding(encoder_input)
+        # Generate position indices (0 and 1)
+        position_indices = torch.arange(0, 2, dtype=torch.long, device=encoder_input.device)
+
+        # Add positional embeddings
+        encoder_input = self.encoder_embedding(encoder_input) + self.positional_embeddings(position_indices)
 
         # Get encoder output
         encoder_output = self.transformer_encoder(encoder_input)
@@ -207,8 +210,7 @@ class TransformerInverse1207(nn.Module):
             # Return encoder output directly
             return x
         else:
-
-            decoder_input = self.decoder_embedding(decoder_input)
+            decoder_input = self.decoder_embedding(decoder_input) + self.positional_embeddings(position_indices)
             # Pass through decoder
             output = self.transformer_decoder(decoder_input, encoder_output)
             output = self.relu(output)

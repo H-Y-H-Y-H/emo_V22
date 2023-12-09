@@ -10,7 +10,7 @@ random.seed(0)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 print("start", device)
-data_path = "../../../Downloads/data1201/"
+data_path = "../../EMO_GPTDEMO/robot_data/data1201/"
 
 
 lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
@@ -238,7 +238,7 @@ if __name__ == '__main__':
         },
     }
 
-    project_name = 'IVMT2_1207(encoder)'
+    project_name = 'IVMT2_1208(encoder)'
     sweep_id = wandb.sweep(sweep=sweep_configuration, project=project_name)
 
 

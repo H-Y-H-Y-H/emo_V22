@@ -116,11 +116,11 @@ class Robot_face_data(Dataset):
             cmds_label0 = self.label_data[idx + 1]
             cmds_label1 = self.label_data[idx]
 
-        noise_0 = torch.randn_like(cmds_0) * 0.1
-        cmds_0 = cmds_0 + noise_0
-
-        noise_1 = torch.randn_like(cmds_1) * 0.1
-        cmds_1 = cmds_1 + noise_1
+        # noise_0 = torch.randn_like(cmds_0) * 0.1
+        # cmds_0 = cmds_0 + noise_0
+        #
+        # noise_1 = torch.randn_like(cmds_1) * 0.1
+        # cmds_1 = cmds_1 + noise_1
 
         encoder_input = torch.cat((cmds_0.unsqueeze(0), cmds_1.unsqueeze(0)), dim=0)
         target_lmks = torch.cat((lmks_0.unsqueeze(0), lmks_1.unsqueeze(0)), dim=0)
@@ -153,16 +153,17 @@ def train_model():
                                    mode = mode
                           ).to(device)
 
-    model.load_state_dict(torch.load(model_path + 'best_model_MSE.pt', map_location=torch.device(device)))
+    # model.load_state_dict(torch.load(model_path + 'best_model_MSE.pt', map_location=torch.device(device)))
 
 
     train_dataloader = DataLoader(train_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
     test_dataloader = DataLoader(test_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
+
     Loss_fun = nn.L1Loss(reduction='mean')
     # You can use dynamic learning rate with this. Google it and try it!
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=20, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=10, verbose=True)
 
     train_epoch_L = []
     test_epoch_L = []
@@ -185,15 +186,15 @@ def train_model():
                 loss.backward()
                 optimizer.step()
                 temp_l.append(loss.item())
-
+            print(np.mean(temp_l))
         train_mean_loss = np.mean(temp_l)
         train_epoch_L.append(train_mean_loss)
 
         model.eval()
         with torch.no_grad():
             temp_l = []
-            for data_type_id in range(5):
-                train_dataloader.dataset.data_type_Flag = data_type_id % 5
+            for data_type_id in range(1):
+                train_dataloader.dataset.data_type_Flag = 2
                 for i, bundle in enumerate(test_dataloader):
                     input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
                     pred_result = model.forward(input_e, input_d)
@@ -246,7 +247,9 @@ if __name__ == '__main__':
 
     api = wandb.Api()
     pre_proj_name = 'IVMT2_1207(encoder)'
-    run_id = 'eager-sweep-1' #'tough-grass-13'#'celestial-sweep-5'
+    run_id = 'eager-sweep-1'
+    # run_id = 'still-sweep-3'
+
 
     runs = api.runs("robotics/%s"%pre_proj_name)
     model_path = '../data/%s/%s/'%(pre_proj_name, run_id)
@@ -256,7 +259,6 @@ if __name__ == '__main__':
             print('loading configuration')
             config = {k: v for k, v in run.config.items() if not k.startswith('_')}
     config = argparse.Namespace(**config)
-
     train_model()
 
 
