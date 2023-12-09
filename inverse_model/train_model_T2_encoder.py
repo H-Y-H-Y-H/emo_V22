@@ -49,7 +49,7 @@ class Robot_face_data(Dataset):
         self.lmks_data = lmks_data
         self.label_data = label_data
         self.init_landmarks = torch.from_numpy(init_lmks).to(device, dtype=torch.float).flatten()
-        self.lmks_data = torch.from_numpy(self.lmks_data).to(device, dtype=torch.float).flatten()
+        self.lmks_data = torch.from_numpy(self.lmks_data).to(device, dtype=torch.float).flatten(1)
         self.label_data = torch.from_numpy(self.label_data).to(device, dtype=torch.float)
         self.init_cmds  = torch.from_numpy(init_cmds).to(device, dtype=torch.float)
         self.future_n_state = 2+2
