@@ -152,7 +152,7 @@ if __name__ == '__main__':
     proj_name = 'IVMT2_1207(encoder)'
     run_id = 'eager-sweep-1' #'tough-grass-13'#'celestial-sweep-5'
 
-    mode_all_id = 'proud-valley-19'
+    mode_all_id = 'soft-capybara-29' # 'proud-valley-19'
 
     runs = api.runs("robotics/%s"%proj_name)
     model_path = '../data/%s/%s/'%(proj_name, mode_all_id)
