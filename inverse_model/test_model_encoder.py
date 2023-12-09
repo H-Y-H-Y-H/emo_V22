@@ -99,30 +99,79 @@ def lmks_eval(target_lmks, gt):
     pre_init_cmds = init_cmds
     outputs = init_cmds
     outputs_data = []
+    loss_list=[]
+    loss1_list = []
+    target_lmks = torch.from_numpy(target_lmks).to(device,dtype=torch.float).flatten(1)
 
     for i in range(len(target_lmks)-1):
         pre_pre_init_cmds = np.copy(pre_init_cmds)
         pre_init_cmds = np.copy(outputs)
-        flatten_lmks1 = target_lmks[i].flatten()
-        flatten_lmks2 = target_lmks[i+1].flatten()
+        flatten_lmks1 = target_lmks[i].unsqueeze(0)
+        flatten_lmks2 = target_lmks[i+1].unsqueeze(0)
 
         input_data_e = np.concatenate((np.expand_dims(pre_pre_init_cmds,axis=0), np.expand_dims(pre_init_cmds,axis=0)))
-        input_data_d = np.concatenate((np.expand_dims(flatten_lmks1,axis=0), np.expand_dims(flatten_lmks2,axis=0)))
+        input_data_d = torch.cat((flatten_lmks1, flatten_lmks2), dim=0)
 
         inputs_e = torch.from_numpy(input_data_e.astype('float32')).to(device).unsqueeze(0)
-        inputs_d = torch.from_numpy(input_data_d.astype('float32')).to(device).unsqueeze(0)
+        inputs_d = input_data_d.unsqueeze(0)
 
-        outputs = model.forward(inputs_e,inputs_d)[0][0]
-        outputs = outputs.detach().cpu().numpy()
-        outputs_data.append(outputs)
-        loss = np.mean(np.abs(outputs - gt[i]))
-        print(loss)
-    final_loss = np.mean(np.abs(np.asarray(outputs_data) - gt[:-1]))
-    print(final_loss)
+        pred_results = model.forward(inputs_e,inputs_d)[0]
+        pred_results = pred_results.detach().cpu().numpy()
+        output_data = pred_results[0]
+        outputs_data.append(output_data)
+        loss1 = np.mean(np.abs(output_data - gt[i]))
+        loss = np.mean(np.abs(pred_results - gt[i:(i + 2)]))
+        loss_list.append(loss)
+        loss1_list.append(loss1)
+        print(loss, loss1)
+
+    print('mean', np.mean(loss_list))
+    print('mean1', np.mean(loss1_list))
+
+
+def lmks_valid(target_lmks, gt):
+
+    outputs_data = []
+    loss_list  = []
+    loss1_list = []
+    target_lmks = torch.from_numpy(target_lmks).to(device,dtype=torch.float).flatten(1)
+
+    for i in range(len(target_lmks)-1):
+        if i==0:
+            pre_pre_init_cmds = init_cmds
+            pre_init_cmds = init_cmds
+
+        elif i ==1:
+            pre_pre_init_cmds = init_cmds
+            pre_init_cmds = gt[0]
+
+        else:
+            pre_pre_init_cmds = gt[i-2]
+            pre_init_cmds = gt[i-1]
+
+        flatten_lmks1 = target_lmks[i].unsqueeze(0)
+        flatten_lmks2 = target_lmks[i+1].unsqueeze(0)
+
+        input_data_e = np.concatenate((np.expand_dims(pre_pre_init_cmds,axis=0), np.expand_dims(pre_init_cmds,axis=0)))
+        input_data_d = torch.cat((flatten_lmks1, flatten_lmks2), dim=0)
+
+        inputs_e = torch.from_numpy(input_data_e.astype('float32')).to(device).unsqueeze(0)
+        inputs_d = input_data_d.unsqueeze(0)
+
+        pred_results = model.forward(inputs_e,inputs_d)[0]
+        pred_results = pred_results.detach().cpu().numpy()
+        output_data = pred_results[0]
+        outputs_data.append(output_data)
+        loss1 = np.mean(np.abs(output_data - gt[i]))
+        loss = np.mean(np.abs(pred_results - gt[i:(i+2)]))
+        loss_list.append(loss)
+        loss1_list.append(loss1)
+        print(loss,loss1)
+
+    print('mean',np.mean(loss_list))
+    print('mean1',np.mean(loss1_list))
 
     return outputs_data
-
-
 
 
 
@@ -151,6 +200,8 @@ if __name__ == '__main__':
     api = wandb.Api()
     proj_name = 'IVMT2_1207(encoder)'
     run_id = 'eager-sweep-1' #'tough-grass-13'#'celestial-sweep-5'
+
+    # mode_all_id = 'azure-cherry-31' # 'proud-valley-19'
 
     mode_all_id = 'soft-capybara-29' # 'proud-valley-19'
 
@@ -201,6 +252,8 @@ if __name__ == '__main__':
             dataset_lmk = dataset_lmk[training_num:, lmks_id]
             groundtruth_data = groundtruth_data[training_num:, key_cmds]
             lmks_eval(dataset_lmk,gt=groundtruth_data)
+            # lmks_valid(dataset_lmk,gt=groundtruth_data)
+
 
     if mode == 1:
         model = TransformerInverse1207(decoder_input_size=180,
