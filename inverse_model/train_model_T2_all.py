@@ -169,24 +169,28 @@ def train_model():
     test_epoch_L = []
     min_loss = + np.inf
     patience = 0
-
+    random_idx_array = list(np.arange(5))
     relu = nn.ReLU()
     for epoch in range(10000):
         t0 = time.time()
         model.train()
         temp_l = []
-
-        for data_type_id in range(5):
-            train_dataloader.dataset.data_type_Flag = data_type_id%5
+        temp_l_around = []
+        random.shuffle(random_idx_array)
+        for data_type_id in random_idx_array:
+            train_dataloader.dataset.data_type_Flag = data_type_id
+            print(data_type_id)
+            temp_l_around = []
             for i, bundle in enumerate(train_dataloader):
-                input_e,input_d, label_d = bundle["input_encoder"],bundle["input_decoder"], bundle["label_cmds"]
-                pred_result = model.forward(input_e,input_d)
+                input_e, input_d, label_d = bundle["input_encoder"],bundle["input_decoder"], bundle["label_cmds"]
+                pred_result = model.forward(input_e, input_d)
                 loss = Loss_fun(pred_result, label_d)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
                 temp_l.append(loss.item())
-            print(np.mean(temp_l))
+                temp_l_around.append(loss.item())
+            print(np.mean(temp_l_around))
         train_mean_loss = np.mean(temp_l)
         train_epoch_L.append(train_mean_loss)
 
@@ -243,12 +247,11 @@ if __name__ == '__main__':
     import wandb
     import argparse
 
-    project_name = 'IVMT2_1207(encoder)'
+    project_name = 'IVMT2_1208(encoder)'
 
     api = wandb.Api()
-    pre_proj_name = 'IVMT2_1207(encoder)'
-    run_id = 'eager-sweep-1'
-    # run_id = 'still-sweep-3'
+    pre_proj_name = 'IVMT2_1208(encoder)'
+    run_id = 'still-sweep-1'
 
 
     runs = api.runs("robotics/%s"%pre_proj_name)
