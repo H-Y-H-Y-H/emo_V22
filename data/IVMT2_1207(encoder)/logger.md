@@ -1,7 +1,16 @@
 proud-valley-19: directly trained on raw model without pre-trained encoder. 5 combination data loader without noise.
 
-wobbly-wind-24: use eager-sweep-1 pretarined encoder. 5 combination without gaussian noise
+wobbly-wind-24: use eager-sweep-1 pretrained encoder. 5 combination without gaussian noise
+
 blooming-glade-30: use eager-sweep-1, 5 combinations without gaussian noise. (50 epoch frozen encoder) worse
+    
+    eval (continue):
+    mean 0.092225461960861
+    mean1 0.09222243602959053
+
+    validation (discrete):
+    mean 0.04998719352192484
+    mean1 0.04998947120059343
 
 apricot-planet-33: use eager-sweep-1. 5 combinations + gaussian noise
 
