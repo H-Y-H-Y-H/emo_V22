@@ -153,7 +153,7 @@ def train_model():
                                    mode = mode
                           ).to(device)
 
-    # model.load_state_dict(torch.load(model_path + 'best_model_MSE.pt', map_location=torch.device(device)))
+    model.load_state_dict(torch.load(model_path + 'best_model_MSE.pt', map_location=torch.device(device)))
 
 
     train_dataloader = DataLoader(train_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
@@ -174,8 +174,7 @@ def train_model():
     for epoch in range(10000):
         t0 = time.time()
         model.train()
-        temp_l = []
-        temp_l_around = []
+        train_loss = []
         random.shuffle(random_idx_array)
         for data_type_id in random_idx_array:
             train_dataloader.dataset.data_type_Flag = data_type_id
@@ -188,24 +187,26 @@ def train_model():
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                temp_l.append(loss.item())
                 temp_l_around.append(loss.item())
-            print(np.mean(temp_l_around))
-        train_mean_loss = np.mean(temp_l)
+            train_loss.append(np.mean(temp_l_around))
+            print(train_loss[-1])
+        train_mean_loss = np.mean(train_loss)
         train_epoch_L.append(train_mean_loss)
 
         model.eval()
         with torch.no_grad():
             temp_l = []
-            for data_type_id in range(1):
-                train_dataloader.dataset.data_type_Flag = 2
+            for data_type_id in range(5):
+                temp_l_t = []
+                train_dataloader.dataset.data_type_Flag = data_type_id
                 for i, bundle in enumerate(test_dataloader):
                     input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
                     pred_result = model.forward(input_e, input_d)
                     loss = Loss_fun(pred_result, label_d)
-                    temp_l.append(loss.item())
+                    temp_l_t.append(loss.item())
+                temp_l.append(np.mean(temp_l_t))
+                print(temp_l[-1])
             valid_loss = np.mean(temp_l)
-
             test_epoch_L.append(valid_loss)
 
         scheduler.step(valid_loss)
