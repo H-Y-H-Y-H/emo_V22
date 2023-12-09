@@ -4,7 +4,16 @@ eternal-sweep-1: Encoder
 
 rosy-sky-17: use still-sweep-1 architecture without pre-trained. 5 combination dataloader without noise
 driven-serenity-18: (same) use still-sweep-1 architecture without pre-trained. 5 combination dataloader without noise
+
+    valid (discrete):
+    mean 0.01950665463076744
+    mean1 0.015542711292044572
+
+    eval: (continue):
+    mean 0.2316106405767983
+    mean1 0.23161862636355787
 misty-star-21: (same) use still-sweep-1 architecture without pre-trained. 5 combination dataloader without noise
+
 
 deep-darkness-22: use pretrained still-sweep-1. 5 combination dataloader without noise
 
@@ -15,8 +24,6 @@ deep-darkness-22: use pretrained still-sweep-1. 5 combination dataloader without
     eval: (continue):
     mean 0.2471169881226562
     mean1 0.24764134923836909
-
-
 iconic-serenity-23: use pretrained still-sweep-1. 5 combination dataloader + gaussian noise 0.1
 
     valid (discrete):
@@ -26,7 +33,6 @@ iconic-serenity-23: use pretrained still-sweep-1. 5 combination dataloader + gau
     eval: (continue):
     mean 0.22887945453326106
     mean1 0.2288872401588239
-
 hardy-river-24: use pretrained still-sweep-1. 5 combination dataloader + gaussian noise 0.05
 
 new method:
@@ -35,7 +41,7 @@ but use predicted incorrect commands is better than use Gaussian noise with corr
 
 bright-darkness-36: 3 combination. without noise. sequence 
 
-
+warm-water-37: 3 combination. without noise. sequence 
 
 
 
