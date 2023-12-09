@@ -29,6 +29,13 @@ iconic-serenity-23: use pretrained still-sweep-1. 5 combination dataloader + gau
 
 hardy-river-24: use pretrained still-sweep-1. 5 combination dataloader + gaussian noise 0.05
 
+new method:
+use the continue data to train the model. The incorrect commands in the previous prediction will affect future,
+but use predicted incorrect commands is better than use Gaussian noise with correct previous commands.
+
+bright-darkness-36: 3 combination. without noise. sequence 
+
+
 
 
 

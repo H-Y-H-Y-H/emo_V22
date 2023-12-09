@@ -43,6 +43,8 @@ init_cmds = np.asarray([0.1,
 init_lmks = np.asarray(dataset_lmk[9])
 
 
+
+
 class Robot_face_data(Dataset):
     def __init__(self, lmks_data, label_data, sequence=2, data_type_Flag=0):
         self.lmks_data = lmks_data
@@ -56,7 +58,42 @@ class Robot_face_data(Dataset):
 
     def __getitem__(self, idx):
 
-        if self.data_type_Flag == 0:
+
+        if self.data_type_Flag == 100:
+            cmds_0 = self.init_cmds
+            cmds_1 = self.init_cmds
+            encoder_input = torch.cat((cmds_0.unsqueeze(0), cmds_1.unsqueeze(0)), dim=0)
+
+            lmks_seq = self.lmks_data[idx:idx+5]
+            cmds_seq = self.label_data[idx:idx+5]
+
+            sample = {"input_encoder": encoder_input, "input_decoder": lmks_seq, "label_cmds": cmds_seq}
+            return sample
+
+        if self.data_type_Flag == 101:
+            cmds_0 = self.init_cmds
+            cmds_1 = self.label_data[idx]
+            encoder_input = torch.cat((cmds_0.unsqueeze(0), cmds_1.unsqueeze(0)), dim=0)
+
+            lmks_seq = self.lmks_data[idx+1:idx+6]
+            cmds_seq = self.label_data[idx+1:idx+6]
+
+            sample = {"input_encoder": encoder_input, "input_decoder": lmks_seq, "label_cmds": cmds_seq}
+            return sample
+
+        elif self.data_type_Flag > 101:
+            cmds_0 = self.label_data[idx]
+            cmds_1 = self.label_data[idx+1]
+            encoder_input = torch.cat((cmds_0.unsqueeze(0), cmds_1.unsqueeze(0)), dim=0)
+
+            lmks_seq = self.lmks_data[idx+2:idx+7]
+            cmds_seq = self.label_data[idx+2:idx+7]
+
+            sample = {"input_encoder": encoder_input, "input_decoder": lmks_seq, "label_cmds": cmds_seq}
+            return sample
+
+
+        elif self.data_type_Flag == 0:
             cmds_0 = self.init_cmds
             cmds_1 = self.init_cmds
 
@@ -116,11 +153,11 @@ class Robot_face_data(Dataset):
             cmds_label0 = self.label_data[idx + 1]
             cmds_label1 = self.label_data[idx]
 
-        # noise_0 = torch.randn_like(cmds_0) * 0.1
-        # cmds_0 = cmds_0 + noise_0
-        #
-        # noise_1 = torch.randn_like(cmds_1) * 0.1
-        # cmds_1 = cmds_1 + noise_1
+        noise_0 = torch.randn_like(cmds_0) * 0.05
+        cmds_0 = cmds_0 + noise_0
+
+        noise_1 = torch.randn_like(cmds_1) * 0.05
+        cmds_1 = cmds_1 + noise_1
 
         encoder_input = torch.cat((cmds_0.unsqueeze(0), cmds_1.unsqueeze(0)), dim=0)
         target_lmks = torch.cat((lmks_0.unsqueeze(0), lmks_1.unsqueeze(0)), dim=0)
@@ -130,7 +167,7 @@ class Robot_face_data(Dataset):
         return sample
 
     def __len__(self):
-        return len(self.lmks_data) - 4
+        return len(self.lmks_data) - 7
 
 train_dataset = Robot_face_data(lmks_data=tr_lmks, label_data=tr_cmds)
 test_dataset  = Robot_face_data(lmks_data=va_lmks, label_data=va_cmds,data_type_Flag=2)
@@ -166,6 +203,7 @@ def train_model():
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=10, verbose=True)
 
     train_epoch_L = []
+    train_epoch_L2 = []
     test_epoch_L = []
     min_loss = + np.inf
     patience = 0
@@ -174,39 +212,76 @@ def train_model():
     for epoch in range(10000):
         t0 = time.time()
         model.train()
-        train_loss = []
-        random.shuffle(random_idx_array)
-        for data_type_id in random_idx_array:
+        # train_loss = []
+        # random.shuffle(random_idx_array)
+        # for data_type_id in random_idx_array:
+        #     train_dataloader.dataset.data_type_Flag = data_type_id
+        #     print(data_type_id)
+        #     temp_l_around = []
+        #     for i, bundle in enumerate(train_dataloader):
+        #         input_e, input_d, label_d = bundle["input_encoder"],bundle["input_decoder"], bundle["label_cmds"]
+        #         pred_result = model.forward(input_e, input_d)
+        #         loss = Loss_fun(pred_result, label_d)
+        #         optimizer.zero_grad()
+        #         loss.backward()
+        #         optimizer.step()
+        #         temp_l_around.append(loss.item())
+        #     train_loss.append(np.mean(temp_l_around))
+        #     print(train_loss[-1])
+        # train_mean_loss = np.mean(train_loss)
+        # train_epoch_L.append(train_mean_loss)
+
+        train_loss2 = []
+        loop_train_loss = []
+        for data_type_id in random.sample([100,101,102,103],4):
             train_dataloader.dataset.data_type_Flag = data_type_id
             print(data_type_id)
-            temp_l_around = []
             for i, bundle in enumerate(train_dataloader):
-                input_e, input_d, label_d = bundle["input_encoder"],bundle["input_decoder"], bundle["label_cmds"]
-                pred_result = model.forward(input_e, input_d)
-                loss = Loss_fun(pred_result, label_d)
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-                temp_l_around.append(loss.item())
-            train_loss.append(np.mean(temp_l_around))
-            print(train_loss[-1])
-        train_mean_loss = np.mean(train_loss)
-        train_epoch_L.append(train_mean_loss)
+                input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
+                pred_result = input_e
+                for seq_i in range(3):
+                    input_e[:,1] = pred_result[:,0].detach().clone()
+                    input_d_cut = input_d[:,seq_i:seq_i+2]
+                    pred_result = model.forward(input_e, input_d_cut)
+                    loss = Loss_fun(pred_result, label_d[:,seq_i:seq_i+2])
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
+                    loop_train_loss.append(loss.item())
+            train_loss2.append(np.mean(loop_train_loss))
+            print(train_loss2[-1])
+        train_mean_loss2 = np.mean(train_loss2)
+        train_epoch_L2.append(train_mean_loss2)
+
 
         model.eval()
         with torch.no_grad():
-            temp_l = []
-            for data_type_id in range(5):
-                temp_l_t = []
-                train_dataloader.dataset.data_type_Flag = data_type_id
-                for i, bundle in enumerate(test_dataloader):
-                    input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
-                    pred_result = model.forward(input_e, input_d)
-                    loss = Loss_fun(pred_result, label_d)
-                    temp_l_t.append(loss.item())
-                temp_l.append(np.mean(temp_l_t))
-                print(temp_l[-1])
-            valid_loss = np.mean(temp_l)
+            # temp_l = []
+            # for data_type_id in range(5):
+            #     temp_l_t = []
+            #     train_dataloader.dataset.data_type_Flag = data_type_id
+            #     for i, bundle in enumerate(test_dataloader):
+            #         input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
+            #         pred_result = model.forward(input_e, input_d)
+            #         loss = Loss_fun(pred_result, label_d)
+            #         temp_l_t.append(loss.item())
+            #     temp_l.append(np.mean(temp_l_t))
+            #     print(temp_l[-1])
+            # valid_loss = np.mean(temp_l)
+            # test_epoch_L.append(valid_loss)
+
+            train_dataloader.dataset.data_type_Flag = 102
+            loop_test_loss = []
+            for i, bundle in enumerate(train_dataloader):
+                input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
+                pred_result = input_e
+                for seq_i in range(3):
+                    input_e[:, 1] = pred_result[:, 0].detach().clone()
+                    input_d_cut = input_d[:, seq_i:seq_i + 2]
+                    pred_result = model.forward(input_e, input_d_cut)
+                    loss = Loss_fun(pred_result, label_d[:, seq_i:seq_i + 2])
+                    loop_test_loss.append(loss.item())
+            valid_loss = np.mean(loop_test_loss)
             test_epoch_L.append(valid_loss)
 
         scheduler.step(valid_loss)
@@ -222,7 +297,8 @@ def train_model():
 
         t1 = time.time()
         wandb.log({'mode': mode,
-                    "train_loss": train_mean_loss,
+                    # "train_loss": train_mean_loss,
+                   'train_loss2':train_mean_loss2,
                    'valid_loss': valid_loss,
                    'epoch':epoch,
                    'learning_rate':optimizer.param_groups[0]['lr'],
@@ -231,7 +307,8 @@ def train_model():
                    })
 
         print(epoch, "time used: ", round((t1 - t0),3),
-              "training mean loss: ",round(train_mean_loss,5),
+              # "training mean loss: ",round(train_mean_loss,5),
+              "training mean loss2: ",round(train_mean_loss2,5),
               "Test loss: ",round(valid_loss,5),
               "lr:", round(optimizer.param_groups[0]['lr'],5),
               " patience:",patience)
