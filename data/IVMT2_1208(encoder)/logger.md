@@ -44,3 +44,8 @@ use the continue data to train the model. The incorrect commands in the previous
 but use predicted incorrect commands is better than use Gaussian noise with correct previous commands.
 
 
+olive-plant-43: pretrained encoder: scarlet-sweep-1. train 4 combinations. valid 102 comb
+
+fiery-sun-44: pretrained encoder: scarlet-sweep-1. train 4 comb. valid: 3 comb
+
+snowy-silence-47: use upbeat-thunder-42 as pre-trained model. only trained 1 comb, 100, use 4 seq
