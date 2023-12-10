@@ -43,4 +43,30 @@ new method:
 use the continue data to train the model. The incorrect commands in the previous prediction will affect future,
 but use predicted incorrect commands is better than use Gaussian noise with correct previous commands.
 
+bright-darkness-36: use still-sweep-1 as pre-trained encoder. 3 combination. without noise. sequence 
+hard to converge.
+
+    mean 0.06931464800465885
+    mean1 0.05917657827255526
+
+    mean 0.21664176584988348
+    mean1 0.21664528824503054
+
+warm-water-37:use scarlet-sweep-1 as pre-trained encoder. 3 combination. without noise. sequence 
+
+    eval
+    mean 0.20338938411001217
+    mean1 0.20337632051654034
+
+upbeat-thunder-42: use still-sweep-1 as pre-trained encoder. one combination (102). without noise. 3 sequence 
+   
+     eval:
+    mean 0.2106786909595062
+    mean1 0.2108662948939009
+
+
+fast-armadillo-40: use untrianed scarlet-sweep-1. model1209 Swap the encoder input and decoder input
+
+
+graceful-leaf-49: use untrained still-sweep-1, one combination (100). 4 seq. deactivate ReLU
 
