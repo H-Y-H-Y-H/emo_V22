@@ -70,3 +70,8 @@ fast-armadillo-40: use untrianed scarlet-sweep-1. model1209 Swap the encoder inp
 
 graceful-leaf-49: use untrained still-sweep-1, one combination (100). 4 seq. deactivate ReLU
 
+olive-plant-43: pretrained encoder: scarlet-sweep-1. train 4 combinations. valid 102 comb
+
+fiery-sun-44: pretrained encoder: scarlet-sweep-1. train 4 comb. valid: 3 comb
+
+snowy-silence-47: use upbeat-thunder-42 as pre-trained model. only trained 1 comb, 100, use 4 seq
