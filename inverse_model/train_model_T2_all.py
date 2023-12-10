@@ -200,7 +200,7 @@ def train_model():
 
     Loss_fun = nn.L1Loss(reduction='mean')
     # You can use dynamic learning rate with this. Google it and try it!
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=10, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=3, verbose=True)
 
     train_epoch_L = []
     train_epoch_L2 = []
@@ -233,13 +233,15 @@ def train_model():
 
         train_loss2 = []
         loop_train_loss = []
-        for data_type_id in random.sample([100,101,102,103],4):
+        # for data_type_id in random.sample([100,101,102,103],4):
+        for data_type_id in range(102,103):
             train_dataloader.dataset.data_type_Flag = data_type_id
             print(data_type_id)
             for i, bundle in enumerate(train_dataloader):
                 input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
                 pred_result = input_e
                 for seq_i in range(3):
+                    input_e[:, 0] = input_e[:, 1].detach().clone()
                     input_e[:,1] = pred_result[:,0].detach().clone()
                     input_d_cut = input_d[:,seq_i:seq_i+2]
                     pred_result = model.forward(input_e, input_d_cut)
@@ -276,6 +278,7 @@ def train_model():
                 input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
                 pred_result = input_e
                 for seq_i in range(3):
+                    input_e[:, 0] = input_e[:, 1].detach().clone()
                     input_e[:, 1] = pred_result[:, 0].detach().clone()
                     input_d_cut = input_d[:, seq_i:seq_i + 2]
                     pred_result = model.forward(input_e, input_d_cut)
