@@ -233,10 +233,9 @@ def train_model():
 
         train_loss2 = []
         loop_train_loss = []
-        # for data_type_id in random.sample([100,101,102,103],4):
-        for data_type_id in range(102,103):
+        for data_type_id in random.sample([100,101,102,103],4):
+        # for data_type_id in range(102,103):
             train_dataloader.dataset.data_type_Flag = data_type_id
-            print(data_type_id)
             for i, bundle in enumerate(train_dataloader):
                 input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
                 pred_result = input_e
@@ -251,7 +250,7 @@ def train_model():
                     optimizer.step()
                     loop_train_loss.append(loss.item())
             train_loss2.append(np.mean(loop_train_loss))
-            print(train_loss2[-1])
+            print(data_type_id, train_loss2[-1])
         train_mean_loss2 = np.mean(train_loss2)
         train_epoch_L2.append(train_mean_loss2)
 
@@ -272,18 +271,19 @@ def train_model():
             # valid_loss = np.mean(temp_l)
             # test_epoch_L.append(valid_loss)
 
-            train_dataloader.dataset.data_type_Flag = 102
             loop_test_loss = []
-            for i, bundle in enumerate(train_dataloader):
-                input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
-                pred_result = input_e
-                for seq_i in range(3):
-                    input_e[:, 0] = input_e[:, 1].detach().clone()
-                    input_e[:, 1] = pred_result[:, 0].detach().clone()
-                    input_d_cut = input_d[:, seq_i:seq_i + 2]
-                    pred_result = model.forward(input_e, input_d_cut)
-                    loss = Loss_fun(pred_result, label_d[:, seq_i:seq_i + 2])
-                    loop_test_loss.append(loss.item())
+            for data_type_id in [100, 101, 102]:
+                train_dataloader.dataset.data_type_Flag = data_type_id
+                for i, bundle in enumerate(train_dataloader):
+                    input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
+                    pred_result = input_e
+                    for seq_i in range(3):
+                        input_e[:, 0] = input_e[:, 1].detach().clone()
+                        input_e[:, 1] = pred_result[:, 0].detach().clone()
+                        input_d_cut = input_d[:, seq_i:seq_i + 2]
+                        pred_result = model.forward(input_e, input_d_cut)
+                        loss = Loss_fun(pred_result, label_d[:, seq_i:seq_i + 2])
+                        loop_test_loss.append(loss.item())
             valid_loss = np.mean(loop_test_loss)
             test_epoch_L.append(valid_loss)
 
