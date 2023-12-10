@@ -194,7 +194,7 @@ def train_model():
 
 
     train_dataloader = DataLoader(train_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
-    test_dataloader = DataLoader(test_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
+    test_dataloader = DataLoader(test_dataset, batch_size=config.batchsize, shuffle=False, num_workers=0)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
 
@@ -233,13 +233,13 @@ def train_model():
 
         train_loss2 = []
         loop_train_loss = []
-        for data_type_id in random.sample([100,101,102,103],4):
-        # for data_type_id in range(102,103):
+        # for data_type_id in random.sample([100,101,102,103],4):
+        for data_type_id in range(100,101):
             train_dataloader.dataset.data_type_Flag = data_type_id
             for i, bundle in enumerate(train_dataloader):
                 input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
                 pred_result = input_e
-                for seq_i in range(3):
+                for seq_i in range(4):
                     input_e[:, 0] = input_e[:, 1].detach().clone()
                     input_e[:,1] = pred_result[:,0].detach().clone()
                     input_d_cut = input_d[:,seq_i:seq_i+2]
@@ -272,12 +272,12 @@ def train_model():
             # test_epoch_L.append(valid_loss)
 
             loop_test_loss = []
-            for data_type_id in [100, 101, 102]:
+            for data_type_id in [100]:
                 train_dataloader.dataset.data_type_Flag = data_type_id
-                for i, bundle in enumerate(train_dataloader):
+                for i, bundle in enumerate(test_dataloader):
                     input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
                     pred_result = input_e
-                    for seq_i in range(3):
+                    for seq_i in range(4):
                         input_e[:, 0] = input_e[:, 1].detach().clone()
                         input_e[:, 1] = pred_result[:, 0].detach().clone()
                         input_d_cut = input_d[:, seq_i:seq_i + 2]
@@ -328,21 +328,38 @@ if __name__ == '__main__':
     import wandb
     import argparse
 
-    project_name = 'IVMT2_1208(encoder)'
+    TRAIN_MODE  = 0
+    if TRAIN_MODE ==0:
+        api = wandb.Api()
+        pre_proj_name = 'IVMT2_1208(encoder)'
+        run_id = 'still-sweep-1'
+        model_pretrained = 'upbeat-thunder-42'
 
-    api = wandb.Api()
-    pre_proj_name = 'IVMT2_1208(encoder)'
-    run_id = 'still-sweep-1'
+        runs = api.runs("robotics/%s"%pre_proj_name)
+        model_path = '../data/%s/%s/'%(pre_proj_name, model_pretrained)
+        config = None
+        for run in runs:
+            if run.name == run_id:
+                print('loading configuration')
+                config = {k: v for k, v in run.config.items() if not k.startswith('_')}
+        config = argparse.Namespace(**config)
+        train_model()
+    else:
 
+        sweep_configuration = {
+            "method": "random",
+            "metric": {"goal": "minimize", "name": "valid_loss"},
+            "parameters": {
+                'dim_feedforward': {"values": [128,256,512]},
+                'batchsize': {"values": [8,16, 32]},
+                'lr': {"max": 10e-5, "min": 10e-6},
+                'num_encoder_layers': {"values": [2, 3, 4]},
+                'num_decoder_layers': {"values": [2, 3, 4]},
+                'nhead': {"values": [1, 2]}
 
-    runs = api.runs("robotics/%s"%pre_proj_name)
-    model_path = '../data/%s/%s/'%(pre_proj_name, run_id)
-    config = None
-    for run in runs:
-        if run.name == run_id:
-            print('loading configuration')
-            config = {k: v for k, v in run.config.items() if not k.startswith('_')}
-    config = argparse.Namespace(**config)
-    train_model()
+            },
+        }
 
+        project_name = 'IVMT2_1210(encoder)'
+        sweep_id = wandb.sweep(sweep=sweep_configuration, project=project_name)
 
