@@ -39,11 +39,18 @@ new method:
 use the continue data to train the model. The incorrect commands in the previous prediction will affect future,
 but use predicted incorrect commands is better than use Gaussian noise with correct previous commands.
 
-bright-darkness-36: 3 combination. without noise. sequence 
+bright-darkness-36: use still-sweep-1 as pre-trained encoder. 3 combination. without noise. sequence 
+hard to converge.
 
-warm-water-37: 3 combination. without noise. sequence 
+    mean 0.06931464800465885
+    mean1 0.05917657827255526
 
+    mean 0.22307065177658383
+    mean1 0.22307854656301399
 
+warm-water-37:use scarlet-sweep-1 as pre-trained encoder. 3 combination. without noise. sequence 
+
+dauntless-jazz-38: use still-sweep-1 as pre-trained encoder. one combination(102). without noise. sequence 
 
 
 
