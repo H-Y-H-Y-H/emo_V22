@@ -50,8 +50,12 @@ hard to converge.
 
 warm-water-37:use scarlet-sweep-1 as pre-trained encoder. 3 combination. without noise. sequence 
 
+    eval
+    mean 0.20338938411001217
+    mean1 0.20337632051654034
+
 dauntless-jazz-38: use still-sweep-1 as pre-trained encoder. one combination(102). without noise. sequence 
 
-
+comfy-sponge-39: use untrianed scarlet-sweep-1. model1209 Swap the encoder input and decoder input
 
 

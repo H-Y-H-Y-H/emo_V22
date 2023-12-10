@@ -117,9 +117,9 @@ def lmks_eval(target_lmks, gt):
 
         pred_results = model.forward(inputs_e,inputs_d)[0]
         pred_results = pred_results.detach().cpu().numpy()
-        output_data = pred_results[0]
-        outputs_data.append(output_data)
-        loss1 = np.mean(np.abs(output_data - gt[i]))
+        outputs = pred_results[0]
+        outputs_data.append(outputs)
+        loss1 = np.mean(np.abs(outputs - gt[i]))
         loss = np.mean(np.abs(pred_results - gt[i:(i + 2)]))
         loss_list.append(loss)
         loss1_list.append(loss1)
@@ -183,7 +183,7 @@ if __name__ == '__main__':
     import wandb
     import argparse
     import matplotlib.pyplot as plt
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
 
     lmks_id = lips_idx + inner_lips_idx
@@ -198,12 +198,12 @@ if __name__ == '__main__':
 
     # MODEL LOADING
     api = wandb.Api()
-    proj_name = 'IVMT2_1207(encoder)'
-    run_id = 'eager-sweep-1' #'tough-grass-13'#'celestial-sweep-5'
-
+    proj_name = 'IVMT2_1208(encoder)'
+    # run_id = 'still-sweep-1'
+    run_id = 'scarlet-sweep-1'
     # mode_all_id = 'azure-cherry-31' # 'proud-valley-19'
 
-    mode_all_id = 'soft-capybara-29' # 'proud-valley-19'
+    mode_all_id = 'warm-water-37' #'proud-valley-19' # 'proud-valley-19'
 
     runs = api.runs("robotics/%s"%proj_name)
     model_path = '../data/%s/%s/'%(proj_name, mode_all_id)
@@ -229,7 +229,7 @@ if __name__ == '__main__':
         model.eval()
 
         d_root = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/'
-        data_path = "../../EMO_GPTDEMO/robot_data/data1201/"
+        data_path = "../../../Downloads/data1201/"
         dataset_lmk = np.load(data_path + 'm_lmks.npy')
         init_lmks = dataset_lmk[9]
 
@@ -251,8 +251,8 @@ if __name__ == '__main__':
             key_cmds = np.asarray([0, 1, 2, 3, 5, 7])
             dataset_lmk = dataset_lmk[training_num:, lmks_id]
             groundtruth_data = groundtruth_data[training_num:, key_cmds]
-            lmks_eval(dataset_lmk,gt=groundtruth_data)
             # lmks_valid(dataset_lmk,gt=groundtruth_data)
+            lmks_eval(dataset_lmk,gt=groundtruth_data)
 
 
     if mode == 1:

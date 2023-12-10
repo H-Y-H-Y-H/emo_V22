@@ -220,6 +220,89 @@ class TransformerInverse1207(nn.Module):
 
             return output
 
+class TransformerInverse1209(nn.Module):
+    def __init__(self,
+                encoder_input_size = 180,
+                decoder_input_size = 6,
+                output_size = 6,
+                nhead = 2     ,
+                num_encoder_layers = 2  ,
+                num_decoder_layers = 2  ,
+                dim_feedforward = 512,
+                mode = ''
+                 ):
+        super(TransformerInverse1209, self).__init__()
+        self.mode= mode
+        self.relu = nn.ReLU()
+        self.encoder_embedding = nn.Linear(encoder_input_size, dim_feedforward)
+        self.decoder_embedding = nn.Linear(decoder_input_size, dim_feedforward)
+
+        # Positional Embeddings for sequence of length 2
+        self.positional_embeddings = nn.Embedding(2, dim_feedforward)
+
+        # Encoder
+        encoder_layers = TransformerEncoderLayer(d_model=dim_feedforward, nhead=nhead, dim_feedforward=dim_feedforward,batch_first=True)
+        self.transformer_encoder = TransformerEncoder(encoder_layers, num_encoder_layers)
+        self.pred_lmks_mlp0 = nn.Linear(dim_feedforward, dim_feedforward//2)
+        self.pred_lmks_mlp1 = nn.Linear(dim_feedforward//2, dim_feedforward // 2)
+        self.pred_lmks_mlp2 = nn.Linear(dim_feedforward // 2, decoder_input_size)
+
+        # Decoder
+        decoder_layers = TransformerDecoderLayer(d_model=dim_feedforward, nhead=nhead, dim_feedforward=dim_feedforward,batch_first=True)
+        self.transformer_decoder = TransformerDecoder(decoder_layers, num_decoder_layers)
+        self.output_layer0 = nn.Linear(dim_feedforward, dim_feedforward//2)
+        self.output_layer1 = nn.Linear(dim_feedforward//2, output_size)
+
+    def freeze_encoder(self):
+        """Freeze the encoder parameters."""
+        for param in self.encoder_embedding.parameters():
+            param.requires_grad = False
+        for param in self.transformer_encoder.parameters():
+            param.requires_grad = False
+
+    def unfreeze_encoder(self):
+        """Unfreeze the encoder parameters."""
+        for param in self.encoder_embedding.parameters():
+            param.requires_grad = True
+        for param in self.transformer_encoder.parameters():
+            param.requires_grad = True
+
+    def forward(self,  decoder_input, encoder_input, current_epoch = 100):
+
+        # # Check the current epoch and freeze/unfreeze encoder accordingly
+        # if current_epoch < 50:
+        #     self.freeze_encoder()
+        # else:
+        #     self.unfreeze_encoder()
+
+        # Generate position indices (0 and 1)
+        position_indices = torch.arange(0, 2, dtype=torch.long, device=encoder_input.device)
+
+        # Add positional embeddings
+        encoder_input = self.encoder_embedding(encoder_input) + self.positional_embeddings(position_indices)
+
+        # Get encoder output
+        encoder_output = self.transformer_encoder(encoder_input)
+
+        if self.mode == 'encoder':
+            x = self.pred_lmks_mlp0(encoder_output)
+            x = self.relu(x)
+            x = self.pred_lmks_mlp1(x)
+            x = self.relu(x)
+            x = self.pred_lmks_mlp2(x)
+
+            # Return encoder output directly
+            return x
+        else:
+            decoder_input = self.decoder_embedding(decoder_input) + self.positional_embeddings(position_indices)
+            # Pass through decoder
+            output = self.transformer_decoder(decoder_input, encoder_output)
+            output = self.relu(output)
+            output = self.output_layer0(output)
+            output = self.relu(output)
+            output = self.output_layer1(output)
+
+            return output
 
 if __name__ == "__main__":
     import time
