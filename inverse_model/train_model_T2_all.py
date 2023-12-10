@@ -173,13 +173,13 @@ train_dataset = Robot_face_data(lmks_data=tr_lmks, label_data=tr_cmds)
 test_dataset  = Robot_face_data(lmks_data=va_lmks, label_data=va_cmds,data_type_Flag=2)
 
 def train_model():
-    wandb.init(project=project_name)
-    # config = wandb.config
+    wandb.init(project=proj_name)
+    config = wandb.config
     run_name = wandb.run.name
     mode = 'all'
     print(run_name)
 
-    log_path = "../data/%s/%s/"%(project_name,run_name)
+    log_path = "../data/%s/%s/"%(proj_name,run_name)
     os.makedirs(log_path,exist_ok=True)
 
     model = TransformerInverse1207(decoder_input_size = 180,
@@ -190,7 +190,7 @@ def train_model():
                                    mode = mode
                           ).to(device)
 
-    model.load_state_dict(torch.load(model_path + 'best_model_MSE.pt', map_location=torch.device(device)))
+    # model.load_state_dict(torch.load(model_path + 'best_model_MSE.pt', map_location=torch.device(device)))
 
 
     train_dataloader = DataLoader(train_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
@@ -200,7 +200,7 @@ def train_model():
 
     Loss_fun = nn.L1Loss(reduction='mean')
     # You can use dynamic learning rate with this. Google it and try it!
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=3, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=4, verbose=True)
 
     train_epoch_L = []
     train_epoch_L2 = []
@@ -273,7 +273,7 @@ def train_model():
 
             loop_test_loss = []
             for data_type_id in [100]:
-                train_dataloader.dataset.data_type_Flag = data_type_id
+                test_dataloader.dataset.data_type_Flag = data_type_id
                 for i, bundle in enumerate(test_dataloader):
                     input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
                     pred_result = input_e
@@ -315,7 +315,7 @@ def train_model():
               "Test loss: ",round(valid_loss,5),
               "lr:", round(optimizer.param_groups[0]['lr'],5),
               " patience:",patience)
-        if patience>45:
+        if patience>=12:
             break
 
     # plt.plot(np.arange(10,len(train_epoch_L)),train_epoch_L[10:])
@@ -328,15 +328,15 @@ if __name__ == '__main__':
     import wandb
     import argparse
 
-    TRAIN_MODE  = 0
+    TRAIN_MODE  = 1
     if TRAIN_MODE ==0:
         api = wandb.Api()
-        pre_proj_name = 'IVMT2_1208(encoder)'
+        proj_name = 'IVMT2_1208(encoder)'
         run_id = 'still-sweep-1'
         model_pretrained = 'upbeat-thunder-42'
 
-        runs = api.runs("robotics/%s"%pre_proj_name)
-        model_path = '../data/%s/%s/'%(pre_proj_name, model_pretrained)
+        runs = api.runs("robotics/%s"%proj_name)
+        model_path = '../data/%s/%s/'%(proj_name, model_pretrained)
         config = None
         for run in runs:
             if run.name == run_id:
@@ -350,16 +350,18 @@ if __name__ == '__main__':
             "method": "random",
             "metric": {"goal": "minimize", "name": "valid_loss"},
             "parameters": {
-                'dim_feedforward': {"values": [128,256,512]},
+                'dim_feedforward': {"values": [128,256,512,1024]},
                 'batchsize': {"values": [8,16, 32]},
                 'lr': {"max": 10e-5, "min": 10e-6},
                 'num_encoder_layers': {"values": [2, 3, 4]},
                 'num_decoder_layers': {"values": [2, 3, 4]},
-                'nhead': {"values": [1, 2]}
+                'nhead': {"values": [2,4,8]}
 
             },
         }
 
-        project_name = 'IVMT2_1210(encoder)'
-        sweep_id = wandb.sweep(sweep=sweep_configuration, project=project_name)
+        proj_name = 'IVMT2_1210(encoder)'
+        sweep_id = wandb.sweep(sweep=sweep_configuration, project=proj_name)
 
+        # train_model()
+        wandb.agent(sweep_id, function=train_model, count=100)

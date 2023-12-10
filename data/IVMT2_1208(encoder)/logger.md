@@ -75,3 +75,12 @@ olive-plant-43: pretrained encoder: scarlet-sweep-1. train 4 combinations. valid
 fiery-sun-44: pretrained encoder: scarlet-sweep-1. train 4 comb. valid: 3 comb
 
 snowy-silence-47: use upbeat-thunder-42 as pre-trained model. only trained 1 comb, 100, use 4 seq
+
+
+lucky-sweep-7: no pretrained. train on one comb. [100].
+
+    eval:
+    mean 0.07512711579004357
+    mean1 0.07240616512681568
+
+
