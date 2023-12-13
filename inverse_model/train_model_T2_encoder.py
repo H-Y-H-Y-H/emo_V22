@@ -228,17 +228,17 @@ if __name__ == '__main__':
         "method": "random",
         "metric": {"goal": "minimize", "name": "valid_loss"},
         "parameters": {
-            'dim_feedforward':{"values":[512,1024]},
-            'batchsize':{"values": [8, 32]},
+            'dim_feedforward':{"values":[256]},
+            'batchsize':{"values": [32]},
             'lr': {"max": 10e-5, "min":10e-6},
-            'num_encoder_layers':{"values": [2,3,4]},
-            'num_decoder_layers':{"values": [2,3,4]},
-            'nhead':{"values": [1,2]}
+            'num_encoder_layers':{"values": [2]},
+            'num_decoder_layers':{"values": [3]},
+            'nhead':{"values": [8]}
 
         },
     }
 
-    project_name = 'IVMT2_1208(encoder)'
+    project_name = 'IVMT2_1210(encoder)'
     sweep_id = wandb.sweep(sweep=sweep_configuration, project=project_name)
 
 

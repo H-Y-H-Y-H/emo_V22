@@ -82,5 +82,52 @@ lucky-sweep-7: no pretrained. train on one comb. [100].
     eval:
     mean 0.07512711579004357
     mean1 0.07240616512681568
+    valid：
+    mean 0.06486439827752731
+    mean1 0.06030323612417133
 
 
+true-sweep-2(same):
+
+    eval:
+    mean 0.07024393855390472
+    mean1 0.06741352005577418
+
+    valid:
+    mean 0.057034405649540786
+    mean1 0.05147983775780436
+
+charmed-sky-46: use vivid-sweep-2 as pretrained model. one comb. frozen first 20 epochs.
+
+    eval:
+    mean 0.06407967790498642
+    mean1 0.06107453021719776
+
+
+pious-voice-56: use pretrained charmed-sky-46. 3 comb. no frozen
+
+    eval:
+    mean 0.06766361254830874
+    mean1 0.06511346087135689
+
+breezy-water-73: use pretrained charmed-sky-46. 1 comb[100]. no frozen. 7 seq loop. compare 
+    
+    eval:
+    mean 0.061858219755144654
+    mean1 0.058758071415048664
+
+logical-rain-76: use pretrained charmed-sky-46. 1 comb[100]. no frozen. 7 seq loop. 
+use k0 k1 k2 lips specific loss function.
+
+    eval
+    mean 0.06321716484803482
+    mean1 0.06001206942920985
+
+prime-sponge-77: use true-sweep-2 as pretrained model. use k0 k1 k2 lips specific loss function.
+    
+    eval:
+    mean 0.06761959916444074
+    mean1 0.06466988101361436
+
+denim-dawn-82: use true-sweep-2 as pretrained model, but 2 comb. 100 and 102, 
+the 102 doesn't join the validation. 3 seq loop. use k0 k1 k2 lips specific loss function.

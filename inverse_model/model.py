@@ -185,11 +185,11 @@ class TransformerInverse1207(nn.Module):
 
     def forward(self, encoder_input, decoder_input, current_epoch = 100):
 
-        # # Check the current epoch and freeze/unfreeze encoder accordingly
-        # if current_epoch < 50:
-        #     self.freeze_encoder()
-        # else:
-        #     self.unfreeze_encoder()
+        # Check the current epoch and freeze/unfreeze encoder accordingly
+        if current_epoch < 20:
+            self.freeze_encoder()
+        else:
+            self.unfreeze_encoder()
 
         # Generate position indices (0 and 1)
         position_indices = torch.arange(0, 2, dtype=torch.long, device=encoder_input.device)

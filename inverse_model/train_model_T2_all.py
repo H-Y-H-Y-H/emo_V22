@@ -244,7 +244,13 @@ def train_model():
                     input_e[:,1] = pred_result[:,0].detach().clone()
                     input_d_cut = input_d[:,seq_i:seq_i+2]
                     pred_result = model.forward(input_e, input_d_cut)
-                    loss = Loss_fun(pred_result, label_d[:,seq_i:seq_i+2])
+                    # loss = Loss_fun(pred_result, label_d[:,seq_i:seq_i+2])
+
+                    loss = Loss_fun(pred_result, label_d[:,seq_i:seq_i+2]) + k0 * (
+                            torch.exp(relu(pred_result[:,:, 0] - label_d[:,seq_i:seq_i+2,0])) - 1).sum() \
+                           + k1 * (torch.exp(relu(label_d[:,seq_i:seq_i+2,2] - pred_result[:,:, 2])) - 1).sum() \
+                           + k2 * (torch.exp(relu(label_d[:,seq_i:seq_i+2,5] - pred_result[:,:, 5])) - 1).sum()
+
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
@@ -282,7 +288,13 @@ def train_model():
                         input_e[:, 1] = pred_result[:, 0].detach().clone()
                         input_d_cut = input_d[:, seq_i:seq_i + 2]
                         pred_result = model.forward(input_e, input_d_cut)
-                        loss = Loss_fun(pred_result, label_d[:, seq_i:seq_i + 2])
+                        # loss = Loss_fun(pred_result, label_d[:, seq_i:seq_i + 2])
+
+                        loss = Loss_fun(pred_result, label_d[:, seq_i:seq_i + 2]) + k0 * (
+                                torch.exp(relu(pred_result[:, :, 0] - label_d[:, seq_i:seq_i + 2, 0])) - 1).sum() \
+                               + k1 * (torch.exp(relu(label_d[:, seq_i:seq_i + 2, 2] - pred_result[:, :, 2])) - 1).sum() \
+                               + k2 * (torch.exp(relu(label_d[:, seq_i:seq_i + 2, 5] - pred_result[:, :, 5])) - 1).sum()
+
                         loop_test_loss.append(loss.item())
             valid_loss = np.mean(loop_test_loss)
             test_epoch_L.append(valid_loss)
