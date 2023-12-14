@@ -8,7 +8,7 @@ if __name__ == "__main__":
 
     mode = 0
     import sys
-    demo_id = 9
+    demo_id = 10
     dataset_name = 'data1201'
 
     d_root = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/'
@@ -16,15 +16,15 @@ if __name__ == "__main__":
     dataset_pth = d_root+f'{dataset_name}/'
     dataset_image_lmks = d_root+f'{dataset_name}/robot_dataset_img'
 
-    target_synthesize_img_path = d_root + f'synthesized/lmks_rendering/{demo_id}'
+    target_synthesize_img_path = d_root + f'output_cmds/syn_video/lmks_rendering/{demo_id}'
 
     dataset_lmk = np.load(d_root+f'{dataset_name}/m_lmks.npy')
-    target_lmks = np.load(d_root + f'synthesized/lmks/m_lmks_{demo_id}.npy')
-    mean_0 = np.mean(dataset_lmk[:, :1], axis=0)
-    dist_dataset = dataset_lmk[:, :1] - mean_0
-    dataset_lmk = dataset_lmk - dist_dataset
-    dist_target = target_lmks[:, :1] - mean_0
-    target_lmks = target_lmks - dist_target
+    target_lmks = np.load(d_root + f'output_cmds/syn_video/lmks/m_lmks_{demo_id}.npy')
+    # mean_0 = np.mean(dataset_lmk[:, :1], axis=0)
+    # dist_dataset = dataset_lmk[:, :1] - mean_0
+    # dataset_lmk = dataset_lmk - dist_dataset
+    # dist_target = target_lmks[:, :1] - mean_0
+    # target_lmks = target_lmks - dist_target
 
     dataset_cmd = np.loadtxt(d_root+f'{dataset_name}/action.csv')
 
@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     if mode == 0:
         NORM_FLAG = False
-        mouth_re_localize = True
+        mouth_re_localize = False
         mutli_nn_cmds_rank = 1
 
         #####  SMOOTH LANDMARKS)
@@ -49,7 +49,7 @@ if __name__ == "__main__":
         img_savepath = nn_root+ f'demo{demo_id}/visualization'
         os.makedirs(img_savepath, exist_ok=True)
 
-        dataset_lmk = dataset_lmk - dataset_lmk[:, :1]
+        # dataset_lmk = dataset_lmk - dataset_lmk[:, :1]
 
         for i in range(len(target_lmks)):
             img_read_synthesized = plt.imread(target_synthesize_img_path + '/%d.png' % i)  # [:480,:640]
@@ -81,8 +81,11 @@ if __name__ == "__main__":
 
             fig, ax = plt.subplots(2,3)
             fig.suptitle('Frame: %d. Normalized lmks Distance + cmds Distance(%d)'%(i,mutli_nn_cmds_rank))
+            plt.xlim(-1,1)
+            plt.ylim(-1,1)
 
-            dataset_lmks_sele = dataset_lmk[best_nn_id]
+            dataset_lmks_sele = dataset_lmk[best_nn_id][mouth_lmks]
+            lmks = lmks[mouth_lmks]
 
             fig.set_figheight(15)
             fig.set_figwidth(25)

@@ -87,7 +87,7 @@ lucky-sweep-7: no pretrained. train on one comb. [100].
     mean1 0.06030323612417133
 
 
-true-sweep-2(same):
+true-sweep-2(same): no pretrained. train on one comb. [100]. use 4 seq
 
     eval:
     mean 0.07024393855390472
@@ -131,3 +131,5 @@ prime-sponge-77: use true-sweep-2 as pretrained model. use k0 k1 k2 lips specifi
 
 denim-dawn-82: use true-sweep-2 as pretrained model, but 2 comb. 100 and 102, 
 the 102 doesn't join the validation. 3 seq loop. use k0 k1 k2 lips specific loss function.
+
+

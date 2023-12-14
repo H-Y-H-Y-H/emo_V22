@@ -224,7 +224,6 @@ def train_model():
             valid_combine_loss = valid_loss1*0.75 + valid_loss2*0.25
             test_epoch_L.append(valid_combine_loss)
 
-
         scheduler.step(valid_combine_loss)
 
         if min_loss>valid_combine_loss:
@@ -264,9 +263,6 @@ def train_model():
     # plt.legend()
     # plt.savefig(log_path+'lc.png')
 
-
-
-
 if __name__ == '__main__':
     import wandb
     import argparse
@@ -274,11 +270,11 @@ if __name__ == '__main__':
     api = wandb.Api()
     proj_name = 'IVMT2_1205(closure)'
 
-    pre_proj_name = 'IVMT2_1202'
-    runs = api.runs("robotics/%s"%pre_proj_name)
-    run_id = 'celestial-sweep-5' # 'laced-sweep-24'
+    # pre_proj_name = 'IVMT2_1202'
+    runs = api.runs("robotics/%s"%proj_name)
+    run_id = 'vocal-sweep-7' #'wandering-sweep-1' # 'laced-sweep-24'
 
-    model_path = '../data/%s/%s/'%(pre_proj_name, run_id)
+    model_path = '../data/%s/%s/'%(proj_name, run_id)
     config = None
     for run in runs:
         if run.name == run_id:
@@ -286,7 +282,6 @@ if __name__ == '__main__':
             config = {k: v for k, v in run.config.items() if not k.startswith('_')}
 
     config = argparse.Namespace(**config)
-
 
     groundtruth_data = np.loadtxt(data_path + 'action.csv')[training_num:, key_cmds]
     test_lmk_data = np.load(data_path+'m_lmks.npy')[training_num:, select_lmks_id]

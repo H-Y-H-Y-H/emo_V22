@@ -156,12 +156,12 @@ def render_img(image, face_mesh, pcf):
 if __name__ == "__main__":
     np.random.seed(2023)
 
-    mode = 1
+    mode = 2
 
     # Collect robot babbling data:
     if mode == 0:
-        from servo_m import *
-        save_data_pth = "../data0914/"
+        # from servo_m import *
+        save_data_pth = "../data1213/"
         os.makedirs(save_data_pth, exist_ok=True)
         os.makedirs(save_data_pth+'img/', exist_ok=True)
 
@@ -271,14 +271,12 @@ if __name__ == "__main__":
         # save_path = f'../EMO_GPTDEMO/robot_data/synthesized/'
         # video_source = f'../EMO_GPTDEMO/robot_data/synthesized/video/{video_id}.mp4'
 
-        real_data_method = 'wandering-sweep-1' #'nn_100' #'wav_bl'#'om'
+        real_data_method ='denim-dawn-82' # 'charmed-sky-46' #'true-sweep-2' #'nn_100' #'wav_bl'#'om'
         save_path = f'../EMO_GPTDEMO/robot_data/output_cmds/{real_data_method}_video/'
         video_source = f'../EMO_GPTDEMO/robot_data/output_cmds/{real_data_method}_video/{video_id}.mp4'
 
-
         os.makedirs(save_path + f'lmks_rendering/{video_id}/', exist_ok=True)
         os.makedirs(save_path + 'lmks/', exist_ok=True)
-
 
         print(video_source)
         cap = cv2.VideoCapture(video_source)
@@ -348,9 +346,9 @@ if __name__ == "__main__":
 
     elif mode == 2:
 
-        img_source = "../EMO_GPTDEMO/robot_data/data1201/"
+        img_source = "../EMO_GPTDEMO/robot_data/data1213/"
         os.makedirs(img_source+'robot_dataset_img',exist_ok=True)
-        Num_data = 40000
+        Num_data = 15000
 
         # get cap property
         frame_width = 480 #= cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`

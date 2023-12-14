@@ -106,11 +106,9 @@ def lmks_eval(target_lmks, gt):
     for i in range(len(target_lmks)-1):
         pre_pre_init_cmds = np.copy(pre_init_cmds)
         pre_init_cmds = np.copy(outputs)
-        flatten_lmks1 = target_lmks[i].unsqueeze(0)
-        flatten_lmks2 = target_lmks[i+1].unsqueeze(0)
 
         input_data_e = np.concatenate((np.expand_dims(pre_pre_init_cmds,axis=0), np.expand_dims(pre_init_cmds,axis=0)))
-        input_data_d = torch.cat((flatten_lmks1, flatten_lmks2), dim=0)
+        input_data_d = target_lmks[i:i + 2]
 
         inputs_e = torch.from_numpy(input_data_e.astype('float32')).to(device).unsqueeze(0)
         inputs_d = input_data_d.unsqueeze(0)
@@ -198,12 +196,12 @@ if __name__ == '__main__':
 
     # MODEL LOADING
     api = wandb.Api()
-    proj_name = 'IVMT2_1208(encoder)'
-    # run_id = 'still-sweep-1'
-    run_id = 'scarlet-sweep-1'
+    proj_name = 'IVMT2_1210(encoder)'
+    run_id = 'true-sweep-2'
+    # run_id = 'scarlet-sweep-1'
     # mode_all_id = 'azure-cherry-31' # 'proud-valley-19'
 
-    mode_all_id = 'warm-water-37' #'proud-valley-19' # 'proud-valley-19'
+    mode_all_id = 'denim-dawn-82' #'proud-valley-19' # 'proud-valley-19'
 
     runs = api.runs("robotics/%s"%proj_name)
     model_path = '../data/%s/%s/'%(proj_name, mode_all_id)
@@ -229,18 +227,18 @@ if __name__ == '__main__':
         model.eval()
 
         d_root = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/'
-        data_path = "../../../Downloads/data1201/"
+        data_path = "../../EMO_GPTDEMO/robot_data/data1201/"
         dataset_lmk = np.load(data_path + 'm_lmks.npy')
         init_lmks = dataset_lmk[9]
 
         # use model to generate cmds
-        save_path = f'../../EMO_GPTDEMO/robot_data/output_cmds/{run_id}/'
+        save_path = f'../../EMO_GPTDEMO/robot_data/output_cmds/{mode_all_id}/'
         os.makedirs(save_path, exist_ok=True)
 
         use_model_or_eval_model = 1
 
         if use_model_or_eval_model == 0:
-            for demo_id in range(8,11):
+            for demo_id in range(11):
                 print(f'process: {demo_id}')
                 target_lmks = np.load(d_root + f'robot_data/synthesized/lmks/m_lmks_{demo_id}.npy')[:, lmks_id]
                 use_all_model(target_lmks, log_path=save_path+f"{demo_id}.csv")

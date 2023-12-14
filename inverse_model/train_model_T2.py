@@ -83,14 +83,14 @@ class Robot_face_data(Dataset):
             cmds_0 = self.init_cmds
             cmds_1 = self.label_data[idx+1]
 
-        elif self.data_type_Flag == 2:
-            cmds_0 = self.label_data[idx]
-            cmds_1 = self.label_data[idx+1]
-            noise_0 = torch.randn_like(cmds_0) * 0.1
-            cmds_0 = cmds_0 + noise_0
-
-            noise_1 = torch.randn_like(cmds_1) * 0.1
-            cmds_1 = cmds_1 + noise_1
+        # elif self.data_type_Flag == 2:
+        #     cmds_0 = self.label_data[idx]
+        #     cmds_1 = self.label_data[idx+1]
+        #     noise_0 = torch.randn_like(cmds_0) * 0.1
+        #     cmds_0 = cmds_0 + noise_0
+        #
+        #     noise_1 = torch.randn_like(cmds_1) * 0.1
+        #     cmds_1 = cmds_1 + noise_1
 
         else:
             cmds_0 = self.label_data[idx]
@@ -211,36 +211,37 @@ def train_model():
                     temp_l.append(loss.item())
             # outputs_data = [groundtruth_data[0], groundtruth_data[1]]
             valid_loss1 = np.mean(temp_l)
-            temp_l = []
-            pre_init_cmds = torch.from_numpy(init_cmds).to(device, dtype=torch.float).unsqueeze(0)  # Assuming init_cmds is a PyTorch tensor
-            outputs       = torch.from_numpy(init_cmds).to(device, dtype=torch.float).unsqueeze(0)
-            for i in range(len(test_lmk_data)-1):
-                pre_pre_init_cmds = pre_init_cmds.clone()
-                pre_init_cmds = outputs.clone()
-
-                # Assuming test_lmk_data is a list of PyTorch tensors
-                flatten_lmks0 = test_lmk_data[i].flatten().unsqueeze(0) # Flattening using PyTorch
-                flatten_lmks1 = test_lmk_data[i+1].flatten().unsqueeze(0) # Flattening using PyTorch
-
-
-                # Concatenation using PyTorch
-                input_data = torch.cat((pre_pre_init_cmds, pre_init_cmds), dim=0)
-                input_lmks = torch.cat((flatten_lmks0, flatten_lmks1), dim=0)
-
-                # Forward pass
-                inputs_v = input_data.unsqueeze(0).to(device)
-                input_lmks = input_lmks.unsqueeze(0).to(device)
-                outputs = model.forward(inputs_v,input_lmks)
-
-                # Loss calculation using PyTorch
-                # Loss calculation using PyTorch
-                loss = Loss_fun(outputs[0], groundtruth_data[i]) + k0 * (
-                        torch.exp(relu(outputs[0][0] - groundtruth_data[i][0])) - 1) \
-                       + k1 * (torch.exp(relu(groundtruth_data[i][2] - outputs[0][2])) - 1)\
-                       + k2 * (torch.exp(relu(groundtruth_data[i][5] - outputs[0][5])) - 1)
-                temp_l.append(loss.item())  # Convert tensor to a Python scalar
-            valid_loss2 = np.mean(temp_l)
-            valid_combine_loss = valid_loss1*0.75 + valid_loss2*0.25
+            # temp_l = []
+            # pre_init_cmds = torch.from_numpy(init_cmds).to(device, dtype=torch.float).unsqueeze(0)  # Assuming init_cmds is a PyTorch tensor
+            # outputs       = torch.from_numpy(init_cmds).to(device, dtype=torch.float).unsqueeze(0)
+            # for i in range(len(test_lmk_data)-1):
+            #     pre_pre_init_cmds = pre_init_cmds.clone()
+            #     pre_init_cmds = outputs.clone()
+            #
+            #     # Assuming test_lmk_data is a list of PyTorch tensors
+            #     flatten_lmks0 = test_lmk_data[i].flatten().unsqueeze(0) # Flattening using PyTorch
+            #     flatten_lmks1 = test_lmk_data[i+1].flatten().unsqueeze(0) # Flattening using PyTorch
+            #
+            #
+            #     # Concatenation using PyTorch
+            #     input_data = torch.cat((pre_pre_init_cmds, pre_init_cmds), dim=0)
+            #     input_lmks = torch.cat((flatten_lmks0, flatten_lmks1), dim=0)
+            #
+            #     # Forward pass
+            #     inputs_v = input_data.unsqueeze(0).to(device)
+            #     input_lmks = input_lmks.unsqueeze(0).to(device)
+            #     outputs = model.forward(inputs_v,input_lmks)
+            #
+            #     # Loss calculation using PyTorch
+            #     # Loss calculation using PyTorch
+            #     loss = Loss_fun(outputs[0], groundtruth_data[i]) + k0 * (
+            #             torch.exp(relu(outputs[0][0] - groundtruth_data[i][0])) - 1) \
+            #            + k1 * (torch.exp(relu(groundtruth_data[i][2] - outputs[0][2])) - 1)\
+            #            + k2 * (torch.exp(relu(groundtruth_data[i][5] - outputs[0][5])) - 1)
+            #     temp_l.append(loss.item())  # Convert tensor to a Python scalar
+            # valid_loss2 = np.mean(temp_l)
+            valid_loss2 = valid_loss1
+            valid_combine_loss = valid_loss1 #*0.75 + valid_loss2*0.25
             test_epoch_L.append(valid_combine_loss)
 
         scheduler.step(valid_combine_loss)

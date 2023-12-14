@@ -57,7 +57,7 @@ import cv2
 import glob
 
 
-def frames_2_video():
+def frames_2_video(method_name , idx = 0):
   # img_array = []
   # img_list = glob.glob('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data1105/img/*.png')
   # img_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1201/img/'
@@ -65,13 +65,13 @@ def frames_2_video():
   # fps = 30
   # fourcc = cv2.VideoWriter_fourcc(*'MP4V')
   # out = cv2.VideoWriter('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1201/data_%ds.mp4'%(frame_n//fps), fourcc, fps, (480, 480))
-  method_name = 'wandering-sweep-1'
-  idx = 9
-  img_pth = f'/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/output_cmds/{method_name}/img{idx}/'
+   #'charmed-sky-46'#   'vocal-sweep-7' true-sweep-2
+
+  img_pth = f'/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/output_cmds/{method_name}_video/img{idx}/'
   frame_n = len(os.listdir(img_pth))
   fps = 30
   fourcc = cv2.VideoWriter_fourcc(*'MP4V')
-  out = cv2.VideoWriter(f'/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/output_cmds/{method_name}/{idx}.mp4', fourcc, fps, (480, 480))
+  out = cv2.VideoWriter(f'/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/output_cmds/{method_name}_video/{idx}.mp4', fourcc, fps, (480, 480))
 
   for i in range(frame_n):
     filename = img_pth+"/%d.png"%(i)
@@ -85,8 +85,7 @@ def frames_2_video():
 
   out.release()
 
-# frames_2_video()
-# quit()
+
 
 def frames_video():
   img_array = []
@@ -235,39 +234,47 @@ inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 40
 
 select_lmks_id = lips_idx + inner_lips_idx
 
-def sidebyside(demo_id = 0):
+def sidebyside(test_model_name,demo_id = 0):
   import matplotlib
   matplotlib.use('Agg')
+  d_root = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1201/'
 
   source_path = f'../EMO_GPTDEMO/robot_data/output_cmds/'
-  method_names = ['syn', 'wandering-sweep-1',  'nn_100', 'wav_bl']
-  save_path = f'../EMO_GPTDEMO/compare/'
+  method_names = ['syn', test_model_name,  'nn_1', 'wav_bl']
+  save_path = f'../EMO_GPTDEMO/compare_{method_names[1]}/'
   os.makedirs(save_path+f'demo{demo_id}/',exist_ok=True)
   video_frames_list = []
   for i in range(len(method_names)):
-    met_n = method_names[i]
-    video_path = source_path + met_n + f'_video/{demo_id}.mp4'
-    frames = video_2_frames(video_path)
-    video_frames_list.append(frames)
+    if i != 2:
+      met_n = method_names[i]
+      video_path = source_path + met_n + f'_video/{demo_id}.mp4'
+      frames = video_2_frames(video_path)
+      video_frames_list.append(frames)
+    else:
+      frames = []
+      frames_id = np.loadtxt(source_path+f'{method_names[2]}_video/nn_lmks_id_%d.csv'%demo_id)
+      for id_i in range(len(frames_id)):
+        frames.append(cv2.imread(d_root+'img/%d.png'%frames_id[id_i])[:,80:560])
+      video_frames_list.append(frames)
 
   img_list = []
 
   scale_change = (45/0.15)
   gt_lmks     = np.load(f'../EMO_GPTDEMO/robot_data/output_cmds/{method_names[0]}_video/lmks/m_lmks_{demo_id}.npy')*scale_change
-  eager_lmks  = np.load(f'../EMO_GPTDEMO/robot_data/output_cmds/{method_names[1]}_video/lmks/m_lmks_{demo_id}.npy')*scale_change
-  nn_400_lmks = np.load(f'../EMO_GPTDEMO/robot_data/output_cmds/{method_names[2]}_video/lmks/m_lmks_{demo_id}.npy')*scale_change
+  om_lmks  = np.load(f'../EMO_GPTDEMO/robot_data/output_cmds/{method_names[1]}_video/lmks/m_lmks_{demo_id}.npy')*scale_change
+  nn_lmks = np.load(source_path+method_names[2]+'/lmks_%d.npy'%demo_id)*scale_change
   wav_bl_lmks = np.load(f'../EMO_GPTDEMO/robot_data/output_cmds/{method_names[3]}_video/lmks/m_lmks_{demo_id}.npy')*scale_change
 
   gt_lmks     = gt_lmks     [:,select_lmks_id]
-  eager_lmks  = eager_lmks  [:,select_lmks_id]
-  nn_400_lmks = nn_400_lmks [:,select_lmks_id]
+  om_lmks     = om_lmks     [:,select_lmks_id]
+  nn_lmks     = nn_lmks     [:,select_lmks_id]
   wav_bl_lmks = wav_bl_lmks [:,select_lmks_id]
 
-  dist_eager   = np.mean(np.abs(gt_lmks - eager_lmks) ,axis=(1,2))
-  dist_nn_400  = np.mean(np.abs(gt_lmks - nn_400_lmks),axis=(1,2))
+  dist_om   = np.mean(np.abs(gt_lmks - om_lmks) ,axis=(1,2))
+  dist_nn  = np.mean(np.abs(gt_lmks - nn_lmks),axis=(1,2))
   dist_wav_bl = np.mean(np.abs(gt_lmks - wav_bl_lmks),axis=(1,2))
 
-  # dist_eager  [:2] = dist_eager  [2]
+  # dist_om  [:2] = dist_om  [2]
   # dist_nn_400 [:2] = dist_nn_400 [2]
   # dist_wav_bl [:2] = dist_wav_bl [2]
 
@@ -275,13 +282,13 @@ def sidebyside(demo_id = 0):
     plt.figure(figsize=(480 / 96, 480 / 96), dpi=96)
     plt.ylim(0,5)
 
-    plt.plot(dist_eager,c = 'black',label='Overall L1 Distance')
-    mean_dist = np.mean(dist_eager)
-    plt.plot([0,len(dist_eager)], [mean_dist]*2,c='deepskyblue', linestyle='--', label =f'Mean L1 Distance')
-    plt.scatter([f],[dist_eager[f]],c = 'r',label=f'Current Distance: {dist_eager[f]:.3f}')
+    plt.plot(dist_om,c = 'black',label='Overall L1 Distance')
+    mean_dist = np.mean(dist_om)
+    plt.plot([0,len(dist_om)], [mean_dist]*2,c='deepskyblue', linestyle='--', label =f'Mean L1 Distance')
+    plt.scatter([f],[dist_om[f]],c = 'r',label=f'Current Distance: {dist_om[f]:.3f}')
     plt.xlabel("Frame Index")
     plt.ylabel("L1 Distance")
-    plt.title(f"Mean L1 Landmarks Distance: {mean_dist:.3f}")
+    plt.title(f"ID: {f} | Mean L1 Landmarks Distance: {mean_dist:.3f}")
     plt.legend()
     plt.gca().figure.canvas.draw()
     # Convert to a NumPy array
@@ -292,13 +299,13 @@ def sidebyside(demo_id = 0):
 
     plt.figure(figsize=(480 / 96, 480 / 96), dpi=96)
     plt.ylim(0,5)
-    plt.plot(dist_nn_400,c = 'black',label='Overall L1 Distance')
-    mean_dist = np.mean(dist_nn_400)
-    plt.plot([0,len(dist_nn_400)], [mean_dist]*2,c='deepskyblue', linestyle='--', label =f'Mean L1 Distance')
-    plt.scatter([f],[dist_nn_400[f]],c = 'r',label=f'Current Distance: {dist_nn_400[f]:.3f}')
+    plt.plot(dist_nn,c = 'black',label='Overall L1 Distance')
+    mean_dist = np.mean(dist_nn)
+    plt.plot([0,len(dist_nn)], [mean_dist]*2,c='deepskyblue', linestyle='--', label =f'Mean L1 Distance')
+    plt.scatter([f],[dist_nn[f]],c = 'r',label=f'Current Distance: {dist_nn[f]:.3f}')
     plt.xlabel("Frame Index")
     plt.ylabel("L1 Distance")
-    plt.title(f"Mean L1 Landmarks Distance: {mean_dist:.3f}")
+    plt.title(f"ID: {f} | Mean L1 Landmarks Distance: {mean_dist:.3f}")
     plt.legend()
     plt.gca().figure.canvas.draw()
     # Convert to a NumPy array
@@ -316,7 +323,7 @@ def sidebyside(demo_id = 0):
     plt.scatter([f],[dist_wav_bl[f]],c = 'r',label=f'Current Distance: {dist_wav_bl[f]:.3f}')
     plt.xlabel("Frame Index")
     plt.ylabel("L1 Distance")
-    plt.title(f"Mean L1 Landmarks Distance: {mean_dist:.3f}")
+    plt.title(f"ID: {f} | Mean L1 Landmarks Distance: {mean_dist:.3f}")
     plt.legend()
     plt.gca().figure.canvas.draw()
     # Convert to a NumPy array
@@ -365,8 +372,10 @@ def sidebyside(demo_id = 0):
   # Usage
   combine_audio_video(audio_path, syn_video_path, out_video_path)
 
+# frames_2_video(method_name = 'denim-dawn-82', idx=10)
+# quit()
 for i in range(9,10):
-  sidebyside(i)
+  sidebyside(test_model_name= 'denim-dawn-82',demo_id=i)
 
 def debug_compare():
   method_name = 'nn_100'

@@ -113,10 +113,9 @@ if __name__ == '__main__':
     # MODEL LOADING
     api = wandb.Api()
     proj_name = 'IVMT2_1205(closure)'
-    run_id = 'wandering-sweep-1' #'tough-grass-13'#'celestial-sweep-5'
-    pre_run_id = 'wandering-sweep-1'
-    pre_proj_name = 'IVMT2_1205(closure)'
+    run_id = 'proud-valley-19' #'vocal-sweep-7'#'wandering-sweep-1' #'tough-grass-13'#'celestial-sweep-5'
 
+    pre_proj_name = 'IVMT2_1205(closure)'
 
     runs = api.runs("robotics/%s"%pre_proj_name)
 
@@ -127,21 +126,13 @@ if __name__ == '__main__':
     model_path = '../data/%s/%s/'%(proj_name, model_config)
     config = None
     for run in runs:
-        if run.name == pre_run_id:
+        if run.name == run_id:
             print('loading configuration')
             config = {k: v for k, v in run.config.items() if not k.startswith('_')}
 
     config = argparse.Namespace(**config)
 
-    # model = inverse_model(input_size=input_dim,
-    #                       label_size=output_dim,
-    #                       num_layer=config.n_layer,
-    #                       d_hidden=config.d_hidden,
-    #                       use_bn=config.use_bn,
-    #                       skip_layer=config.skip_layer,
-    #                       final_sigmoid=config.final_sigmoid
-    #                       ).to(device)
-    model = TransformerInverse_baseline(decoder_input_size = 180,
+    model = TransformerInverse(decoder_input_size = 180,
                                 nhead              = config.nhead               ,
                                 num_encoder_layers = config.num_encoder_layers  ,
                                 num_decoder_layers = config.num_decoder_layers  ,
@@ -149,15 +140,15 @@ if __name__ == '__main__':
 
                           ).to(device)
     # Load state dictionary
-    state_dict = torch.load(model_path+'best_model_MSE.pt', map_location=torch.device(device))
+    # state_dict = torch.load(model_path+'best_model_MSE.pt', map_location=torch.device(device))
+    #
+    # # Filter out unnecessary keys
+    # new_state_dict = {k: v for k, v in state_dict.items() if k in model.state_dict()}
+    #
+    # # Load the filtered state dictionary
+    # model.load_state_dict(new_state_dict, strict=False)
 
-    # Filter out unnecessary keys
-    new_state_dict = {k: v for k, v in state_dict.items() if k in model.state_dict()}
-
-    # Load the filtered state dictionary
-    model.load_state_dict(new_state_dict, strict=False)
-
-    # model.load_state_dict(torch.load(model_path+'best_model_MSE.pt', map_location=torch.device(device)))
+    model.load_state_dict(torch.load(model_path+'best_model_MSE.pt', map_location=torch.device(device)))
     model.eval()
 
     mode = 0
@@ -165,12 +156,11 @@ if __name__ == '__main__':
     if mode == 0:
         data_path = "../../EMO_GPTDEMO/robot_data/data1201/"
         dataset_lmk = np.load(data_path + 'm_lmks.npy')
-        mean_0 = np.mean(dataset_lmk[:, :1], axis=0)
 
         # use model to generate cmds
         save_path = f'../../EMO_GPTDEMO/robot_data/output_cmds/{run_id}/'
         os.makedirs(save_path, exist_ok=True)
-        for demo_id in range(9,10):
+        for demo_id in range(8,11):
             print(f'process: {demo_id}')
             target_lmks = np.load(d_root + f'robot_data/synthesized/lmks/m_lmks_{demo_id}.npy')[:, lmks_id]
             # dist = target_lmks[:,:1] - mean_0
@@ -185,9 +175,9 @@ if __name__ == '__main__':
         dataset_lmk = np.load(data_path+'m_lmks.npy')
         groundtruth_data = np.loadtxt(data_path+'action.csv')
 
-        mean_0 = np.mean(dataset_lmk[:, :1], axis=0)
-        dist = dataset_lmk[:, :1] - mean_0
-        dataset_lmk = dataset_lmk - dist
+        # mean_0 = np.mean(dataset_lmk[:, :1], axis=0)
+        # dist = dataset_lmk[:, :1] - mean_0
+        # dataset_lmk = dataset_lmk - dist
 
         training_num = int(len(dataset_lmk) * 0.8)
 

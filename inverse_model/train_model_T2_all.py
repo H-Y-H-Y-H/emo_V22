@@ -64,33 +64,52 @@ class Robot_face_data(Dataset):
             cmds_1 = self.init_cmds
             encoder_input = torch.cat((cmds_0.unsqueeze(0), cmds_1.unsqueeze(0)), dim=0)
 
-            lmks_seq = self.lmks_data[idx:idx+5]
-            cmds_seq = self.label_data[idx:idx+5]
+            lmks_seq = self.lmks_data[idx:idx+4]
+            cmds_seq = self.label_data[idx:idx+4]
 
             sample = {"input_encoder": encoder_input, "input_decoder": lmks_seq, "label_cmds": cmds_seq}
             return sample
 
-        if self.data_type_Flag == 101:
-            cmds_0 = self.init_cmds
-            cmds_1 = self.label_data[idx]
-            encoder_input = torch.cat((cmds_0.unsqueeze(0), cmds_1.unsqueeze(0)), dim=0)
+        # if self.data_type_Flag == 101:
+        #     cmds_0 = self.init_cmds
+        #     cmds_1 = self.label_data[idx]
+        #     encoder_input = torch.cat((cmds_0.unsqueeze(0), cmds_1.unsqueeze(0)), dim=0)
+        #
+        #     lmks_seq = self.lmks_data[idx+1:idx+9]
+        #     cmds_seq = self.label_data[idx+1:idx+9]
+        #
+        #     sample = {"input_encoder": encoder_input, "input_decoder": lmks_seq, "label_cmds": cmds_seq}
+        #     return sample
+        elif self.data_type_Flag ==102:
 
-            lmks_seq = self.lmks_data[idx+1:idx+6]
-            cmds_seq = self.label_data[idx+1:idx+6]
-
-            sample = {"input_encoder": encoder_input, "input_decoder": lmks_seq, "label_cmds": cmds_seq}
-            return sample
-
-        elif self.data_type_Flag > 101:
             cmds_0 = self.label_data[idx]
             cmds_1 = self.label_data[idx+1]
             encoder_input = torch.cat((cmds_0.unsqueeze(0), cmds_1.unsqueeze(0)), dim=0)
 
-            lmks_seq = self.lmks_data[idx+2:idx+7]
-            cmds_seq = self.label_data[idx+2:idx+7]
+            lmks_seq = self.lmks_data[idx+2:idx+6]
+            cmds_seq = self.label_data[idx+2:idx+6]
+
 
             sample = {"input_encoder": encoder_input, "input_decoder": lmks_seq, "label_cmds": cmds_seq}
             return sample
+
+        # elif self.data_type_Flag ==102:
+        #
+        #     random_id = sorted(random.sample(list(range(20)),4))
+        #
+        #     cmds_0 = self.label_data[idx]
+        #     cmds_1 = self.label_data[idx+1]
+        #     encoder_input = torch.cat((cmds_0.unsqueeze(0), cmds_1.unsqueeze(0)), dim=0)
+        #
+        #     lmks_seq = self.lmks_data[idx+2:idx+22]
+        #     cmds_seq = self.label_data[idx+2:idx+22]
+        #
+        #     lmks_seq = lmks_seq[random_id]
+        #     cmds_seq = cmds_seq[random_id]
+        #
+        #
+        #     sample = {"input_encoder": encoder_input, "input_decoder": lmks_seq, "label_cmds": cmds_seq}
+        #     return sample
 
 
         elif self.data_type_Flag == 0:
@@ -167,14 +186,14 @@ class Robot_face_data(Dataset):
         return sample
 
     def __len__(self):
-        return len(self.lmks_data) - 7
+        return len(self.lmks_data) - 22
 
 train_dataset = Robot_face_data(lmks_data=tr_lmks, label_data=tr_cmds)
 test_dataset  = Robot_face_data(lmks_data=va_lmks, label_data=va_cmds,data_type_Flag=2)
 
 def train_model():
     wandb.init(project=proj_name)
-    config = wandb.config
+    # config = wandb.config
     run_name = wandb.run.name
     mode = 'all'
     print(run_name)
@@ -190,7 +209,7 @@ def train_model():
                                    mode = mode
                           ).to(device)
 
-    # model.load_state_dict(torch.load(model_path + 'best_model_MSE.pt', map_location=torch.device(device)))
+    model.load_state_dict(torch.load(model_path + 'best_model_MSE.pt', map_location=torch.device(device)))
 
 
     train_dataloader = DataLoader(train_dataset, batch_size=config.batchsize, shuffle=True, num_workers=0)
@@ -200,15 +219,18 @@ def train_model():
 
     Loss_fun = nn.L1Loss(reduction='mean')
     # You can use dynamic learning rate with this. Google it and try it!
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=4, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=10, verbose=True)
 
     train_epoch_L = []
     train_epoch_L2 = []
+    train_epoch_L3 = []
+
     test_epoch_L = []
     min_loss = + np.inf
     patience = 0
     random_idx_array = list(np.arange(5))
     relu = nn.ReLU()
+    k0,k1,k2 = 0.001,0.001,0.001
     for epoch in range(10000):
         t0 = time.time()
         model.train()
@@ -234,12 +256,12 @@ def train_model():
         train_loss2 = []
         loop_train_loss = []
         # for data_type_id in random.sample([100,101,102,103],4):
-        for data_type_id in range(100,101):
+        for data_type_id in [100,102]:
             train_dataloader.dataset.data_type_Flag = data_type_id
             for i, bundle in enumerate(train_dataloader):
                 input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
                 pred_result = input_e
-                for seq_i in range(4):
+                for seq_i in range(3):
                     input_e[:, 0] = input_e[:, 1].detach().clone()
                     input_e[:,1] = pred_result[:,0].detach().clone()
                     input_d_cut = input_d[:,seq_i:seq_i+2]
@@ -260,6 +282,33 @@ def train_model():
         train_mean_loss2 = np.mean(train_loss2)
         train_epoch_L2.append(train_mean_loss2)
 
+        # train_loss3 = []
+        # loop_train_loss3 = []
+        # for data_type_id in [102]:
+        #     train_dataloader.dataset.data_type_Flag = data_type_id
+        #     for i, bundle in enumerate(train_dataloader):
+        #         input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
+        #         pred_result = input_e
+        #         for seq_i in range(3):
+        #             input_e[:, 0] = input_e[:, 1].detach().clone()
+        #             input_e[:,1] = pred_result[:,0].detach().clone()
+        #             input_d_cut = input_d[:,seq_i:seq_i+2]
+        #             pred_result = model.forward(input_e, input_d_cut)
+        #             # loss = Loss_fun(pred_result, label_d[:,seq_i:seq_i+2])
+        #
+        #             loss = Loss_fun(pred_result, label_d[:,seq_i:seq_i+2]) + k0 * (
+        #                     torch.exp(relu(pred_result[:,:, 0] - label_d[:,seq_i:seq_i+2,0])) - 1).sum() \
+        #                    + k1 * (torch.exp(relu(label_d[:,seq_i:seq_i+2,2] - pred_result[:,:, 2])) - 1).sum() \
+        #                    + k2 * (torch.exp(relu(label_d[:,seq_i:seq_i+2,5] - pred_result[:,:, 5])) - 1).sum()
+        #
+        #             optimizer.zero_grad()
+        #             loss.backward()
+        #             optimizer.step()
+        #             loop_train_loss.append(loss.item())
+        #     train_loss3.append(np.mean(loop_train_loss))
+        #     print(data_type_id, train_loss2[-1])
+        # train_mean_loss3 = np.mean(train_loss2)
+        # train_epoch_L3.append(train_mean_loss3)
 
         model.eval()
         with torch.no_grad():
@@ -278,12 +327,12 @@ def train_model():
             # test_epoch_L.append(valid_loss)
 
             loop_test_loss = []
-            for data_type_id in [100]:
+            for data_type_id in [100,102]:
                 test_dataloader.dataset.data_type_Flag = data_type_id
                 for i, bundle in enumerate(test_dataloader):
                     input_e, input_d, label_d = bundle["input_encoder"], bundle["input_decoder"], bundle["label_cmds"]
                     pred_result = input_e
-                    for seq_i in range(4):
+                    for seq_i in range(3):
                         input_e[:, 0] = input_e[:, 1].detach().clone()
                         input_e[:, 1] = pred_result[:, 0].detach().clone()
                         input_d_cut = input_d[:, seq_i:seq_i + 2]
@@ -313,6 +362,8 @@ def train_model():
         t1 = time.time()
         wandb.log({'mode': mode,
                     # "train_loss": train_mean_loss,
+                   # 'train_loss3': train_mean_loss3,
+
                    'train_loss2':train_mean_loss2,
                    'valid_loss': valid_loss,
                    'epoch':epoch,
@@ -327,7 +378,7 @@ def train_model():
               "Test loss: ",round(valid_loss,5),
               "lr:", round(optimizer.param_groups[0]['lr'],5),
               " patience:",patience)
-        if patience>=12:
+        if patience>=22:
             break
 
     # plt.plot(np.arange(10,len(train_epoch_L)),train_epoch_L[10:])
@@ -340,12 +391,13 @@ if __name__ == '__main__':
     import wandb
     import argparse
 
-    TRAIN_MODE  = 1
+    TRAIN_MODE  = 0
+
     if TRAIN_MODE ==0:
         api = wandb.Api()
-        proj_name = 'IVMT2_1208(encoder)'
-        run_id = 'still-sweep-1'
-        model_pretrained = 'upbeat-thunder-42'
+        proj_name = 'IVMT2_1210(encoder)'
+        run_id = 'true-sweep-2'
+        model_pretrained = 'true-sweep-2'
 
         runs = api.runs("robotics/%s"%proj_name)
         model_path = '../data/%s/%s/'%(proj_name, model_pretrained)

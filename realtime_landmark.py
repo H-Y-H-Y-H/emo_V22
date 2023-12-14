@@ -214,7 +214,7 @@ def nearest_neighber(lmks, dataset, only_mouth = False, normalize = False,rank_d
 
     # MSE
     # distance = np.mean(np.mean(distance, axis=1), axis=1)
-    distance = np.sum((dataset - lmks) ** 2, axis=(1, 2))
+    distance = np.mean(np.abs(dataset - lmks), axis=(1, 2))
 
     rank = np.argsort(distance)
     best_nn_id = rank[0]
