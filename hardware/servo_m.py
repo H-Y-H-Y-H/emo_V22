@@ -3,6 +3,7 @@ import numpy as np
 import random
 import time
 import board
+import cv2
 # i2c = board.I2C()
 ########################################
 ################# Face #################
@@ -78,11 +79,11 @@ lip_down = Actuator(idx_tuple=(1, 11), min_angle=80, max_angle=125, init_angle=1
 # lip_down.norm_act(0)
 
 
-r_corner_up = Actuator(idx_tuple=(0, 2), min_angle=40, max_angle=110, init_angle=60)
-l_corner_up = Actuator(idx_tuple=(0, 7), min_angle=20, max_angle=90, init_angle=65, inverse_flag=1)
+r_corner_up = Actuator(idx_tuple=(0, 2), min_angle=40, max_angle=110, init_angle=70)
+l_corner_up = Actuator(idx_tuple=(0, 7), min_angle=20, max_angle=90, init_angle=55, inverse_flag=1)
 
-r_corner_low = Actuator(idx_tuple=(0, 3), min_angle=20, max_angle=98, init_angle=62)
-l_corner_low = Actuator(idx_tuple=(0, 6), min_angle=85, max_angle=165, init_angle=128, inverse_flag=1)
+r_corner_low = Actuator(idx_tuple=(0, 3), min_angle=30, max_angle=98, init_angle=52)
+l_corner_low = Actuator(idx_tuple=(0, 6), min_angle=85, max_angle=155, init_angle=138, inverse_flag=1)
 
 r_eye_yaw = Actuator(idx_tuple=(0, 8), min_angle=65, max_angle=125, init_angle=95)
 l_eye_yaw = Actuator(idx_tuple=(1, 7), min_angle=60, max_angle=120, init_angle=90)
@@ -207,11 +208,11 @@ def check_lip_upper(cmd_lip_up,cmd_lip_up_warp,cmd_lip_low,cmd_corner_up,cmd_cor
 def random_cmds(reference=None, noise=0.2, only_mouth=True):
     num_motors = len(all_motors)
 
-    if reference != None:
-        cmds_random = np.random.normal(reference, scale=noise)
-    else:
-        # Generate random movement and check lower lips
-        cmds_random = np.random.sample(num_motors)
+    # if reference != None:
+    cmds_random = np.random.normal(reference, scale=noise)
+    # else:
+    #     # Generate random movement and check lower lips
+    #     cmds_random = np.random.sample(num_motors)
     cmds_random = np.clip(cmds_random, 0, 1)
 
     # cmds_random = [1. , 1 ,0.68233284, 0.53335575, 0.53335575, 0.0, 0.0, 0.37913007, 0.42857, 0.42857, 0.66667, 0.66667]
@@ -219,7 +220,7 @@ def random_cmds(reference=None, noise=0.2, only_mouth=True):
     # Symmetrize
 
     # cmds_random[2], cmds_random[3] = check_lip_low(cmds_random[2], cmds_random[3])
-    cmds_random[0], cmds_random[1],cmds_random[2],cmds_random[3] = check_lip_upper(cmds_random[0],cmds_random[1],cmds_random[2],cmds_random[3],cmds_random[5])
+    cmds_random[0],cmds_random[1],cmds_random[2],cmds_random[3] = check_lip_upper(cmds_random[0],cmds_random[1],cmds_random[2],cmds_random[3],cmds_random[5])
     cmds_random[4] = cmds_random[3]
     cmds_random[6] = cmds_random[5]
     cmds_random[9] = cmds_random[8]
@@ -229,13 +230,16 @@ def random_cmds(reference=None, noise=0.2, only_mouth=True):
     if only_mouth:
         cmds_random[8:] = restart_face[8:]
 
-    
 
     return cmds_random
 
 
-def move_all(target_cmds, interval=50):
-    num_motors = len(all_motors)
+def move_all(target_cmds, interval=50, with_eyes = True):
+    if with_eyes:
+        num_motors = len(all_motors)
+    else:
+        num_motors = len(all_motors)-4
+
     # Get current motor joint angles:
     curr = np.zeros(num_motors)
     for i in range(num_motors):
@@ -322,42 +326,122 @@ def blink_seg(ti, c = 10, n_step= 8):
         l_lower_eyelid.norm_act(1-(ti-c)/n_step)
         r_lower_eyelid.norm_act(1-(ti-c)/n_step)  
 
-def random_move(restf, scale_range = 0.1,loop_time =50):
+def random_move(restf, scale_range = 0.1,loop_time =50,only_mouth=True):
+
+    blink_count_threshold = 9
+    blink_count = 0
+    blink_flag = False
+
     for i in range(loop_time):
         print(i)
-        target_cmds = random_cmds(reference=restf, noise=scale_range, only_mouth=True)
-        # target_cmds = resting_face1
-        # if i<49: continue
+        target_cmds = random_cmds(reference=restf, noise=scale_range, only_mouth=only_mouth)
+
 
         print(target_cmds)
         move_all(target_cmds,interval=50)
         # time.sleep(0.5)
 
-restart_face = [0.1, 0.0, 0.55556, 0.28571, 0.35714, 0.53846, 0.4625, 1, 0.42857, 0.42857, 0.66667, 0.66667] #0.3
-restart_face0 = [0.1, 0.0, 0.55556, 0.28571, 0.35714, 0.53846, 0.4625, .5, 0.42857, 0.42857, 0.66667, 0.66667] #0.3 open mouth
-smile_face = [0.8, 0, 0.8,  0.8, 0.8, 0.6, 0.6, 0.8, 0.4286, 0.4286, 0.6667, 0.6667] # 0.5
-smile_face0 = [0.8, 0, 0.8,  0.8, 0.8, 0.6, 0.6, 0.4, 0.4286, 0.4286, 0.6667, 0.6667] # 0.3 open mouth
+restart_face = [0.1, 0.0, 0.55556, 0.42857, 0.5, 0.32353, 0.24286, 1.0, 0.42857, 0.42857, 0.66667, 0.66667]
+restart_face0 = [0.1, 0.0, 0.55556, 0.42857, 0.5, 0.32353, 0.24286, 0.5, 0.42857, 0.42857, 0.66667, 0.66667]  #0.3 open mouth
+smile_face = [0.8, 0, 0.3,  0.8, 0.8, 0.6, 0.6, 0.8, 0.4286, 0.4286, 0.6667, 0.6667] # 0.5
+smile_face0 = [0.8, 0, 0.3,  0.8, 0.8, 0.6, 0.6, 0.4, 0.4286, 0.4286, 0.6667, 0.6667] # 0.3 open mouth
 pout_face = [0, 0.8, 1, 0.1, 0.1, 0.9, 0.9, 1.0, 0.42857, 0.42857, 0.66667, 0.66667] # 0.3
-pout_face0 = [0, 0.8, 1, 0.1, 0.1, 0.9, 0.9, .6, 0.42857, 0.42857, 0.66667, 0.66667] # 0.3
+# pout_face0 = [0, 0.8, 1, 0.1, 0.1, 0.9, 0.9, .6, 0.42857, 0.42857, 0.66667, 0.66667] # 0.3
 
-ref_face_list = [restart_face,restart_face0,smile_face,smile_face0,pout_face,pout_face0]
+ref_face_list = [restart_face,restart_face0,smile_face,smile_face0,pout_face]
+
 noise_list = [0.3,0.3,0.5,0.3,0.3,0.3]
  
 wired_face = [0.01833095 ,0.82924096, 0.44764508, 0.      ,   0.   ,      0.91063554, 0.91063554 ,1.   ,      0.42857  ,  0.42857 ,   0.66667  ,  0.66667    ]
 
 # combin_face = [resting_face,smile_face,upper_teeth]
 from scipy.signal import savgol_filter
-import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
 
+    import matplotlib.pyplot as plt
+    from matplotlib.widgets import Slider, Button
 
-    # action0830 = np.loadtxt('../data0830/action.csv')
+    # Create a figure and axis
+    fig, ax = plt.subplots(figsize=(20,10))
+    plt.subplots_adjust(left=0.5)
+
+    # Some initial data
+    index_d_motor = [0,1,2,3,5,7]
+    initial_data = np.asarray(restart_face)[index_d_motor]
+
+
+    bars = plt.bar(range(1, 7), initial_data)
+    plt.ylim(0,1)
+    x_label = ['Upper Lip', 'Upper Lip Warp', 'Lower Lip', 'Upper Corner', 'Lower Corner', 'Jaw']
+
+    # Vertical Slider
+    amp_slider_list = []
+    for i in range(6):
+        axamp = plt.axes([ 0.05 + 0.07 * i, 0.1, 0.02, 0.8])
+        amp_slider_list.append(Slider(axamp, x_label[i], 0., 1.0, valinit=initial_data[i], orientation="vertical"))
+
+
+    # Update function
+    def update(val):
+        action_list = []
+        for i in range(6):
+            amplitude = amp_slider_list[i].val
+            action_list.append(amplitude)
+            bars[i].set_height(amplitude)
+
+        fig.canvas.draw_idle()
+        action_list = np.hstack((action_list[:4],action_list[3:4],action_list[4:5],action_list[4:5],action_list[5:6]))
+        move_all(action_list,with_eyes=False,interval=10)
+
+        
+
+    # Register the update function with the slider
+    for i in range(6):
+        amp_slider_list[i].on_changed(update)
+
+    # Create a list to store values
+    stored_values = []
+
+    # Button press handler
+    def on_button_press(event):
+        current_values = [slider.val for slider in amp_slider_list]
+        stored_values.append(current_values)
+        print(f"Stored values{len(current_values)}:", current_values)
+
+    # Add a button
+    ax_button = plt.axes([0.4, 0.02, 0.2, 0.05])
+    button = Button(ax_button, 'Store Values')
+    button.on_clicked(on_button_press)
+
+
+    # Show the plot
+    plt.show()
+    np.savetxt('log_action.csv',stored_values)
+
+    quit()
+
+
+
+
+
+
+    # # load_cmd = np.loadtxt(f'../data/true-sweep-2/9.csv') #vocal-sweep-7
+    # # load_cmd = np.hstack((load_cmd[:,:4],load_cmd[:,3:4],load_cmd[:,4:5],load_cmd[:,4:5],load_cmd[:,5:6]))
+    # load_cmd = np.loadtxt(f'../../data1213/action.csv')
+
+
     # for i in range(1000):
     #     a = input()
     #     a = int(a)
-    #     action_list = action0830[a]
-    #     print(np.round(action_list,3))
+    #     # target_cmds = [ 0.621,  0.004,  0.305,  0.406, 0.406, -0.135, -0.135,  0.966]
+    #     # target_cmds = [ 0.621,  0.004,  0.305,  0.406, 0.406, -0.135, -0.135,  0.966]
+    #     target_cmds = load_cmd[a]
+    #     print(target_cmds)
+    #     for j in range(8):
+    #         target_cmds[j] = np.clip(target_cmds[j],0,1)
+    #         all_motors[j].norm_act(target_cmds[j])
+    # quit()
 
 
     ##########################################
@@ -394,21 +478,40 @@ if __name__ == "__main__":
     # move_all(restart_face)
     
     # scale = 0.3
-    # random_move(restart_face, scale,loop_time=1000)
-    # quit()
+    # random_move(restart_face, scale,loop_time=1000,only_mouth=True)
 
     ##########################################
     ########## Run commands (Record)##########
     ##########################################
 
-    time_interval = 1/25
-    # load_cmd = np.loadtxt('data/nvidia/smooth_mimic_synced_cmds.csv')
-    load_cmd = np.loadtxt('../../data0914/action.csv')
-    copy_first = np.copy(load_cmd[:2])
-    load_cmd = np.vstack((copy_first,load_cmd[1:-1]))
-    np.savetxt('../../data0914/action_tuned.csv',load_cmd)
+    # import os
+    # time_interval = 1/30
+    # idx_cmds = 0
 
-    load_cmd_filt = np.copy(load_cmd)
+    # filter_flag = False
+    # model_name = 'denim-dawn-82'
+    # load_cmd = np.loadtxt(f'../data/{model_name}/{idx_cmds}.csv')
+
+    # # model_name = "nn_100" #'eager-sweep-2' #'fanciful-sweep-1' 
+    # # load_cmd = np.loadtxt(f'../data/{model_name}/cmds_{idx_cmds}.csv')
+    # load_cmd = np.hstack((load_cmd[:,:4],load_cmd[:,3:4],load_cmd[:,4:5],load_cmd[:,4:5],load_cmd[:,5:6]))
+
+    # load_cmd = np.loadtxt('../data/nvidia/en_1_cmds.csv')
+    # load_cmd = np.loadtxt('../data/nvidia/fs2_nn_cmds.csv')
+
+    ####### After collecting data, shift the index ##########
+    # load_cmd = np.loadtxt('../../data1124/action.csv')
+    # copy_first = np.copy(load_cmd[:2])
+    # load_cmd = np.vstack((copy_first,load_cmd[1:-1]))
+    # np.savetxt('../data/action_tuned.csv',load_cmd)
+    # for i in range(100):
+    #     a_id = int(input())
+    #     target_cmds = load_cmd[a_id]
+    #     # target_cmds = ref_face_list[i%6]
+    #     for j in range(8):
+    #         all_motors[j].norm_act(target_cmds[j])
+    # quit()
+    ########################
 
     # # visualize commands
     # load_cmd_ori = np.copy(load_cmd)
@@ -427,19 +530,22 @@ if __name__ == "__main__":
     # quit()
     
     # Camera Record: 
-    record = False  # Frame by frame
-    # Smooth:
-    filter_flag = False
-    window = 15 #7 #13
-    order = 3 #2 #3
-    for i in range(9):
-        load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
-    time.sleep(1)
+    mode = 3
+
+    # for i in range(8):
+    #     load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
+    # time.sleep(1)
 
     if filter_flag:
+        load_cmd_filt = np.copy(load_cmd)
+            # Smooth:
+        window = 5 #7 #13
+        order = 2 #2 #3
+        load_cmd_filt= savgol_filter(load_cmd_filt, window, order) # window size 51, polynomial order 3
+    
         load_cmd = load_cmd_filt
 
-    if record == False:
+    if mode == 0:
         time0 = time.time()
         eyelid_traj_id = 0
         blink_count_threshold = 105
@@ -447,12 +553,11 @@ if __name__ == "__main__":
         blink_flag = False
         for i in range(len(load_cmd)):
             
-            A = int(input())
-            print(A)
-            target_cmds = load_cmd[A]
+            # A = int(input())
+            target_cmds = load_cmd[i]
             print(target_cmds)
             # Mouth movements
-            for j in range(9):
+            for j in range(8):
                 target_cmds[j] = np.clip(target_cmds[j],0,1)
                 all_motors[j].norm_act(target_cmds[j])
 
@@ -475,8 +580,7 @@ if __name__ == "__main__":
                 print('NOT REALTIME')
             time0 = time.time()
             
-
-    else:
+    elif mode == 1:
         print('record mode')
         #   RECORD A VIDEO
         from collect_data import *
@@ -553,4 +657,85 @@ if __name__ == "__main__":
             np.save('../gpt_demo_output/en1_m_lmks.npy', np.asarray(m_lmks_logger))
         cap.cap.release()
 
+    elif mode == 2:
+        import sys
+        sys.path.append('../../test/')
+        from camera_test import *
+        if filter_flag:
+            video_log_path = f'../data/{model_name}/filter/output{idx_cmds}.mp4'
+        else:
+            video_log_path = f'../data/{model_name}/output{idx_cmds}.mp4'
+        recorder = VideoRecorder(cam_id = 0,output_file=video_log_path)
+        recorder.start_recording()
+        time.sleep(4)
+        time0 = time.time()
+        for i in range(len(load_cmd)):
+            
+            target_cmds = load_cmd[i]
+            print(target_cmds)
+            # Mouth movements
+            for j in range(8):
+                target_cmds[j] = np.clip(target_cmds[j],0,1)
+                all_motors[j].norm_act(target_cmds[j])
+
+            time_used = time.time()-time0
+            if time_used<time_interval:
+                time.sleep(time_interval-time_used)
+            else:
+                print('NOT REALTIME')
+            time0 = time.time()
+
+        recorder.stop_recording()
+
+    elif mode == 3:
+        
+        cap = cv2.VideoCapture(0)
+        os.makedirs(f'../data/{model_name}/img{idx_cmds}/',exist_ok=True)
+        for img_i in range(len(load_cmd)):
+            if img_i == 0:
+                for _ in range(100):
+                    ret,image = cap.read()
+
+            target_cmds = load_cmd[img_i]
+
+            # execute the commands:
+            for j in range(8):
+                target_cmds[j] = np.clip(target_cmds[j],0,1)
+                all_motors[j].norm_act(target_cmds[j])
+
+            time1 =time.time()
+            for _ in range(30):
+                ret,image = cap.read()
+            time2 =time.time()
+            print(time2-time1)
+            # SAVE
+            cv2.imwrite(f'../data/{model_name}/img%d/%d.png' % (idx_cmds, img_i), image)
+
+
+
+    # only move jaw
+    else:
+        import sys
+        sys.path.append('../../test/')
+        from camera_test import *
+        if filter_flag:
+            video_log_path = f'../data/{model_name}/filter/output{idx_cmds}.mp4'
+        else:
+            video_log_path = f'../data/{model_name}/output{idx_cmds}.mp4'
+        recorder = VideoRecorder(cam_id = 0,output_file=video_log_path)
+        recorder.start_recording()
+        time.sleep(4)
+        time0 = time.time()
+        for i in range(len(load_cmd)):
+            target_cmds = np.clip(load_cmd[i],0,1)
+            all_motors[7].norm_act(target_cmds)
+
+            time_used = time.time()-time0
+            if time_used<time_interval:
+                time.sleep(time_interval-time_used)
+            else:
+                print('NOT REALTIME')
+            time0 = time.time()
+
+        recorder.stop_recording()
 
