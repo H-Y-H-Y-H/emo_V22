@@ -156,13 +156,12 @@ def render_img(image, face_mesh, pcf):
 if __name__ == "__main__":
     np.random.seed(2023)
 
-    mode = 1
-
+    mode = 2
 
     # Collect robot babbling data:
     if mode == 0:
-        from servo_m import *
-        save_data_pth = "../data0914/"
+        # from servo_m import *
+        save_data_pth = "../data1213/"
         os.makedirs(save_data_pth, exist_ok=True)
         os.makedirs(save_data_pth+'img/', exist_ok=True)
 
@@ -267,15 +266,25 @@ if __name__ == "__main__":
 
     # Collect landmarks from a video
     elif mode == 1:
+        video_id = 9
 
-        video_source = "data/desktop/synced_video.avi"
-        # video_source = '../EMO_GPTDEMO/result-2.avi'
+        # save_path = f'../EMO_GPTDEMO/robot_data/synthesized/'
+        # video_source = f'../EMO_GPTDEMO/robot_data/synthesized/video/{video_id}.mp4'
 
+        real_data_method ='denim-dawn-82' # 'charmed-sky-46' #'true-sweep-2' #'nn_100' #'wav_bl'#'om'
+        save_path = f'../EMO_GPTDEMO/robot_data/output_cmds/{real_data_method}_video/'
+        video_source = f'../EMO_GPTDEMO/robot_data/output_cmds/{real_data_method}_video/{video_id}.mp4'
+
+        os.makedirs(save_path + f'lmks_rendering/{video_id}/', exist_ok=True)
+        os.makedirs(save_path + 'lmks/', exist_ok=True)
+
+        print(video_source)
         cap = cv2.VideoCapture(video_source)
-        cap.set(cv2.CAP_PROP_FPS, 25)
+        cap.set(cv2.CAP_PROP_FPS, 30)
         # get cap property
-        frame_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
-        frame_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        frame_width,frame_height = 480,480
+        # frame_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
+        # frame_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
         focal_length = frame_width
         center = (frame_width / 2, frame_height / 2)
@@ -315,18 +324,89 @@ if __name__ == "__main__":
                 if not ret:
                     print("Can't receive frame (stream end?). Exiting ...")
                     break
-
+                # image = cv2.resize(image,(480,480))
+                # image = image[(480-320)//2:(480+320)//2, (480-320)//2:(480+320)//2]
+                print(image.shape)
                 image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
+                print(image_show.shape)
                 r_lmks_logger.append(raw_lmks)
                 m_lmks_logger.append(m_lmks)
 
                 cv2.imshow('landmarks', image_show)
-                cv2.imwrite('/Users/yuhan/PycharmProjects/EMO_GPTDEMO/synthesized_lmks/%d.png'%count,image_show)
+                cv2.imwrite(save_path+'lmks_rendering/%d/%d.png'%(video_id,count),image_show)
+
                 print(count)
                 count+=1
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
 
-            np.save('data/desktop/emo_synced_lmks.npy', m_lmks_logger)
-
+            np.save(save_path+'lmks/m_lmks_%d.npy'%video_id, m_lmks_logger)
+            # np.save(save_path+'r_lmks_%d.npy'%video_id, r_lmks_logger)
         cap.release()
+
+    elif mode == 2:
+
+        img_source = "../EMO_GPTDEMO/robot_data/data1213/"
+        os.makedirs(img_source+'robot_dataset_img',exist_ok=True)
+        Num_data = 15000
+
+        # get cap property
+        frame_width = 480 #= cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
+        frame_height = 480#cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+
+        focal_length = frame_width
+        center = (frame_width / 2, frame_height / 2)
+        camera_matrix = np.array(
+            [[focal_length, 0, center[0]], [0, focal_length, center[1]], [0, 0, 1]],
+            dtype="double",
+        )
+
+        pcf = PCF(
+            near=1,
+            far=10000,
+            frame_height=frame_height,
+            frame_width=frame_width,
+            fy=camera_matrix[1, 1]
+        )
+
+        # cv2.namedWindow("landmarks")
+        # cv2.createTrackbar("vert", "landmarks", 180, 360, do_nothing)
+        # cv2.createTrackbar("hori", "landmarks", 180, 360, do_nothing)
+        img_i = 0
+        r_lmks_logger = []
+        m_lmks_logger = []
+        action_logger = []
+
+        with mp_face_mesh.FaceMesh(
+                max_num_faces=1,
+                refine_landmarks=True,
+                min_detection_confidence=0.5,
+                min_tracking_confidence=0.5) as face_mesh:
+            m_lmks = 0
+            raw_lmks = 0
+            image_show = 0
+
+            for i in range(Num_data):
+                print(i)
+                # ret, image = cap.read()
+                # if not ret:
+                #     print("Can't receive frame (stream end?). Exiting ...")
+                #     break
+                image = cv2.imread(img_source+'/img/%d.png'%i)
+                # image = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+                # image = np.dstack((image,image,image))
+                image = image[:,(640-480)//2:(640+480)//2 ]
+
+                image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
+                r_lmks_logger.append(raw_lmks)
+                m_lmks_logger.append(m_lmks)
+
+                # cv2.imshow('landmarks', image_show)
+                cv2.imwrite(img_source+'/robot_dataset_img/%d.png'%i,image_show)
+
+                # if cv2.waitKey(5) & 0xFF == 27:
+                #     break
+
+            np.save(img_source+'/m_lmks.npy', m_lmks_logger)
+            np.save(img_source+'/r_lmks.npy', r_lmks_logger)
+

@@ -193,16 +193,18 @@ def render_img(image,face_mesh,pcf):
 lips_idx = [0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 78, 191, 80,
             81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
 inner_lips_idx = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
+mouth_lmks = lips_idx+inner_lips_idx
 
-
-def nearest_neighber(lmks, dataset, only_mouth = False,normalize = False,rank_data = 20):
-
+def nearest_neighber(lmks, dataset, only_mouth = False, normalize = False,rank_data = 20):
 
     if only_mouth:
-
-        compare_idx = lips_idx + inner_lips_idx
-        dataset = dataset[:,compare_idx]
-        lmks = lmks[compare_idx]
+        if lmks.shape[0]==478:
+            lmks = lmks[mouth_lmks]
+            dataset = dataset[:,mouth_lmks]
+            print('lips only')
+        else:
+            lmks = lmks[49:]
+            dataset = dataset[:,49:]
 
         if normalize:
             dataset_min = dataset.min(axis=(0, 1), keepdims=True)
@@ -210,20 +212,15 @@ def nearest_neighber(lmks, dataset, only_mouth = False,normalize = False,rank_da
             dataset = (dataset - dataset_min) / (dataset_max - dataset_min)
             lmks = (lmks - dataset_min[0]) / (dataset_max - dataset_min[0])
 
-            # distance = (lmks - dataset[:,compare_idx]) ** 2
-
-        # else:
-        #     distance = (lmks[compare_idx] - dataset[:,compare_idx]) ** 2
-
     # MSE
     # distance = np.mean(np.mean(distance, axis=1), axis=1)
-    distance = np.sum((dataset - lmks) ** 2, axis=(1, 2))
+    distance = np.mean(np.abs(dataset - lmks), axis=(1, 2))
 
     rank = np.argsort(distance)
     best_nn_id = rank[0]
     rank_nn_id = rank[:rank_data]
     rank_distance = distance[rank_nn_id]
-    print(rank_distance)
+    # print(rank_distance)
     print(rank_nn_id)
 
     return best_nn_id, rank_nn_id,rank_distance
@@ -231,25 +228,24 @@ def nearest_neighber(lmks, dataset, only_mouth = False,normalize = False,rank_da
 
 if __name__ == "__main__":
 
-    source_pth = 'data/desktop/synced_video.avi'
+    source_pth = 'data/desktop/synced_video_1103heygen.mp4'
 
-    dataset_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/data0914/'
+    dataset_pth = '/Users/yuhan/PycharmProjects/EMO_GPTDEMO/robot_data/data1201/'
 
-    filter_out = 3043
-    dataset = np.load(dataset_pth + 'm_lmks.npy')[filter_out:]
+    # filter_out = 3043
+    dataset = np.load(dataset_pth + 'm_lmks.npy')
 
 
     # dataset = smooth_lmks(dataset)
 
     WEB_CAM = True
-    LOG_VIDEO = False
+    SAVERESULTS_VIDEO = False
 
     if WEB_CAM:
         cap = VideoCapture(0)
         # get cap property
         frame_width = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
         frame_height = cap.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-
 
     else:
         cap = cv2.VideoCapture(source_pth)
@@ -260,7 +256,7 @@ if __name__ == "__main__":
         frame_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
         frame_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
-    if LOG_VIDEO:
+    if SAVERESULTS_VIDEO:
         # choose codec according to format needed
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         video = cv2.VideoWriter('data/desktop/video.avi', fourcc, 25, (640, 960))
@@ -286,6 +282,10 @@ if __name__ == "__main__":
     cv2.createTrackbar("vert", "landmarks", 180, 360, do_nothing)
     cv2.createTrackbar("hori", "landmarks", 180, 360, do_nothing)
 
+
+    compare_idx = lips_idx + inner_lips_idx
+    dataset = dataset[:, compare_idx]
+
     with mp_face_mesh.FaceMesh(
             max_num_faces=1,
             refine_landmarks=True,
@@ -298,9 +298,12 @@ if __name__ == "__main__":
                 break
             image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
 
-            best_nn_id = nearest_neighber(m_lmks, dataset, only_mouth=True,normalize=True)
+            m_lmks = m_lmks[compare_idx]
 
-            nn_img = cv2.imread(dataset_pth + 'img/%d.png' % (best_nn_id+filter_out))
+
+            best_nn_id, rank_nn_id,rank_distance = nearest_neighber(m_lmks, dataset, only_mouth=True,normalize=True)
+
+            nn_img = cv2.imread(dataset_pth + 'img/%d.png' % (best_nn_id))
             nn_img1 = nn_img[:, 160:480]
             nn_img2 = nn_img[:, 800:1120]
             nn_img = np.hstack((nn_img1, nn_img2))
@@ -313,7 +316,7 @@ if __name__ == "__main__":
 
             cv2.imshow('landmarks', image_show)
             cv2.imshow('Robot', nn_img)
-            if LOG_VIDEO:
+            if SAVERESULTS_VIDEO:
                 video.write(nn_img)
             # plt.show()
             # break
