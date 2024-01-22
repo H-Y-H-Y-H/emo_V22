@@ -79,8 +79,8 @@ lip_down = Actuator(idx_tuple=(1, 11), min_angle=80, max_angle=125, init_angle=1
 # lip_down.norm_act(0)
 
 
-r_corner_up = Actuator(idx_tuple=(0, 2), min_angle=40, max_angle=110, init_angle=70)
-l_corner_up = Actuator(idx_tuple=(0, 7), min_angle=20, max_angle=90, init_angle=55, inverse_flag=1)
+r_corner_up = Actuator(idx_tuple=(0, 2), min_angle=40, max_angle=90, init_angle=60)
+l_corner_up = Actuator(idx_tuple=(0, 7), min_angle=40, max_angle=90, init_angle=70, inverse_flag=1)
 
 r_corner_low = Actuator(idx_tuple=(0, 3), min_angle=30, max_angle=98, init_angle=52)
 l_corner_low = Actuator(idx_tuple=(0, 6), min_angle=85, max_angle=155, init_angle=138, inverse_flag=1)
@@ -341,16 +341,20 @@ def random_move(restf, scale_range = 0.1,loop_time =50,only_mouth=True):
         move_all(target_cmds,interval=50)
         # time.sleep(0.5)
 
-restart_face = [0.1, 0.0, 0.55556, 0.42857, 0.5, 0.32353, 0.24286, 1.0, 0.42857, 0.42857, 0.66667, 0.66667]
-restart_face0 = [0.1, 0.0, 0.55556, 0.42857, 0.5, 0.32353, 0.24286, 0.5, 0.42857, 0.42857, 0.66667, 0.66667]  #0.3 open mouth
+restart_face = []
+for m in all_motors:
+        restart_face.append(round(m.norm_v_cur,5))
+print(restart_face)
+
+restart_face = [0.1, 0.0, 0.55556, 0.4, 0.4, 0.32353, 0.24286, 1.0, 0.42857, 0.42857, 0.66667, 0.66667]
 smile_face = [0.8, 0, 0.3,  0.8, 0.8, 0.6, 0.6, 0.8, 0.4286, 0.4286, 0.6667, 0.6667] # 0.5
 smile_face0 = [0.8, 0, 0.3,  0.8, 0.8, 0.6, 0.6, 0.4, 0.4286, 0.4286, 0.6667, 0.6667] # 0.3 open mouth
 pout_face = [0, 0.8, 1, 0.1, 0.1, 0.9, 0.9, 1.0, 0.42857, 0.42857, 0.66667, 0.66667] # 0.3
 # pout_face0 = [0, 0.8, 1, 0.1, 0.1, 0.9, 0.9, .6, 0.42857, 0.42857, 0.66667, 0.66667] # 0.3
 
-ref_face_list = [restart_face,restart_face0,smile_face,smile_face0,pout_face]
+ref_face_list = [restart_face,smile_face,smile_face0,pout_face]
 
-noise_list = [0.3,0.3,0.5,0.3,0.3,0.3]
+noise_list = [0.3,0.5,0.3,0.3,0.3]
  
 wired_face = [0.01833095 ,0.82924096, 0.44764508, 0.      ,   0.   ,      0.91063554, 0.91063554 ,1.   ,      0.42857  ,  0.42857 ,   0.66667  ,  0.66667    ]
 
@@ -358,69 +362,106 @@ wired_face = [0.01833095 ,0.82924096, 0.44764508, 0.      ,   0.   ,      0.9106
 from scipy.signal import savgol_filter
 
 if __name__ == "__main__":
-
     import matplotlib.pyplot as plt
-    from matplotlib.widgets import Slider, Button
 
-    # Create a figure and axis
-    fig, ax = plt.subplots(figsize=(20,10))
-    plt.subplots_adjust(left=0.5)
-
-    # Some initial data
-    index_d_motor = [0,1,2,3,5,7]
-    initial_data = np.asarray(restart_face)[index_d_motor]
+    mode = 2
 
 
-    bars = plt.bar(range(1, 7), initial_data)
-    plt.ylim(0,1)
-    x_label = ['Upper Lip', 'Upper Lip Warp', 'Lower Lip', 'Upper Corner', 'Lower Corner', 'Jaw']
+    # Run commands by input index.
+    if mode == 0:
+        file_name = 'action_source.csv'
+        load_cmd = np.loadtxt(file_name)
 
-    # Vertical Slider
-    amp_slider_list = []
-    for i in range(6):
-        axamp = plt.axes([ 0.05 + 0.07 * i, 0.1, 0.02, 0.8])
-        amp_slider_list.append(Slider(axamp, x_label[i], 0., 1.0, valinit=initial_data[i], orientation="vertical"))
+        for i in range(1000):
+            a = input()
+            a = int(a)
+            target_cmds = load_cmd[a]
+            target_cmds = np.hstack((target_cmds[:4],target_cmds[3:4],target_cmds[4:5],target_cmds[4:5],target_cmds[5:6]))
+
+            print(target_cmds)
+            for j in range(8):
+                target_cmds[j] = np.clip(target_cmds[j],0,1)
+                all_motors[j].norm_act(target_cmds[j])
+    
+
+    # Control bar interface.
+    elif mode == 1:
+        from matplotlib.widgets import Slider, Button
+
+        # Create a figure and axis
+        fig, ax = plt.subplots(figsize=(20,10))
+        plt.subplots_adjust(left=0.5)
+
+        # Some initial data
+        index_d_motor = [0,1,2,3,5,7]
+        initial_data = np.asarray(restart_face)[index_d_motor]
 
 
-    # Update function
-    def update(val):
-        action_list = []
+        bars = plt.bar(range(1, 7), initial_data)
+        plt.ylim(0,1)
+        x_label = ['Upper Lip', 'Upper Lip Warp', 'Lower Lip', 'Upper Corner', 'Lower Corner', 'Jaw']
+
+        # Vertical Slider
+        amp_slider_list = []
         for i in range(6):
-            amplitude = amp_slider_list[i].val
-            action_list.append(amplitude)
-            bars[i].set_height(amplitude)
+            axamp = plt.axes([ 0.05 + 0.07 * i, 0.1, 0.02, 0.8])
+            amp_slider_list.append(Slider(axamp, x_label[i], 0., 1.0, valinit=initial_data[i], orientation="vertical"))
 
-        fig.canvas.draw_idle()
-        action_list = np.hstack((action_list[:4],action_list[3:4],action_list[4:5],action_list[4:5],action_list[5:6]))
-        move_all(action_list,with_eyes=False,interval=10)
 
+        # Update function
+        def update(val):
+            action_list = []
+            for i in range(6):
+                amplitude = amp_slider_list[i].val
+                action_list.append(amplitude)
+                bars[i].set_height(amplitude)
+
+            fig.canvas.draw_idle()
+            action_list = np.hstack((action_list[:4],action_list[3:4],action_list[4:5],action_list[4:5],action_list[5:6]))
+            move_all(action_list,with_eyes=False,interval=10)
+
+
+        # Register the update function with the slider
+        for i in range(6):
+            amp_slider_list[i].on_changed(update)
+
+        # Create a list to store values
+        stored_values = []
+
+        # Button press handler
+        def on_button_press(event):
+            current_values = [slider.val for slider in amp_slider_list]
+            stored_values.append(current_values)
+            print(f"Stored values{len(current_values)}:", current_values)
+
+        # Add a button
+        ax_button = plt.axes([0.4, 0.02, 0.2, 0.05])
+        button = Button(ax_button, 'Store Values')
+        button.on_clicked(on_button_press)
+
+
+        # Show the plot
+        plt.show()
+        np.savetxt('log_action.csv',stored_values)
+
+
+    # show figures of Gaussian noised action source
+    elif mode == 2:
+        color_list = ['#7FFFD4','#C79FEF','#A52A2A',"#FFA500","#9ACD32",'#006400','#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+        action_source = np.loadtxt('action_source.csv')
+        noise = 0.1
+        N = 200
+        for i in range(len(action_source)):
+            action_array = action_source[i]
+            action_array = np.asarray([action_array]*N)
+            
+            # noise
+            action_array = np.random.normal(action_array,scale = noise)
+            for j in range(N):
+                plt.plot(action_array[j],c=color_list[i],alpha=0.5)
         
-
-    # Register the update function with the slider
-    for i in range(6):
-        amp_slider_list[i].on_changed(update)
-
-    # Create a list to store values
-    stored_values = []
-
-    # Button press handler
-    def on_button_press(event):
-        current_values = [slider.val for slider in amp_slider_list]
-        stored_values.append(current_values)
-        print(f"Stored values{len(current_values)}:", current_values)
-
-    # Add a button
-    ax_button = plt.axes([0.4, 0.02, 0.2, 0.05])
-    button = Button(ax_button, 'Store Values')
-    button.on_clicked(on_button_press)
-
-
-    # Show the plot
-    plt.show()
-    np.savetxt('log_action.csv',stored_values)
-
-    quit()
-
+        
+        plt.savefig(f'source_action_figure/{N}noise_{noise}.png')
 
 
 
@@ -470,10 +511,7 @@ if __name__ == "__main__":
 
     # np.random.seed(3)
 
-    # restart_face = []
-    # for m in all_motors:
-    #      restart_face.append(round(m.norm_v_cur,5))
-    # print(restart_face)
+
     
     # move_all(restart_face)
     
@@ -529,213 +567,213 @@ if __name__ == "__main__":
     #     plt.clf()
     # quit()
     
-    # Camera Record: 
-    mode = 3
+    # # Camera Record: 
+    # mode = 3
 
-    # for i in range(8):
-    #     load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
-    # time.sleep(1)
+    # # for i in range(8):
+    # #     load_cmd_filt[:,i] = savgol_filter(load_cmd_filt[:,i], window, order) # window size 51, polynomial order 3
+    # # time.sleep(1)
 
-    if filter_flag:
-        load_cmd_filt = np.copy(load_cmd)
-            # Smooth:
-        window = 5 #7 #13
-        order = 2 #2 #3
-        load_cmd_filt= savgol_filter(load_cmd_filt, window, order) # window size 51, polynomial order 3
+    # if filter_flag:
+    #     load_cmd_filt = np.copy(load_cmd)
+    #         # Smooth:
+    #     window = 5 #7 #13
+    #     order = 2 #2 #3
+    #     load_cmd_filt= savgol_filter(load_cmd_filt, window, order) # window size 51, polynomial order 3
     
-        load_cmd = load_cmd_filt
+    #     load_cmd = load_cmd_filt
 
-    if mode == 0:
-        time0 = time.time()
-        eyelid_traj_id = 0
-        blink_count_threshold = 105
-        blink_count = 0
-        blink_flag = False
-        for i in range(len(load_cmd)):
+    # if mode == 0:
+    #     time0 = time.time()
+    #     eyelid_traj_id = 0
+    #     blink_count_threshold = 105
+    #     blink_count = 0
+    #     blink_flag = False
+    #     for i in range(len(load_cmd)):
             
-            # A = int(input())
-            target_cmds = load_cmd[i]
-            print(target_cmds)
-            # Mouth movements
-            for j in range(8):
-                target_cmds[j] = np.clip(target_cmds[j],0,1)
-                all_motors[j].norm_act(target_cmds[j])
+    #         # A = int(input())
+    #         target_cmds = load_cmd[i]
+    #         print(target_cmds)
+    #         # Mouth movements
+    #         for j in range(8):
+    #             target_cmds[j] = np.clip(target_cmds[j],0,1)
+    #             all_motors[j].norm_act(target_cmds[j])
 
-            ########## blink ###########
-            # if blink_count > blink_count_threshold:
-            #     blink_flag = True
-            #     blink_count = 0
+    #         ########## blink ###########
+    #         # if blink_count > blink_count_threshold:
+    #         #     blink_flag = True
+    #         #     blink_count = 0
 
-            # if blink_flag:
-            #     blink_seg(blink_count)
-            #     if blink_count == 18:
-            #         blink_count = 0
-            #         blink_flag = False
-            # blink_count +=1
+    #         # if blink_flag:
+    #         #     blink_seg(blink_count)
+    #         #     if blink_count == 18:
+    #         #         blink_count = 0
+    #         #         blink_flag = False
+    #         # blink_count +=1
 
-            time_used = time.time()-time0
-            if time_used<time_interval:
-                time.sleep(time_interval-time_used)
-            else:
-                print('NOT REALTIME')
-            time0 = time.time()
+    #         time_used = time.time()-time0
+    #         if time_used<time_interval:
+    #             time.sleep(time_interval-time_used)
+    #         else:
+    #             print('NOT REALTIME')
+    #         time0 = time.time()
             
-    elif mode == 1:
-        print('record mode')
-        #   RECORD A VIDEO
-        from collect_data import *
-        from realtime_landmark import *
+    # elif mode == 1:
+    #     print('record mode')
+    #     #   RECORD A VIDEO
+    #     from collect_data import *
+    #     from realtime_landmark import *
 
-        cap = VideoCapture(4)
+    #     cap = VideoCapture(4)
 
-        # get cap property
-        frame_width = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
-        frame_height = cap.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    #     # get cap property
+    #     frame_width = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
+    #     frame_height = cap.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
-        focal_length = frame_width
-        center = (frame_width / 2, frame_height / 2)
-        camera_matrix = np.array(
-            [[focal_length, 0, center[0]], [0, focal_length, center[1]], [0, 0, 1]],
-            dtype="double",
-        )
+    #     focal_length = frame_width
+    #     center = (frame_width / 2, frame_height / 2)
+    #     camera_matrix = np.array(
+    #         [[focal_length, 0, center[0]], [0, focal_length, center[1]], [0, 0, 1]],
+    #         dtype="double",
+    #     )
 
-        pcf = PCF(
-            near=1,
-            far=10000,
-            frame_height=frame_height,
-            frame_width=frame_width,
-            fy=camera_matrix[1, 1]
-        )
+    #     pcf = PCF(
+    #         near=1,
+    #         far=10000,
+    #         frame_height=frame_height,
+    #         frame_width=frame_width,
+    #         fy=camera_matrix[1, 1]
+    #     )
 
-        # cv2.namedWindow("landmarks")
-        # cv2.createTrackbar("vert", "landmarks", 180, 360, do_nothing)
-        # cv2.createTrackbar("hori", "landmarks", 180, 360, do_nothing)
-        img_i = 0
-        r_lmks_logger = []
-        m_lmks_logger = []
-        action_logger = []
+    #     # cv2.namedWindow("landmarks")
+    #     # cv2.createTrackbar("vert", "landmarks", 180, 360, do_nothing)
+    #     # cv2.createTrackbar("hori", "landmarks", 180, 360, do_nothing)
+    #     img_i = 0
+    #     r_lmks_logger = []
+    #     m_lmks_logger = []
+    #     action_logger = []
 
-        with mp_face_mesh.FaceMesh(
-                max_num_faces=1,
-                refine_landmarks=True,
-                min_detection_confidence=0.5,
-                min_tracking_confidence=0.5) as face_mesh:
-            for i in range(len(load_cmd)):
-                if img_i == 0:
-                    for _ in range(100):
-                        image = cap.read()
+    #     with mp_face_mesh.FaceMesh(
+    #             max_num_faces=1,
+    #             refine_landmarks=True,
+    #             min_detection_confidence=0.5,
+    #             min_tracking_confidence=0.5) as face_mesh:
+    #         for i in range(len(load_cmd)):
+    #             if img_i == 0:
+    #                 for _ in range(100):
+    #                     image = cap.read()
 
-                target_cmds = load_cmd[i]
+    #             target_cmds = load_cmd[i]
 
-                # execute the commands:
-                for j in range(9):
-                    target_cmds[j] = np.clip(target_cmds[j],0,1)
-                    all_motors[j].norm_act(target_cmds[j])
+    #             # execute the commands:
+    #             for j in range(9):
+    #                 target_cmds[j] = np.clip(target_cmds[j],0,1)
+    #                 all_motors[j].norm_act(target_cmds[j])
 
-                time.sleep(0.03)
+    #             time.sleep(0.03)
 
-                image = cap.read()
-                # if not success:
-                #     print("Ignoring empty camera frame.")
-                #     # If loading a video, use 'break' instead of 'continue'.
-                #     continue
+    #             image = cap.read()
+    #             # if not success:
+    #             #     print("Ignoring empty camera frame.")
+    #             #     # If loading a video, use 'break' instead of 'continue'.
+    #             #     continue
 
-                image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
-                # r_lmks_logger.append(raw_lmks)
-                m_lmks_logger.append(m_lmks)
+    #             image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
+    #             # r_lmks_logger.append(raw_lmks)
+    #             m_lmks_logger.append(m_lmks)
 
-                # SAVE
-                cv2.imwrite('../gpt_demo_output/img/%d.png' % img_i, image_show)
-                img_i += 1
-                # if img_i % 20 == 0:
-                    # np.save('../dataset/resting_r_lmks.npy', np.asarray(r_lmks_logger))
+    #             # SAVE
+    #             cv2.imwrite('../gpt_demo_output/img/%d.png' % img_i, image_show)
+    #             img_i += 1
+    #             # if img_i % 20 == 0:
+    #                 # np.save('../dataset/resting_r_lmks.npy', np.asarray(r_lmks_logger))
 
-                # cv2.imshow('landmarks', image_show)
+    #             # cv2.imshow('landmarks', image_show)
 
-                if cv2.waitKey(5) & 0xFF == 27:
-                    break
-            np.save('../gpt_demo_output/en1_m_lmks.npy', np.asarray(m_lmks_logger))
-        cap.cap.release()
+    #             if cv2.waitKey(5) & 0xFF == 27:
+    #                 break
+    #         np.save('../gpt_demo_output/en1_m_lmks.npy', np.asarray(m_lmks_logger))
+    #     cap.cap.release()
 
-    elif mode == 2:
-        import sys
-        sys.path.append('../../test/')
-        from camera_test import *
-        if filter_flag:
-            video_log_path = f'../data/{model_name}/filter/output{idx_cmds}.mp4'
-        else:
-            video_log_path = f'../data/{model_name}/output{idx_cmds}.mp4'
-        recorder = VideoRecorder(cam_id = 0,output_file=video_log_path)
-        recorder.start_recording()
-        time.sleep(4)
-        time0 = time.time()
-        for i in range(len(load_cmd)):
+    # elif mode == 2:
+    #     import sys
+    #     sys.path.append('../../test/')
+    #     from camera_test import *
+    #     if filter_flag:
+    #         video_log_path = f'../data/{model_name}/filter/output{idx_cmds}.mp4'
+    #     else:
+    #         video_log_path = f'../data/{model_name}/output{idx_cmds}.mp4'
+    #     recorder = VideoRecorder(cam_id = 0,output_file=video_log_path)
+    #     recorder.start_recording()
+    #     time.sleep(4)
+    #     time0 = time.time()
+    #     for i in range(len(load_cmd)):
             
-            target_cmds = load_cmd[i]
-            print(target_cmds)
-            # Mouth movements
-            for j in range(8):
-                target_cmds[j] = np.clip(target_cmds[j],0,1)
-                all_motors[j].norm_act(target_cmds[j])
+    #         target_cmds = load_cmd[i]
+    #         print(target_cmds)
+    #         # Mouth movements
+    #         for j in range(8):
+    #             target_cmds[j] = np.clip(target_cmds[j],0,1)
+    #             all_motors[j].norm_act(target_cmds[j])
 
-            time_used = time.time()-time0
-            if time_used<time_interval:
-                time.sleep(time_interval-time_used)
-            else:
-                print('NOT REALTIME')
-            time0 = time.time()
+    #         time_used = time.time()-time0
+    #         if time_used<time_interval:
+    #             time.sleep(time_interval-time_used)
+    #         else:
+    #             print('NOT REALTIME')
+    #         time0 = time.time()
 
-        recorder.stop_recording()
+    #     recorder.stop_recording()
 
-    elif mode == 3:
+    # elif mode == 3:
         
-        cap = cv2.VideoCapture(0)
-        os.makedirs(f'../data/{model_name}/img{idx_cmds}/',exist_ok=True)
-        for img_i in range(len(load_cmd)):
-            if img_i == 0:
-                for _ in range(100):
-                    ret,image = cap.read()
+    #     cap = cv2.VideoCapture(0)
+    #     os.makedirs(f'../data/{model_name}/img{idx_cmds}/',exist_ok=True)
+    #     for img_i in range(len(load_cmd)):
+    #         if img_i == 0:
+    #             for _ in range(100):
+    #                 ret,image = cap.read()
 
-            target_cmds = load_cmd[img_i]
+    #         target_cmds = load_cmd[img_i]
 
-            # execute the commands:
-            for j in range(8):
-                target_cmds[j] = np.clip(target_cmds[j],0,1)
-                all_motors[j].norm_act(target_cmds[j])
+    #         # execute the commands:
+    #         for j in range(8):
+    #             target_cmds[j] = np.clip(target_cmds[j],0,1)
+    #             all_motors[j].norm_act(target_cmds[j])
 
-            time1 =time.time()
-            for _ in range(30):
-                ret,image = cap.read()
-            time2 =time.time()
-            print(time2-time1)
-            # SAVE
-            cv2.imwrite(f'../data/{model_name}/img%d/%d.png' % (idx_cmds, img_i), image)
+    #         time1 =time.time()
+    #         for _ in range(30):
+    #             ret,image = cap.read()
+    #         time2 =time.time()
+    #         print(time2-time1)
+    #         # SAVE
+    #         cv2.imwrite(f'../data/{model_name}/img%d/%d.png' % (idx_cmds, img_i), image)
 
 
 
-    # only move jaw
-    else:
-        import sys
-        sys.path.append('../../test/')
-        from camera_test import *
-        if filter_flag:
-            video_log_path = f'../data/{model_name}/filter/output{idx_cmds}.mp4'
-        else:
-            video_log_path = f'../data/{model_name}/output{idx_cmds}.mp4'
-        recorder = VideoRecorder(cam_id = 0,output_file=video_log_path)
-        recorder.start_recording()
-        time.sleep(4)
-        time0 = time.time()
-        for i in range(len(load_cmd)):
-            target_cmds = np.clip(load_cmd[i],0,1)
-            all_motors[7].norm_act(target_cmds)
+    # # only move jaw
+    # else:
+    #     import sys
+    #     sys.path.append('../../test/')
+    #     from camera_test import *
+    #     if filter_flag:
+    #         video_log_path = f'../data/{model_name}/filter/output{idx_cmds}.mp4'
+    #     else:
+    #         video_log_path = f'../data/{model_name}/output{idx_cmds}.mp4'
+    #     recorder = VideoRecorder(cam_id = 0,output_file=video_log_path)
+    #     recorder.start_recording()
+    #     time.sleep(4)
+    #     time0 = time.time()
+    #     for i in range(len(load_cmd)):
+    #         target_cmds = np.clip(load_cmd[i],0,1)
+    #         all_motors[7].norm_act(target_cmds)
 
-            time_used = time.time()-time0
-            if time_used<time_interval:
-                time.sleep(time_interval-time_used)
-            else:
-                print('NOT REALTIME')
-            time0 = time.time()
+    #         time_used = time.time()-time0
+    #         if time_used<time_interval:
+    #             time.sleep(time_interval-time_used)
+    #         else:
+    #             print('NOT REALTIME')
+    #         time0 = time.time()
 
-        recorder.stop_recording()
+    #     recorder.stop_recording()
 
