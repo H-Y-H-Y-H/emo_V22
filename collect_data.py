@@ -156,7 +156,7 @@ def render_img(image, face_mesh, pcf):
 if __name__ == "__main__":
     np.random.seed(2023)
 
-    mode = 2
+    mode = 3
 
     # Collect robot babbling data:
     if mode == 0:
@@ -266,14 +266,14 @@ if __name__ == "__main__":
 
     # Collect landmarks from a video
     elif mode == 1:
-        video_id = 9
+        video_id = 10
 
-        # save_path = f'../EMO_GPTDEMO/robot_data/synthesized/'
-        # video_source = f'../EMO_GPTDEMO/robot_data/synthesized/video/{video_id}.mp4'
+        save_path = f'../EMO_GPTDEMO/robot_data/synthesized/'
+        video_source = f'../EMO_GPTDEMO/robot_data/synthesized/video/{video_id}.mp4'
 
-        real_data_method ='denim-dawn-82' # 'charmed-sky-46' #'true-sweep-2' #'nn_100' #'wav_bl'#'om'
-        save_path = f'../EMO_GPTDEMO/robot_data/output_cmds/{real_data_method}_video/'
-        video_source = f'../EMO_GPTDEMO/robot_data/output_cmds/{real_data_method}_video/{video_id}.mp4'
+        # real_data_method ='denim-dawn-82' # 'charmed-sky-46' #'true-sweep-2' #'nn_100' #'wav_bl'#'om'
+        # save_path = f'../EMO_GPTDEMO/robot_data/output_cmds/{real_data_method}_video/'
+        # video_source = f'../EMO_GPTDEMO/robot_data/output_cmds/{real_data_method}_video/{video_id}.mp4'
 
         os.makedirs(save_path + f'lmks_rendering/{video_id}/', exist_ok=True)
         os.makedirs(save_path + 'lmks/', exist_ok=True)
@@ -346,9 +346,9 @@ if __name__ == "__main__":
 
     elif mode == 2:
 
-        img_source = "../EMO_GPTDEMO/robot_data/data1213/"
+        img_source = "../EMO_GPTDEMO/robot_data/data0127/"
         os.makedirs(img_source+'robot_dataset_img',exist_ok=True)
-        Num_data = 15000
+        Num_data = 30000
 
         # get cap property
         frame_width = 480 #= cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
@@ -402,11 +402,72 @@ if __name__ == "__main__":
                 m_lmks_logger.append(m_lmks)
 
                 # cv2.imshow('landmarks', image_show)
-                cv2.imwrite(img_source+'/robot_dataset_img/%d.png'%i,image_show)
+                # cv2.imwrite(img_source+'/robot_dataset_img/%d.png'%i,image_show)
 
                 # if cv2.waitKey(5) & 0xFF == 27:
                 #     break
 
             np.save(img_source+'/m_lmks.npy', m_lmks_logger)
             np.save(img_source+'/r_lmks.npy', r_lmks_logger)
+
+    # Collect landmarks from frames.
+    elif mode == 3:
+        model_name = 'still-sweep-2'
+        video_id = 9
+        source_path = f'../EMO_GPTDEMO/robot_data/output_cmds/{model_name}/'
+
+        action_list_path = source_path+f'/{video_id}.csv'
+
+        n_frame = len(np.loadtxt(action_list_path))
+        # get cap property
+        frame_width = 480
+        frame_height = 480
+
+        focal_length = frame_width
+        center = (frame_width / 2, frame_height / 2)
+        camera_matrix = np.array(
+            [[focal_length, 0, center[0]], [0, focal_length, center[1]], [0, 0, 1]],
+            dtype="double",
+        )
+
+        pcf = PCF(
+            near=1,
+            far=10000,
+            frame_height=frame_height,
+            frame_width=frame_width,
+            fy=camera_matrix[1, 1]
+        )
+
+
+        r_lmks_logger = []
+        m_lmks_logger = []
+        action_logger = []
+
+        with mp_face_mesh.FaceMesh(
+                max_num_faces=1,
+                refine_landmarks=True,
+                min_detection_confidence=0.5,
+                min_tracking_confidence=0.5) as face_mesh:
+            m_lmks = 0
+            raw_lmks = 0
+            image_show = 0
+
+            for i in range(n_frame):
+
+                image = cv2.imread(source_path+f'img{video_id}/{i}.png')
+
+                image = image[:,(640-480)//2:(640+480)//2 ]
+
+                image_show, raw_lmks, m_lmks = render_img(image, face_mesh, pcf)
+                r_lmks_logger.append(raw_lmks)
+                m_lmks_logger.append(m_lmks)
+
+                # cv2.imwrite(img_source+'/robot_dataset_img/%d.png'%i,image_show)
+
+                # if cv2.waitKey(5) & 0xFF == 27:
+                #     break
+
+            np.save(source_path+'/m_lmks%d.npy'%video_id, m_lmks_logger)
+            # np.save(source_path+'/r_lmks%d.npy'%video_id, r_lmks_logger)
+
 
