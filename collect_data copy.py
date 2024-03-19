@@ -161,14 +161,11 @@ if __name__ == "__main__":
     # Collect robot babbling data:
     if mode == 0:
         # from servo_m import *
-        save_data_pth = "../data0126_2/"
-        ref_list = np.loadtxt('hardware/action_source.csv')
-
-
+        save_data_pth = "../data1213/"
         os.makedirs(save_data_pth, exist_ok=True)
         os.makedirs(save_data_pth+'img/', exist_ok=True)
 
-        cap = VideoCapture(0)
+        cap = VideoCapture(4)
 
         # get cap property
         frame_width = cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`

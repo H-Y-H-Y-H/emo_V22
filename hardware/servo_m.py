@@ -138,13 +138,16 @@ if neck_mode == True:
     neck_pitch = Actuator(idx_tuple=(1, 12), min_angle=20, max_angle=60, init_angle=40, inverse_flag=1)
     all_motors = [lip_up, lip_up_warp, lip_down, r_corner_up, l_corner_up, r_corner_low, l_corner_low,
                   jaw,
-                  r_inner_eyebrow, l_inner_eyebrow, r_outer_eyebrow, l_outer_eyebrow,
+                  r_inner_eyebrow, l_inner_eyebrow, r_outer_eyebrow, l_outer_eyebrow, 
+                  r_upper_eyelid, l_upper_eyelid, r_lower_eyelid, l_lower_eyelid,
                   neck_roll, neck_pitch, neck_yaw]
 else:
     all_motors = [lip_up, lip_up_warp, lip_down,
                   r_corner_up, l_corner_up, r_corner_low, l_corner_low,
                   jaw,
-                  r_inner_eyebrow, l_inner_eyebrow, r_outer_eyebrow, l_outer_eyebrow]
+                  r_inner_eyebrow, l_inner_eyebrow, r_outer_eyebrow, l_outer_eyebrow,
+                  r_upper_eyelid, l_upper_eyelid, r_lower_eyelid, l_lower_eyelid
+                  ]
 
 # def check_lip_low(cmd_lip_down, cmd_lip_down_warp):
 #     # regenerate the lip values.
@@ -241,23 +244,26 @@ def move_all(target_cmds, interval=50, with_eyes = True):
     if with_eyes:
         num_motors = len(all_motors)
     else:
-        num_motors = len(all_motors)-4
+        num_motors = len(all_motors)-8
 
     # Get current motor joint angles:
+    print("MOVE ALL",target_cmds)
     curr = np.zeros(num_motors)
     for i in range(num_motors):
         curr[i] = all_motors[i].norm_v_cur
 
     traj = np.linspace(curr, target_cmds, num=interval+1, endpoint=True)
     # execute the commands:
+    print("MOVE ALL",target_cmds)
     for i in range(1,interval+1):
         for j in range(num_motors):
+            
             val = traj[i][j]
             all_motors[j].norm_act(val)
-        time.sleep(0.004)
+            time.sleep(0.0001)
         # time.sleep(0.001)
 
-
+# happy, angry, sad, suprise, 
 
 def eyes_move_2_traget(l_point, r_point):
     step = 1
@@ -349,13 +355,15 @@ for m in all_motors:
         restart_face.append(round(m.norm_v_cur,5))
 print(restart_face)
 init_cmds =[0.1,0.0,0.55556,0.4,0.32353,1.00000]
-restart_face = [0.1, 0.0, 0.55556, 0.4, 0.4, 0.32353, 0.24286, 1.0, 0.42857, 0.42857, 0.66667, 0.66667]
+restart_face = [0.1, 0.0, 0.55556, 0.4, 0.4, 0.32353, 0.24286, 1.0, 0.42857, 0.42857, 0.66667, 0.66667, 1.0, 1.0, 0.0, 0.0]
+
 smile_face = [0.8, 0, 0.3,  0.8, 0.8, 0.6, 0.6, 0.8, 0.4286, 0.4286, 0.6667, 0.6667] # 0.5
 smile_face0 = [0.8, 0, 0.3,  0.8, 0.8, 0.6, 0.6, 0.4, 0.4286, 0.4286, 0.6667, 0.6667] # 0.3 open mouth
 pout_face = [0, 0.8, 1, 0.1, 0.1, 0.9, 0.9, 1.0, 0.42857, 0.42857, 0.66667, 0.66667] # 0.3
 # pout_face0 = [0, 0.8, 1, 0.1, 0.1, 0.9, 0.9, .6, 0.42857, 0.42857, 0.66667, 0.66667] # 0.3
 
-noise_list = [0.3,0.5,0.3,0.3,0.3]
+noise_list = [0.1]*15
+noise_list[9] = 0.06
  
 wired_face = [0.01833095 ,0.82924096, 0.44764508, 0.      ,   0.   ,      0.91063554, 0.91063554 ,1.   ,      0.42857  ,  0.42857 ,   0.66667  ,  0.66667    ]
 
@@ -386,28 +394,87 @@ class VideoCapture:
     def read(self):
         return self.q.get()
 
+def adjust_motor_commands(motor_commands, audio_volumes, calm_face_cmds, max_scale=1.0):
+    """
+    Adjust motor commands based on audio volume.
+
+    :param motor_commands: 2D array (N x M) of motor commands
+    :param audio_volumes: 1D array (N) of audio volumes [0-1]
+    :param min_scale: Minimum scaling factor
+    :param max_scale: Maximum scaling factor
+    :return: Adjusted motor commands
+    """
+    calm_face_cmds = np.asarray(calm_face_cmds)
+    audio_volumes = audio_volumes*max_scale
+    audio_volumes = audio_volumes[:, np.newaxis]  # Reshapes to (343, 1)
+
+    # audio_volumes = np.asarray(audio_volumes)
+
+    # Scale the audio volumes to the desired range
+    # adjusted_motor_commands = calm_face_cmds + (motor_commands - calm_face_cmds) * (audio_volumes*0.2+0.8)
+    adjusted_motor_commands = calm_face_cmds + (motor_commands - calm_face_cmds) * (audio_volumes*0.8+0.2)
+
+
+
+    return adjusted_motor_commands
+
 
 if __name__ == "__main__":
 
-    mode = 6
-
+    mode = 101
 
     # Run commands by input index.
-    if mode == 0:
-        file_name = 'action_source.csv'
-        load_cmd = np.loadtxt(file_name)
 
+    # Mimic to children:
+    if mode == 100:
+        # reset    :0
+        # happy    :1
+        # sad      :2
+        # angry    :3
+        # superise :4
+        # fear     :5
+        # disgust  :6
+        # 
+        file_name = '6basic_expressions.csv'
+        load_cmd = np.loadtxt(file_name)
+        noise = 0.04
         for i in range(1000):
             a = input()
             a = int(a)
-            target_cmds = load_cmd[a]
-            target_cmds = np.hstack((target_cmds[:4],target_cmds[3:4],target_cmds[4:5],target_cmds[4:5],target_cmds[5:6]))
+            raw_action_list = load_cmd[a]
+            for i in range(5):
+                action_list = np.random.normal(raw_action_list,scale=noise)
+                action_list = np.clip(action_list,0,1)
 
-            print(target_cmds)
-            for j in range(8):
-                target_cmds[j] = np.clip(target_cmds[j],0,1)
-                all_motors[j].norm_act(target_cmds[j])
+                action_list = np.hstack((action_list[:4],action_list[3:4],action_list[4:5],action_list[4:5],action_list[5:6],
+                                        action_list[6:7],action_list[6:7],action_list[7:8],action_list[7:8],
+                                        action_list[8:9],action_list[8:9],action_list[9:10],action_list[9:10]))
+                move_all(action_list,with_eyes=True,interval=10)
+                print(action_list)
+
+
+
     
+    if mode == 101:
+        noise = 0.1
+        file_name = '6basic_expressions.csv'
+        load_cmd = np.loadtxt(file_name)
+
+        for i in range(1000):
+            a = np.random.randint(0,len(load_cmd))
+            action_list = load_cmd[a]
+
+            action_list = np.random.normal(action_list,scale=noise)
+            action_list = np.clip(action_list,0,1)
+
+            action_list = np.hstack((action_list[:4],action_list[3:4],action_list[4:5],action_list[4:5],action_list[5:6],
+                                    action_list[6:7],action_list[6:7],action_list[7:8],action_list[7:8],
+                                    action_list[8:9],action_list[8:9],action_list[9:10],action_list[9:10]))
+            move_all(action_list,with_eyes=True,interval=50)
+            print(action_list)
+
+
+
 
     # Control bar interface.
     elif mode == 1:
@@ -415,20 +482,19 @@ if __name__ == "__main__":
 
         # Create a figure and axis
         fig, ax = plt.subplots(figsize=(20,10))
-        plt.subplots_adjust(left=0.5)
-
+        # plt.subplots_adjust(left=0.5)
+        ax.set_visible(False)
         # Some initial data
-        index_d_motor = [0,1,2,3,5,7]
+        index_d_motor = [0,1,2,3,5,7,8,10,12,14]
         initial_data = np.asarray(restart_face)[index_d_motor]
 
-
-        bars = plt.bar(range(1, 7), initial_data)
         plt.ylim(0,1)
-        x_label = ['Upper Lip', 'Upper Lip Warp', 'Lower Lip', 'Upper Corner', 'Lower Corner', 'Jaw']
+        x_label = ['Upper Lip', 'Upper Lip Warp', 'Lower Lip', 'Upper Corner', 'Lower Corner', 'Jaw', 
+                    'inner_eyebrow', 'outer_eyebrow', 'up_eyelid', 'low_eyelid']
 
         # Vertical Slider
         amp_slider_list = []
-        for i in range(6):
+        for i in range(len(index_d_motor)):
             axamp = plt.axes([ 0.05 + 0.07 * i, 0.1, 0.02, 0.8])
             amp_slider_list.append(Slider(axamp, x_label[i], 0., 1.0, valinit=initial_data[i], orientation="vertical"))
 
@@ -436,14 +502,15 @@ if __name__ == "__main__":
         # Update function
         def update(val):
             action_list = []
-            for i in range(6):
+            for i in range(len(index_d_motor)):
                 amplitude = amp_slider_list[i].val
                 action_list.append(amplitude)
-                bars[i].set_height(amplitude)
 
             fig.canvas.draw_idle()
-            action_list = np.hstack((action_list[:4],action_list[3:4],action_list[4:5],action_list[4:5],action_list[5:6]))
-            move_all(action_list,with_eyes=False,interval=10)
+            action_list = np.hstack((action_list[:4],action_list[3:4],action_list[4:5],action_list[4:5],action_list[5:6],
+                                    action_list[6:7],action_list[6:7],action_list[7:8],action_list[7:8],
+                                    action_list[8:9],action_list[8:9],action_list[9:10],action_list[9:10]))
+            move_all(action_list,with_eyes=True,interval=10)
 
 
         # Register the update function with the slider
@@ -469,7 +536,6 @@ if __name__ == "__main__":
         plt.show()
         np.savetxt('log_action.csv',stored_values)
 
-
     # show figures of Gaussian noised action source
     elif mode == 2:
         color_list = ['#7FFFD4','#C79FEF','#A52A2A',"#FFA500","#9ACD32",'#006400','#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
@@ -488,7 +554,6 @@ if __name__ == "__main__":
         
         plt.savefig(f'source_action_figure/{N}noise_{noise}.png')
 
-
     # run the commands generated by the model and record a video
     elif mode == 3:
         import sys
@@ -496,8 +561,8 @@ if __name__ == "__main__":
         from camera_test import *
         time_interval = 1/30
         filter_flag = False
-        idx_cmds = 10
-        model_name = 'copper-sweep-1'#'scarlet-waterfall-3'
+        idx_cmds = 0
+        model_name = 'giddy-sweep-1'
 
         load_cmd = np.loadtxt(f'../data/{model_name}/{idx_cmds}.csv') 
         load_cmd = np.hstack((load_cmd[:,:4],load_cmd[:,3:4],load_cmd[:,4:5],load_cmd[:,4:5],load_cmd[:,5:6]))
@@ -510,7 +575,7 @@ if __name__ == "__main__":
             
         recorder = VideoRecorder(cam_id = 0, output_file=video_log_path)
         recorder.start_recording()
-        # time.sleep(2)
+        time.sleep(1)
         time0 = time.time()
         for i in range(len(load_cmd)):
             
@@ -563,15 +628,19 @@ if __name__ == "__main__":
             time.sleep(1)
         recorder.stop_recording()
 
-
     # run one command and take one picture.
     elif mode == 5:
-        
 
-        idx_cmds = 11
-        model_name = 'scarlet-waterfall-3'
+        idx_cmds = 8
+        Audio_tune = True
+        model_name = 'giddy-sweep-1'
 
         load_cmd = np.loadtxt(f'../data/{model_name}/{idx_cmds}.csv') 
+
+        if Audio_tune:
+            audio_f = np.loadtxt(f'../data/{model_name}/audio_v{idx_cmds}.csv')
+            load_cmd = adjust_motor_commands(load_cmd,audio_f,init_cmds,1)
+
         load_cmd = np.hstack((load_cmd[:,:4],load_cmd[:,3:4],load_cmd[:,4:5],load_cmd[:,4:5],load_cmd[:,5:6]))
 
         cap = cv2.VideoCapture(0)
@@ -589,7 +658,7 @@ if __name__ == "__main__":
                 all_motors[j].norm_act(target_cmds[j])
 
             time1 =time.time()
-            for _ in range(30):
+            for _ in range(10):
                 ret,image = cap.read()
             time2 =time.time()
             print(time2-time1)
@@ -598,9 +667,9 @@ if __name__ == "__main__":
 
     # data_collect only pictures
     elif mode == 6:
-        save_data_pth = "../data0127/"
-        step_num = 6
-        NUM_data = 30000
+        save_data_pth = "../../data0202/"
+        step_num = 5
+        NUM_data = 10000
         # TOTAL = NUM_data
         num_motors = 8
 
@@ -620,7 +689,7 @@ if __name__ == "__main__":
                     image = cap.read()
                 target_cmds = restart_face[:num_motors]
             else:
-                idx_ref = np.random.randint(0,17)
+                idx_ref = np.random.randint(0,25)
                 if idx_ref>14:
                     ref_face = init_cmds
                     target_cmds = np.random.normal(ref_face,scale=0.0)
